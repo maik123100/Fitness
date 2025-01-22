@@ -17,10 +17,10 @@ const tabs: TabLayoutProps[] = [
     ),
   },
   {
-    name: 'diary',
-    title: 'Diary',
+    name: 'food',
+    title: 'Food',
     iconElement:  ({ color, focused }) => (
-      <Ionicons name={focused ? 'book-sharp' : 'book-outline'} color={color} size={24} />
+      <Ionicons name={focused ? 'fast-food' : 'fast-food-outline'} color={color} size={24} />
     ),
   },
   {
