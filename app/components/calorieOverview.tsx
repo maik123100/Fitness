@@ -57,4 +57,22 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
+  formulaContainer: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#2d2d2d',
+  },
+  formulaText: {
+    color: '#76c7c0',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  formulaLabel: {
+    color: '#b0b0b0',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 5,
+  },
 });

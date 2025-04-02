@@ -1,7 +1,11 @@
-import {View, StyleSheet} from 'react-native';
-import CalorieOverview, {CalorieOverviewProps} from '../components/calorieOverview';
-import RecentActivities, {RecentActivity} from '../components/recentActivities';
-import MakroOverview, {Makro,MakroOverviewProps} from '../components/makroOverview';
+import { View, StyleSheet } from 'react-native';
+import { useCallback, useState } from 'react';
+
+import CalorieOverview, { CalorieOverviewProps } from '../components/calorieOverview';
+import RecentActivities, { RecentActivity } from '../components/recentActivities';
+import MakroOverview, { Makro, MakroOverviewProps } from '../components/makroOverview';
+import { getRecentActivities, Activity } from '@/services/database';
+import { useFocusEffect } from 'expo-router';
 
 /**
  * Index screen is the Dashboard of the Fitness App.
@@ -9,56 +13,59 @@ import MakroOverview, {Makro,MakroOverviewProps} from '../components/makroOvervi
  * There should be a Calorie Counter (eaten,burned,remaining) and a list of the user's recent activities.
  */
 export default function Index() {
-  // Sample data
-  const calorieData: CalorieOverviewProps = {
-    eaten: 1500,
-    burned: 500,
-    remaining: 1000,
+  const [calorieData, setCalorieData] = useState<CalorieOverviewProps>({
+    eaten: 0,
+    burned: 0,
+    remaining: 2000, // Default daily calorie goal
+  });
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Loading data...');
+      loadData();
+    },[])
+  );
+
+  const loadData = () => {
+    const activities = getRecentActivities(14); // Get last 14 activities
+    setRecentActivities(activities);
+
+    // Calculate calories
+    const eaten = activities
+      .filter(a => a.type === 'eaten')
+      .reduce((sum, activity) => sum + activity.calories, 0);
+    
+    const burned = activities
+      .filter(a => a.type === 'burned')
+      .reduce((sum, activity) => sum + activity.calories, 0);
+
+    setCalorieData({
+      eaten,
+      burned,
+      remaining: 2000 - eaten + burned, // 2000 is default daily goal
+    });
   };
 
-  const recentActivities:RecentActivity[] = [
-    { id: '1', activity: 'Morning Run', calories: 300, type: 'burned' },
-    { id: '2', activity: 'Lunch: Salad', calories: 400, type: 'eaten' },
-    { id: '3', activity: 'Workout: HIIT', calories: 600, type: 'burned' },
-    { id: '4', activity: 'Dinner: Chicken', calories: 400, type: 'eaten' },
-    { id: '5', activity: 'Evening Walk', calories: 200, type: 'burned' },
-    { id: '6', activity: 'Snack: Apple', calories: 100, type: 'eaten' },
-    { id: '7', activity: 'Sleep', calories: 50, type: 'burned' },
-    { id: '8', activity: 'Morning Run', calories: 300, type: 'burned' },
-    { id: '9', activity: 'Lunch: Salad', calories: 400, type: 'eaten' },
-    { id: '10', activity: 'Workout: HIIT', calories: 600, type: 'burned' },
-    { id: '11', activity: 'Dinner: Chicken', calories: 400, type: 'eaten' },
-    { id: '12', activity: 'Evening Walk', calories: 200, type: 'burned' },
-    { id: '13', activity: 'Snack: Apple', calories: 100, type: 'eaten' },
-    { id: '14', activity: 'Sleep', calories: 50, type: 'burned' },
-  ];
-  
-  const emptyRecentActivities:RecentActivity[] = [];
-  const makroTarget:Makro = {
+  const makroTarget: Makro = {
     protein: 100,
     carbs: 200,
     fat: 50,
   };
-  const makroCurrent:Makro = {
+  const makroCurrent: Makro = {
     protein: 80,
     carbs: 150,
     fat: 40,
   };
 
-
-
   return (
     <View style={styles.container}>
-      <CalorieOverview
-        eaten={calorieData.eaten}
-        burned={calorieData.burned}
-        remaining={calorieData.remaining}
-      />
+      <CalorieOverview {...calorieData} />
       <RecentActivities recentActivities={recentActivities} />
-      <MakroOverview currentMakro={makroCurrent} targetMakro={makroTarget}  />
+      <MakroOverview currentMakro={makroCurrent} targetMakro={makroTarget} />
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
