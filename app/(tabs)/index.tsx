@@ -1,67 +1,76 @@
-import { View, StyleSheet } from 'react-native';
-import { useCallback, useState } from 'react';
 
-import CalorieOverview, { CalorieOverviewProps } from '../components/calorieOverview';
-import RecentActivities, { RecentActivity } from '../components/recentActivities';
-import MakroOverview, { Makro, MakroOverviewProps } from '../components/makroOverview';
-import { getRecentActivities, Activity } from '@/services/database';
+import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
-/**
- * Index screen is the Dashboard of the Fitness App.
- * It should display the user's current status and progress. 
- * There should be a Calorie Counter (eaten,burned,remaining) and a list of the user's recent activities.
- */
-export default function Index() {
-  const [calorieData, setCalorieData] = useState<CalorieOverviewProps>({
-    eaten: 0,
-    burned: 0,
-    remaining: 2000, // Default daily calorie goal
+import CalorieOverview from '../components/calorieOverview';
+import MakroOverview from '../components/makroOverview';
+import RecentActivities from '../components/recentActivities';
+import { 
+  getUserProfile, 
+  getNutritionSummary, 
+  getFoodEntriesForDate, 
+  getWorkoutEntriesForDate, 
+  FoodEntry, 
+  WorkoutEntry 
+} from '../../services/database';
+import { draculaTheme, spacing, typography } from '../../styles/theme';
+
+export default function DashboardScreen() {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [calorieData, setCalorieData] = useState({ eaten: 0, burned: 0, remaining: 2000 });
+  const [makroData, setMakroData] = useState({ 
+    current: { protein: 0, carbs: 0, fat: 0 },
+    target: { protein: 100, carbs: 200, fat: 50 } 
   });
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [recentActivities, setRecentActivities] = useState<(FoodEntry | WorkoutEntry)[]>([]);
+
   useFocusEffect(
     useCallback(() => {
-      console.log('Loading data...');
-      loadData();
-    },[])
+      loadDashboardData();
+    }, [date])
   );
 
-  const loadData = () => {
-    const activities = getRecentActivities(14); // Get last 14 activities
-    setRecentActivities(activities);
+  const loadDashboardData = () => {
+    const userProfile = getUserProfile();
+    const nutritionSummary = getNutritionSummary(date);
+    const foodEntries = getFoodEntriesForDate(date);
+    const workoutEntries = getWorkoutEntriesForDate(date);
 
-    // Calculate calories
-    const eaten = activities
-      .filter(a => a.type === 'eaten')
-      .reduce((sum, activity) => sum + activity.calories, 0);
-    
-    const burned = activities
-      .filter(a => a.type === 'burned')
-      .reduce((sum, activity) => sum + activity.calories, 0);
+    const targetCalories = userProfile?.targetCalories || 2000;
+    const eaten = nutritionSummary.totalCalories;
+    const burned = nutritionSummary.caloriesBurned;
 
     setCalorieData({
       eaten,
       burned,
-      remaining: 2000 - eaten + burned, // 2000 is default daily goal
+      remaining: targetCalories - eaten + burned,
     });
-  };
 
-  const makroTarget: Makro = {
-    protein: 100,
-    carbs: 200,
-    fat: 50,
-  };
-  const makroCurrent: Makro = {
-    protein: 80,
-    carbs: 150,
-    fat: 40,
+    setMakroData({
+      current: {
+        protein: nutritionSummary.totalProtein,
+        carbs: nutritionSummary.totalCarbs,
+        fat: nutritionSummary.totalFat,
+      },
+      target: {
+        protein: userProfile?.targetProtein || 100,
+        carbs: userProfile?.targetCarbs || 200,
+        fat: userProfile?.targetFat || 50,
+      },
+    });
+
+    // Combine and sort recent activities
+    const activities = [...foodEntries, ...workoutEntries].sort((a, b) => b.createdAt - a.createdAt);
+    setRecentActivities(activities);
   };
 
   return (
     <View style={styles.container}>
+      <Text style={styles.header}>Dashboard</Text>
       <CalorieOverview {...calorieData} />
+      <MakroOverview currentMakro={makroData.current} targetMakro={makroData.target} />
       <RecentActivities recentActivities={recentActivities} />
-      <MakroOverview currentMakro={makroCurrent} targetMakro={makroTarget} />
     </View>
   );
 }
@@ -69,7 +78,13 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    padding: 20,
+    backgroundColor: draculaTheme.background,
+    padding: spacing.md,
+  },
+  header: {
+    ...typography.sizes,
+    color: draculaTheme.foreground,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.md,
   },
 });

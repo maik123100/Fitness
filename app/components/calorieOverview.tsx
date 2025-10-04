@@ -1,4 +1,6 @@
+
 import { View, Text, StyleSheet } from 'react-native';
+import { draculaTheme, spacing, typography, borderRadius } from '../../styles/theme';
 
 export type CalorieOverviewProps = {
   eaten: number;
@@ -13,15 +15,15 @@ export default function CalorieOverview({ eaten, burned, remaining }: CalorieOve
       <View style={styles.calorieStats}>
         <View style={styles.calorieBox}>
           <Text style={styles.calorieLabel}>Eaten</Text>
-          <Text style={styles.calorieValue}>{eaten} kcal</Text>
+          <Text style={[styles.calorieValue, styles.eaten]}>{eaten} kcal</Text>
         </View>
         <View style={styles.calorieBox}>
           <Text style={styles.calorieLabel}>Burned</Text>
-          <Text style={styles.calorieValue}>{burned} kcal</Text>
+          <Text style={[styles.calorieValue, styles.burned]}>{burned} kcal</Text>
         </View>
         <View style={styles.calorieBox}>
           <Text style={styles.calorieLabel}>Remaining</Text>
-          <Text style={styles.calorieValue}>{remaining} kcal</Text>
+          <Text style={[styles.calorieValue, styles.remaining]}>{remaining} kcal</Text>
         </View>
       </View>
     </View>
@@ -30,49 +32,40 @@ export default function CalorieOverview({ eaten, burned, remaining }: CalorieOve
 
 const styles = StyleSheet.create({
   calorieCounter: {
-    marginBottom: 30,
-    backgroundColor: '#1f1f1f',
-    padding: 20,
-    borderRadius: 10,
+    marginBottom: spacing.lg,
+    backgroundColor: draculaTheme.surface.card,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
   calorieTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    color: draculaTheme.foreground,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.md,
   },
   calorieStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
   },
   calorieBox: {
     alignItems: 'center',
   },
   calorieLabel: {
-    color: '#b0b0b0',
-    fontSize: 16,
+    color: draculaTheme.comment,
+    fontSize: typography.sizes.md,
+    marginBottom: spacing.sm,
   },
   calorieValue: {
-    color: '#76c7c0',
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
   },
-  formulaContainer: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#2d2d2d',
+  eaten: {
+    color: draculaTheme.nutrition.calories,
   },
-  formulaText: {
-    color: '#76c7c0',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  burned: {
+    color: draculaTheme.activity.cardio,
   },
-  formulaLabel: {
-    color: '#b0b0b0',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 5,
+  remaining: {
+    color: draculaTheme.green,
   },
 });

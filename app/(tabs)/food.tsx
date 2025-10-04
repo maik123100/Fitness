@@ -1,178 +1,116 @@
-import { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
-import { addActivity, getRecentActivities, Activity, resetDatabase, updateActivity, deleteActivity } from '@/services/database';
 
-export default function DiaryScreen() {
-  const [foodName, setFoodName] = useState('');
-  const [calories, setCalories] = useState('');
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editCalories, setEditCalories] = useState('');
+import { useState, useEffect } from 'react';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Alert, ScrollView } from 'react-native';
+import { addFoodEntry, getFoodEntriesForDate, deleteFoodEntry, searchFoodItems, FoodItem, FoodEntry, MealType, getFoodItem } from '../../services/database';
+import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+
+export default function FoodDiaryScreen() {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [foodEntries, setFoodEntries] = useState<Record<MealType, FoodEntry[]>>({ breakfast: [], lunch: [], dinner: [], snack: [] });
   const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<FoodItem[]>([]);
+  const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
 
   useEffect(() => {
-    loadRecentActivities();
-  }, []);
+    loadFoodEntries();
+  }, [date]);
 
-  const loadRecentActivities = () => {
-    const activities = getRecentActivities(10);
-    setRecentActivities(activities);
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      const results = searchFoodItems(searchQuery);
+      setSearchResults(results);
+    }
+  }, [searchQuery]);
+
+  const loadFoodEntries = () => {
+    const entries = getFoodEntriesForDate(date);
+    const groupedEntries = { breakfast: [], lunch: [], dinner: [], snack: [] };
+    entries.forEach(entry => {
+      groupedEntries[entry.mealType].push(entry);
+    });
+    setFoodEntries(groupedEntries);
   };
 
-  const handleAddFood = () => {
-    if (!foodName || !calories) return;
-
-    const newActivity: Activity = {
+  const handleAddFood = (foodItem: FoodItem) => {
+    const newEntry: FoodEntry = {
       id: Date.now().toString(),
-      activity: foodName,
-      calories: parseInt(calories),
-      type: 'eaten',
-      timestamp: Date.now()
+      foodId: foodItem.id,
+      date,
+      mealType: selectedMealType,
+      quantity: 1, // Default quantity
+      unit: foodItem.servingUnit,
+      totalCalories: foodItem.calories,
+      totalProtein: foodItem.protein,
+      totalCarbs: foodItem.carbs,
+      totalFat: foodItem.fat,
+      totalFiber: foodItem.fiber,
+      totalSugar: foodItem.sugar,
+      totalSodium: foodItem.sodium,
+      createdAt: Date.now(),
     };
-
-    addActivity(newActivity);
-    setFoodName('');
-    setCalories('');
-    loadRecentActivities();
-  };
-
-  const handleReset = () => {
-    resetDatabase();
-    loadRecentActivities();
-  };
-
-  const handleActivityPress = (activity: Activity) => {
-    setSelectedActivity(activity);
-    setEditName(activity.activity);
-    setEditCalories(activity.calories.toString());
-    setModalVisible(true);
-  };
-
-  const handleUpdateActivity = () => {
-    if (!selectedActivity || !editName || !editCalories) return;
-
-    const updatedActivity: Activity = {
-      ...selectedActivity,
-      activity: editName,
-      calories: parseInt(editCalories),
-    };
-
-    updateActivity(updatedActivity);
+    addFoodEntry(newEntry);
     setModalVisible(false);
-    loadRecentActivities();
+    loadFoodEntries();
   };
 
-  const handleDeleteActivity = () => {
-    if (!selectedActivity) return;
+  const handleDeleteFood = (id: string) => {
+    Alert.alert('Delete Entry', 'Are you sure you want to delete this food entry?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => {
+        deleteFoodEntry(id);
+        loadFoodEntries();
+      }},
+    ]);
+  };
 
-    Alert.alert(
-      "Delete Activity",
-      "Are you sure you want to delete this activity?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive",
-          onPress: () => {
-            deleteActivity(selectedActivity.id);
-            setModalVisible(false);
-            loadRecentActivities();
-          }
-        }
-      ]
-    );
+  const openSearchModal = (mealType: MealType) => {
+    setSelectedMealType(mealType);
+    setSearchQuery('');
+    setSearchResults([]);
+    setModalVisible(true);
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-        <Text style={styles.resetButtonText}>Reset Database</Text>
-      </TouchableOpacity>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Food name"
-          placeholderTextColor="#999"
-          value={foodName}
-          onChangeText={setFoodName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Calories"
-          placeholderTextColor="#999"
-          keyboardType="numeric"
-          value={calories}
-          onChangeText={setCalories}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={handleAddFood}>
-          <Text style={styles.buttonText}>Add Food</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.listContainer}>
-        <Text style={styles.listTitle}>Recent Food Entries</Text>
-        <FlatList
-          data={recentActivities.filter(activity => activity.type === 'eaten')}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.listItem}
-              onPress={() => handleActivityPress(item)}
-            >
-              <Text style={styles.foodName}>{item.activity}</Text>
-              <Text style={styles.calories}>{item.calories} kcal</Text>
+      {Object.keys(foodEntries).map((mealType) => (
+        <View key={mealType} style={styles.mealSection}>
+          <Text style={styles.mealTitle}>{(mealType as string).charAt(0).toUpperCase() + (mealType as string).slice(1)}</Text>
+          {foodEntries[mealType as MealType].map((item) => (
+            <TouchableOpacity key={item.id} onLongPress={() => handleDeleteFood(item.id)}>
+              <View style={styles.foodItem}>
+                <Text style={styles.foodName}>{getFoodItem(item.foodId)?.name}</Text>
+                <Text style={styles.foodCalories}>{item.totalCalories} kcal</Text>
+              </View>
             </TouchableOpacity>
-          )}
-        />
-      </View>
+          ))}
+          <TouchableOpacity style={styles.addButton} onPress={() => openSearchModal(mealType as MealType)}>
+            <Ionicons name="add" size={24} color={draculaTheme.text.inverse} />
+            <Text style={styles.addButtonText}>Add Food</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Food Entry</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Food name"
-              placeholderTextColor="#999"
-              value={editName}
-              onChangeText={setEditName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Calories"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              value={editCalories}
-              onChangeText={setEditCalories}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.deleteButton]}
-                onPress={handleDeleteActivity}
-              >
-                <Text style={styles.buttonText}>Delete</Text>
+      <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search for food..."
+            placeholderTextColor={draculaTheme.comment}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.searchResultItem} onPress={() => handleAddFood(item)}>
+                <Text style={styles.searchResultName}>{item.name}</Text>
+                <Text style={styles.searchResultDetails}>{item.calories} kcal per {item.servingSize}{item.servingUnit}</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.updateButton]}
-                onPress={handleUpdateActivity}
-              >
-                <Text style={styles.buttonText}>Update</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity 
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+            )}
+          />
         </View>
       </Modal>
     </View>
@@ -182,110 +120,79 @@ export default function DiaryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    padding: 20,
+    backgroundColor: draculaTheme.background,
+    padding: spacing.md,
   },
-  inputContainer: {
-    backgroundColor: '#1f1f1f',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 20,
+  mealSection: {
+    backgroundColor: draculaTheme.surface.card,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
-  input: {
-    backgroundColor: '#2d2d2d',
-    padding: 15,
-    borderRadius: 8,
-    color: '#fff',
-    marginBottom: 10,
+  mealTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: draculaTheme.foreground,
+    marginBottom: spacing.md,
   },
-  addButton: {
-    backgroundColor: '#ffd33d',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  listContainer: {
-    flex: 1,
-    backgroundColor: '#1f1f1f',
-    padding: 20,
-    borderRadius: 10,
-  },
-  listTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  listItem: {
+  foodItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#2d2d2d',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: draculaTheme.surface.secondary,
   },
   foodName: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: typography.sizes.md,
+    color: draculaTheme.foreground,
   },
-  calories: {
-    color: '#ffd33d',
-    fontSize: 16,
-    fontWeight: 'bold',
+  foodCalories: {
+    fontSize: typography.sizes.md,
+    color: draculaTheme.nutrition.calories,
+    fontWeight: typography.weights.semibold,
   },
-  resetButton: {
-    backgroundColor: '#ff4444',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  resetButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#1f1f1f',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-  },
-  modalTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  modalButtons: {
+  addButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  modalButton: {
-    padding: 15,
-    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: draculaTheme.green,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.md,
+  },
+  addButtonText: {
+    color: draculaTheme.text.inverse,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    marginLeft: spacing.sm,
+  },
+  modalContainer: {
     flex: 1,
-    marginHorizontal: 5,
+    backgroundColor: draculaTheme.background,
+    padding: spacing.md,
   },
-  updateButton: {
-    backgroundColor: '#ffd33d',
+  searchInput: {
+    backgroundColor: draculaTheme.surface.input,
+    color: draculaTheme.foreground,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    fontSize: typography.sizes.md,
+    marginBottom: spacing.md,
   },
-  deleteButton: {
-    backgroundColor: '#ff4444',
+  searchResultItem: {
+    backgroundColor: draculaTheme.surface.card,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
   },
-  cancelButton: {
-    backgroundColor: '#666',
-    marginTop: 10,
+  searchResultName: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    color: draculaTheme.foreground,
+  },
+  searchResultDetails: {
+    fontSize: typography.sizes.sm,
+    color: draculaTheme.comment,
+    marginTop: spacing.xs,
   },
 });

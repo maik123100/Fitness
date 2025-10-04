@@ -37,6 +37,13 @@ const tabs: TabLayoutProps[] = [
       <Entypo name={focused ? 'area-graph' : 'line-graph'} color={color} size={24} />
     ),
   },
+  {
+    name: 'profile',
+    title: 'Profile',
+    iconElement:  ({ color, focused }) => (
+      <Ionicons name={focused ? 'person-sharp' : 'person-outline'} color={color} size={24} />
+    ),
+  },
 ]
 export default function TabLayout() {
   return (
