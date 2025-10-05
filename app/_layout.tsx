@@ -1,12 +1,24 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { initDatabase } from "@/services/database";
+import { useEffect, useState } from "react";
+import { initDatabase, dbInitialized } from "@/services/database";
+import { Text, View } from "react-native";
 
 export default function RootLayout() {
+  const [isDbInitialized, setIsDbInitialized] = useState(false);
+
   useEffect(() => {
     initDatabase();
+    dbInitialized.then(() => setIsDbInitialized(true));
   }, []);
+
+  if (!isDbInitialized) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
   return(
     <>

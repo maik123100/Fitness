@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   title: {
-    ...typography.sizes,
+    fontSize: typography.sizes.heading,
     color: draculaTheme.foreground,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.lg,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
-    ...typography.sizes,
+    fontSize: typography.sizes.md,
     color: draculaTheme.foreground,
     fontWeight: typography.weights.semibold,
     marginBottom: spacing.sm,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     color: draculaTheme.foreground,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    ...typography.sizes,
+    fontSize: typography.sizes.md,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: draculaTheme.primary,
   },
   segmentText: {
-    ...typography.sizes,
+    fontSize: typography.sizes.sm,
     color: draculaTheme.foreground,
     textAlign: 'center',
   },
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   saveButtonText: {
-    ...typography.sizes,
+    fontSize: typography.sizes.lg,
     color: draculaTheme.text.inverse,
     fontWeight: typography.weights.bold,
   },

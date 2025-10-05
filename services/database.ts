@@ -96,31 +96,47 @@ export interface RecipeIngredient {
   unit: string;
 }
 
-export interface WorkoutExercise {
+export interface WorkoutTemplate {
   id: string;
   name: string;
-  category: ExerciseCategory;
-  muscleGroups: MuscleGroup[];
-  description?: string;
-  instructions?: string;
-  // METs (Metabolic Equivalent of Task)
-  mets: number;
+}
+
+export interface WorkoutTemplateExercise {
+  id: string;
+  workout_template_id: string;
+  exercise_template_id: string;
+  sets: number;
+  reps: string;
+}
+
+export interface ExerciseTemplate {
+  id: string;
+  name: string;
+  default_sets: number;
+  default_reps: string;
+}
+
+export interface WorkoutSet {
+  id: string;
+  workout_template_exercise_id: string;
+  weight: number;
+  reps: number;
+  completed: boolean;
+}
+
+export interface ActiveWorkoutSession {
+  id: string;
+  workout_template_id: string;
+  start_time: number;
+  sets: WorkoutSet[];
 }
 
 export interface WorkoutEntry {
   id: string;
-  exerciseId: string;
+  workout_template_id: string;
   date: string;
   duration: number; // in minutes
-  calories: number;
-  // Strength training specific
-  sets?: number;
-  reps?: number;
-  weight?: number;
-  // Cardio specific
-  distance?: number;
-  distanceUnit?: string;
-  heartRate?: number;
+  sets: WorkoutSet[];
   createdAt: number;
 }
 
@@ -196,8 +212,10 @@ export type GoalType =
   | 'build-muscle'
   | 'improve-fitness';
 
+export let dbInitialized: Promise<void>;
+
 export const initDatabase = (): void => {
-  if (!db) {
+  dbInitialized = new Promise<void>((resolve, reject) => {
     try {
       db = SQLite.openDatabaseSync('fitness.db');
       db.execSync('DROP TABLE IF EXISTS activities');
@@ -206,174 +224,208 @@ export const initDatabase = (): void => {
       db.execSync('DROP TABLE IF EXISTS food_entries');
       db.execSync('DROP TABLE IF EXISTS recipes');
       db.execSync('DROP TABLE IF EXISTS recipe_ingredients');
-      db.execSync('DROP TABLE IF EXISTS workout_exercises');
       db.execSync('DROP TABLE IF EXISTS workout_entries');
+      db.execSync('DROP TABLE IF EXISTS active_workout_session');
       db.execSync('DROP TABLE IF EXISTS user_profile');
       db.execSync('DROP TABLE IF EXISTS weight_entries');
+      db.execSync('DROP TABLE IF EXISTS workout_templates');
+      db.execSync('DROP TABLE IF EXISTS workout_template_exercises');
+      db.execSync('DROP TABLE IF EXISTS exercise_templates');
+      
+      db.execSync(`
+        PRAGMA journal_mode = WAL;
+      `);
+
+      // Always run the create table statements to ensure they exist
+      db.execSync(`
+        CREATE TABLE IF NOT EXISTS activities (
+          id TEXT PRIMARY KEY,
+          activity TEXT NOT NULL,
+          calories INTEGER NOT NULL,
+          type TEXT NOT NULL,
+          timestamp INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS daily_nutrition (
+          id TEXT PRIMARY KEY,
+          date TEXT NOT NULL,
+          protein REAL NOT NULL,
+          carbs REAL NOT NULL,
+          fat REAL NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS food_items (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          brand TEXT,
+          barcode TEXT,
+          category TEXT NOT NULL,
+          calories REAL NOT NULL,
+          protein REAL NOT NULL,
+          carbs REAL NOT NULL,
+          fat REAL NOT NULL,
+          fiber REAL NOT NULL DEFAULT 0,
+          sugar REAL NOT NULL DEFAULT 0,
+          sodium REAL NOT NULL DEFAULT 0,
+          cholesterol REAL NOT NULL DEFAULT 0,
+          saturated_fat REAL NOT NULL DEFAULT 0,
+          trans_fat REAL NOT NULL DEFAULT 0,
+          vitamin_a REAL DEFAULT 0,
+          vitamin_c REAL DEFAULT 0,
+          vitamin_d REAL DEFAULT 0,
+          calcium REAL DEFAULT 0,
+          iron REAL DEFAULT 0,
+          potassium REAL DEFAULT 0,
+          serving_size REAL NOT NULL,
+          serving_unit TEXT NOT NULL,
+          is_verified INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS food_entries (
+          id TEXT PRIMARY KEY,
+          food_id TEXT NOT NULL,
+          user_id TEXT,
+          date TEXT NOT NULL,
+          meal_type TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          unit TEXT NOT NULL,
+          total_calories REAL NOT NULL,
+          total_protein REAL NOT NULL,
+          total_carbs REAL NOT NULL,
+          total_fat REAL NOT NULL,
+          total_fiber REAL NOT NULL,
+          total_sugar REAL NOT NULL,
+          total_sodium REAL NOT NULL,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (food_id) REFERENCES food_items(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS recipes (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          instructions TEXT,
+          servings INTEGER NOT NULL,
+          prep_time INTEGER,
+          cook_time INTEGER,
+          calories_per_serving REAL NOT NULL,
+          protein_per_serving REAL NOT NULL,
+          carbs_per_serving REAL NOT NULL,
+          fat_per_serving REAL NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS recipe_ingredients (
+          id TEXT PRIMARY KEY,
+          recipe_id TEXT NOT NULL,
+          food_id TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          unit TEXT NOT NULL,
+          FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+          FOREIGN KEY (food_id) REFERENCES food_items(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS workout_templates (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS workout_template_exercises (
+          id TEXT PRIMARY KEY,
+          workout_template_id TEXT NOT NULL,
+          exercise_template_id TEXT NOT NULL,
+          sets INTEGER NOT NULL,
+          reps TEXT NOT NULL,
+          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),
+          FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS exercise_templates (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          default_sets INTEGER NOT NULL,
+          default_reps TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS workout_template_exercises (
+          id TEXT PRIMARY KEY,
+          workout_template_id TEXT NOT NULL,
+          exercise_template_id TEXT NOT NULL,
+          sets INTEGER NOT NULL,
+          reps TEXT NOT NULL,
+          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),
+          FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS exercise_templates (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          default_sets INTEGER NOT NULL,
+          default_reps TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS workout_entries (
+          id TEXT PRIMARY KEY,
+          workout_template_id TEXT NOT NULL,
+          date TEXT NOT NULL,
+          duration INTEGER NOT NULL,
+          sets TEXT NOT NULL, -- JSON string of WorkoutSet[]
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS active_workout_session (
+          id TEXT PRIMARY KEY,
+          workout_template_id TEXT NOT NULL,
+          start_time INTEGER NOT NULL,
+          sets TEXT NOT NULL, -- JSON string of WorkoutSet[]
+          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS user_profile (
+          id TEXT PRIMARY KEY,
+          age INTEGER NOT NULL,
+          gender TEXT NOT NULL,
+          height REAL NOT NULL,
+          weight REAL NOT NULL,
+          activity_level TEXT NOT NULL,
+          goal_type TEXT NOT NULL,
+          target_weight REAL,
+          target_calories REAL NOT NULL,
+          target_protein REAL NOT NULL,
+          target_carbs REAL NOT NULL,
+          target_fat REAL NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS weight_entries (
+          id TEXT PRIMARY KEY,
+          weight REAL NOT NULL,
+          date TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        );
+
+        -- Create indexes for better performance
+        CREATE INDEX IF NOT EXISTS idx_food_entries_date ON food_entries(date);
+        CREATE INDEX IF NOT EXISTS idx_food_entries_meal_type ON food_entries(meal_type);
+        CREATE INDEX IF NOT EXISTS idx_workout_entries_date ON workout_entries(date);
+        CREATE INDEX IF NOT EXISTS idx_food_items_name ON food_items(name);
+        CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category);
+        CREATE INDEX IF NOT EXISTS idx_weight_entries_date ON weight_entries(date);
+      `);
+
+      
+      // Populate with sample data
+      populateSampleData();
+      resolve();
     } catch (error) {
-      console.error("Error dropping tables: ", error);
+      reject(error);
     }
-    db = SQLite.openDatabaseSync('fitness.db');
-    
-    db.execSync(`
-      PRAGMA journal_mode = WAL;
-    `);
-
-    // Always run the create table statements to ensure they exist
-    db.execSync(`
-      CREATE TABLE IF NOT EXISTS activities (
-        id TEXT PRIMARY KEY,
-        activity TEXT NOT NULL,
-        calories INTEGER NOT NULL,
-        type TEXT NOT NULL,
-        timestamp INTEGER NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS daily_nutrition (
-        id TEXT PRIMARY KEY,
-        date TEXT NOT NULL,
-        protein REAL NOT NULL,
-        carbs REAL NOT NULL,
-        fat REAL NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS food_items (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        brand TEXT,
-        barcode TEXT,
-        category TEXT NOT NULL,
-        calories REAL NOT NULL,
-        protein REAL NOT NULL,
-        carbs REAL NOT NULL,
-        fat REAL NOT NULL,
-        fiber REAL NOT NULL DEFAULT 0,
-        sugar REAL NOT NULL DEFAULT 0,
-        sodium REAL NOT NULL DEFAULT 0,
-        cholesterol REAL NOT NULL DEFAULT 0,
-        saturated_fat REAL NOT NULL DEFAULT 0,
-        trans_fat REAL NOT NULL DEFAULT 0,
-        vitamin_a REAL DEFAULT 0,
-        vitamin_c REAL DEFAULT 0,
-        vitamin_d REAL DEFAULT 0,
-        calcium REAL DEFAULT 0,
-        iron REAL DEFAULT 0,
-        potassium REAL DEFAULT 0,
-        serving_size REAL NOT NULL,
-        serving_unit TEXT NOT NULL,
-        is_verified INTEGER NOT NULL DEFAULT 0,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS food_entries (
-        id TEXT PRIMARY KEY,
-        food_id TEXT NOT NULL,
-        user_id TEXT,
-        date TEXT NOT NULL,
-        meal_type TEXT NOT NULL,
-        quantity REAL NOT NULL,
-        unit TEXT NOT NULL,
-        total_calories REAL NOT NULL,
-        total_protein REAL NOT NULL,
-        total_carbs REAL NOT NULL,
-        total_fat REAL NOT NULL,
-        total_fiber REAL NOT NULL,
-        total_sugar REAL NOT NULL,
-        total_sodium REAL NOT NULL,
-        created_at INTEGER NOT NULL,
-        FOREIGN KEY (food_id) REFERENCES food_items(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS recipes (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT,
-        instructions TEXT,
-        servings INTEGER NOT NULL,
-        prep_time INTEGER,
-        cook_time INTEGER,
-        calories_per_serving REAL NOT NULL,
-        protein_per_serving REAL NOT NULL,
-        carbs_per_serving REAL NOT NULL,
-        fat_per_serving REAL NOT NULL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS recipe_ingredients (
-        id TEXT PRIMARY KEY,
-        recipe_id TEXT NOT NULL,
-        food_id TEXT NOT NULL,
-        quantity REAL NOT NULL,
-        unit TEXT NOT NULL,
-        FOREIGN KEY (recipe_id) REFERENCES recipes(id),
-        FOREIGN KEY (food_id) REFERENCES food_items(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS workout_exercises (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        category TEXT NOT NULL,
-        muscle_groups TEXT NOT NULL,
-        description TEXT,
-        instructions TEXT,
-        mets REAL NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS workout_entries (
-        id TEXT PRIMARY KEY,
-        exercise_id TEXT NOT NULL,
-        date TEXT NOT NULL,
-        duration INTEGER NOT NULL,
-        calories REAL NOT NULL,
-        sets INTEGER,
-        reps INTEGER,
-        weight REAL,
-        distance REAL,
-        distance_unit TEXT,
-        heart_rate INTEGER,
-        created_at INTEGER NOT NULL,
-        FOREIGN KEY (exercise_id) REFERENCES workout_exercises(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS user_profile (
-        id TEXT PRIMARY KEY,
-        age INTEGER NOT NULL,
-        gender TEXT NOT NULL,
-        height REAL NOT NULL,
-        weight REAL NOT NULL,
-        activity_level TEXT NOT NULL,
-        goal_type TEXT NOT NULL,
-        target_weight REAL,
-        target_calories REAL NOT NULL,
-        target_protein REAL NOT NULL,
-        target_carbs REAL NOT NULL,
-        target_fat REAL NOT NULL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS weight_entries (
-        id TEXT PRIMARY KEY,
-        weight REAL NOT NULL,
-        date TEXT NOT NULL,
-        created_at INTEGER NOT NULL
-      );
-
-      -- Create indexes for better performance
-      CREATE INDEX IF NOT EXISTS idx_food_entries_date ON food_entries(date);
-      CREATE INDEX IF NOT EXISTS idx_food_entries_meal_type ON food_entries(meal_type);
-      CREATE INDEX IF NOT EXISTS idx_workout_entries_date ON workout_entries(date);
-      CREATE INDEX IF NOT EXISTS idx_food_items_name ON food_items(name);
-      CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category);
-      CREATE INDEX IF NOT EXISTS idx_weight_entries_date ON weight_entries(date);
-    `);
-
-    
-    // Populate with sample data
-    populateSampleData();
-  }
+  });
 };
 
 // Enhanced Food Database Functions
@@ -386,10 +438,10 @@ export const addFoodItem = (food: FoodItem): void => {
       serving_size, serving_unit, is_verified, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      food.id, food.name, food.brand, food.barcode, food.category,
+      food.id, food.name, food.brand ?? null, food.barcode ?? null, food.category,
       food.calories, food.protein, food.carbs, food.fat, food.fiber, food.sugar, food.sodium,
-      food.cholesterol, food.saturatedFat, food.transFat, food.vitaminA, food.vitaminC, food.vitaminD,
-      food.calcium, food.iron, food.potassium, food.servingSize, food.servingUnit,
+      food.cholesterol, food.saturatedFat, food.transFat, food.vitaminA ?? 0, food.vitaminC ?? 0, food.vitaminD ?? 0,
+      food.calcium ?? 0, food.iron ?? 0, food.potassium ?? 0, food.servingSize, food.servingUnit,
       food.isVerified ? 1 : 0, food.createdAt || now, food.updatedAt || now
     ]
   );
@@ -404,7 +456,7 @@ export const searchFoodItems = (query: string, category?: FoodCategory, limit: n
     LIMIT ?
   `;
   
-  const params = [`%${query}%`];
+  const params: (string | number | null)[] = [`%${query}%`];
   if (category) params.push(category);
   params.push(limit);
   
@@ -479,7 +531,7 @@ export const addFoodEntry = (entry: FoodEntry): void => {
       total_calories, total_protein, total_carbs, total_fat, total_fiber, total_sugar, total_sodium, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      entry.id, entry.foodId, entry.userId, entry.date, entry.mealType, entry.quantity, entry.unit,
+      entry.id, entry.foodId, entry.userId ?? null, entry.date, entry.mealType, entry.quantity, entry.unit,
       entry.totalCalories, entry.totalProtein, entry.totalCarbs, entry.totalFat,
       entry.totalFiber, entry.totalSugar, entry.totalSodium, entry.createdAt
     ]
@@ -511,105 +563,118 @@ export const deleteFoodEntry = (id: string): void => {
   db.runSync('DELETE FROM food_entries WHERE id = ?', [id]);
 };
 
-export const deleteWorkoutEntry = (id: string): void => {
-  db.runSync('DELETE FROM workout_entries WHERE id = ?', [id]);
+// Workout Functions
+export const addWorkoutTemplate = (template: WorkoutTemplate): void => {
+  db.runSync('INSERT INTO workout_templates (id, name) VALUES (?, ?)', [template.id, template.name]);
 };
 
-// Workout Functions
-export const addWorkoutExercise = (exercise: WorkoutExercise): void => {
+export const getWorkoutTemplates = (): WorkoutTemplate[] => {
+  return db.getAllSync<WorkoutTemplate>('SELECT * FROM workout_templates');
+};
+
+export const getWorkoutTemplate = (id: string): WorkoutTemplate | null => {
+  return db.getFirstSync<WorkoutTemplate>('SELECT * FROM workout_templates WHERE id = ?', [id]);
+};
+
+export const getExerciseTemplate = (id: string): ExerciseTemplate | null => {
+  return db.getFirstSync<ExerciseTemplate>('SELECT * FROM exercise_templates WHERE id = ?', [id]);
+};
+
+export const addWorkoutTemplateExercise = (exercise: WorkoutTemplateExercise): void => {
   db.runSync(
-    'INSERT INTO workout_exercises (id, name, category, muscle_groups, description, instructions, mets) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [exercise.id, exercise.name, exercise.category, JSON.stringify(exercise.muscleGroups), 
-     exercise.description, exercise.instructions, exercise.mets]
+    'INSERT INTO workout_template_exercises (id, workout_template_id, exercise_template_id, sets, reps) VALUES (?, ?, ?, ?, ?)',
+    [exercise.id, exercise.workout_template_id, exercise.exercise_template_id, exercise.sets, exercise.reps]
   );
 };
 
-export const searchExercises = (query: string, category?: ExerciseCategory, limit: number = 20): WorkoutExercise[] => {
-  let sql = `
-    SELECT * FROM workout_exercises 
-    WHERE name LIKE ? 
-    ${category ? 'AND category = ?' : ''}
-    ORDER BY name ASC 
-    LIMIT ?
-  `;
-  
-  const params = [`%${query}%`];
-  if (category) params.push(category);
-  params.push(limit);
-  
-  return db.getAllSync<any>(sql, params).map(row => {
-    try {
-      return {
-        id: row.id,
-        name: row.name,
-        category: row.category as ExerciseCategory,
-        muscleGroups: JSON.parse(row.muscle_groups) as MuscleGroup[],
-        description: row.description,
-        instructions: row.instructions,
-        mets: row.mets,
-      };
-    } catch (error) {
-      console.error('Error parsing muscle_groups a json in searchExercises:', error);
-      return {
-        id: row.id,
-        name: row.name,
-        category: row.category as ExerciseCategory,
-        muscleGroups: [],
-        description: row.description,
-        instructions: row.instructions,
-        mets: row.mets,
-      };
-    }
-  });
+export const addExerciseTemplate = (template: ExerciseTemplate): void => {
+  db.runSync('INSERT INTO exercise_templates (id, name, default_sets, default_reps) VALUES (?, ?, ?, ?)', [template.id, template.name, template.default_sets, template.default_reps]);
 };
 
-export const getWorkoutExercise = (id: string): WorkoutExercise | null => {
-  const row = db.getFirstSync<any>('SELECT * FROM workout_exercises WHERE id = ?', [id]);
+export const getExerciseTemplates = (): ExerciseTemplate[] => {
+  return db.getAllSync<ExerciseTemplate>('SELECT * FROM exercise_templates');
+};
+
+export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplateExercise[] => {
+  return db.getAllSync<WorkoutTemplateExercise>(
+    'SELECT * FROM workout_template_exercises WHERE workout_template_id = ?',
+    [templateId]
+  );
+};
+
+export const startWorkoutSession = (templateId: string): ActiveWorkoutSession => {
+  db.runSync('DELETE FROM active_workout_session');
+  const exercises = getWorkoutTemplateExercises(templateId);
+  const sets: WorkoutSet[] = exercises.flatMap(exercise => {
+    const exerciseTemplate = getExerciseTemplate(exercise.exercise_template_id);
+    if (!exerciseTemplate) return [];
+    const sets: WorkoutSet[] = [];
+    for (let i = 0; i < exerciseTemplate.default_sets; i++) {
+      sets.push({
+        id: `${exercise.id}-${i}`,
+        workout_template_exercise_id: exercise.id,
+        weight: 0,
+        reps: 0,
+        completed: false,
+      });
+    }
+    return sets;
+  });
+
+  const newSession: ActiveWorkoutSession = {
+    id: Date.now().toString(),
+    workout_template_id: templateId,
+    start_time: Date.now(),
+    sets,
+  };
+
+  db.runSync(
+    'INSERT INTO active_workout_session (id, workout_template_id, start_time, sets) VALUES (?, ?, ?, ?)',
+    [newSession.id, newSession.workout_template_id, newSession.start_time, JSON.stringify(newSession.sets)]
+  );
+
+  return newSession;
+};
+
+export const getActiveWorkoutSession = (): ActiveWorkoutSession | null => {
+  const row = db.getFirstSync<any>('SELECT * FROM active_workout_session LIMIT 1');
   if (!row) return null;
 
-  try {
-    return {
-      id: row.id,
-      name: row.name,
-      category: row.category as ExerciseCategory,
-      muscleGroups: JSON.parse(row.muscle_groups) as MuscleGroup[],
-      description: row.description,
-      instructions: row.instructions,
-      mets: row.mets,
-    };
-  } catch (error) {
-    console.error('Error parsing muscle_groups a json in getWorkoutExercise:', error);
-    return {
-      id: row.id,
-      name: row.name,
-      category: row.category as ExerciseCategory,
-      muscleGroups: [],
-      description: row.description,
-      instructions: row.instructions,
-      mets: row.mets,
-    };
-  }
+  return {
+    id: row.id,
+    workout_template_id: row.workout_template_id,
+    start_time: row.start_time,
+    sets: JSON.parse(row.sets),
+  };
 };
 
-export const addWorkoutEntry = (entry: WorkoutEntry): void => {
+export const updateActiveWorkoutSession = (session: ActiveWorkoutSession): void => {
+  db.runSync('UPDATE active_workout_session SET sets = ? WHERE id = ?', [JSON.stringify(session.sets), session.id]);
+};
+
+export const finishWorkoutSession = (session: ActiveWorkoutSession): void => {
+  const newEntry: WorkoutEntry = {
+    id: Date.now().toString(),
+    workout_template_id: session.workout_template_id,
+    date: new Date().toISOString().split('T')[0],
+    duration: Math.round((Date.now() - session.start_time) / 60000), // duration in minutes
+    sets: session.sets.filter(s => s.completed),
+    createdAt: Date.now(),
+  };
+
   db.runSync(
-    `INSERT INTO workout_entries (
-      id, exercise_id, date, duration, calories, sets, reps, weight, distance, distance_unit, heart_rate, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      entry.id, entry.exerciseId, entry.date, entry.duration, entry.calories,
-      entry.sets, entry.reps, entry.weight, entry.distance, entry.distanceUnit, entry.heartRate, entry.createdAt
-    ]
+    'INSERT INTO workout_entries (id, workout_template_id, date, duration, sets, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [newEntry.id, newEntry.workout_template_id, newEntry.date, newEntry.duration, JSON.stringify(newEntry.sets), newEntry.createdAt]
   );
+
+  db.runSync('DELETE FROM active_workout_session');
 };
 
-export const getWorkoutEntriesForDate = (date: string): (WorkoutEntry & { exerciseName: string })[] => {
-  return db.getAllSync<
-    WorkoutEntry & { exerciseName: string }
-  >(
-    'SELECT w.*, e.name as exerciseName FROM workout_entries w JOIN workout_exercises e ON w.exercise_id = e.id WHERE w.date = ? ORDER BY w.created_at DESC',
-    [date]
-  );
+export const getWorkoutEntries = (): WorkoutEntry[] => {
+  return db.getAllSync<any>('SELECT * FROM workout_entries ORDER BY created_at DESC').map(row => ({
+    ...row,
+    sets: JSON.parse(row.sets),
+  }));
 };
 
 // User Profile Functions
@@ -622,7 +687,7 @@ export const saveUserProfile = (profile: UserProfile): void => {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       profile.id, profile.age, profile.gender, profile.height, profile.weight,
-      profile.activityLevel, profile.goalType, profile.targetWeight,
+      profile.activityLevel, profile.goalType, profile.targetWeight ?? null,
       profile.targetCalories, profile.targetProtein, profile.targetCarbs, profile.targetFat,
       profile.createdAt || now, now
     ]
@@ -699,10 +764,7 @@ export const getNutritionSummary = (date: string): NutritionSummary => {
   );
 
   // Get workout calories for the date
-  const workoutSummary = db.getFirstSync<any>(
-    'SELECT COALESCE(SUM(calories), 0) as calories_burned FROM workout_entries WHERE date = ?',
-    [date]
-  );
+  const workoutSummary = { calories_burned: 0 };
 
   return {
     date,
@@ -721,8 +783,8 @@ export const getNutritionSummary = (date: string): NutritionSummary => {
 // Populate sample data for offline use
 const populateSampleData = (): void => {
   // Check if we already have data
-  const foodCount = db.getFirstSync<{count: number}>('SELECT COUNT(*) as count FROM food_items');
-  if (foodCount && foodCount.count > 0) return;
+  const workoutTemplateCount = db.getFirstSync<{count: number}>('SELECT COUNT(*) as count FROM workout_templates');
+  if (workoutTemplateCount && workoutTemplateCount.count > 0) return;
 
   const now = Date.now();
 
@@ -779,32 +841,41 @@ const populateSampleData = (): void => {
   ];
 
   // Sample exercises
-  const sampleExercises: WorkoutExercise[] = [
-    {
-      id: '1', name: 'Running', category: 'cardio', muscleGroups: ['legs', 'core'],
-      description: 'Outdoor or treadmill running', mets: 8.0
-    },
-    {
-      id: '2', name: 'Push-ups', category: 'strength', muscleGroups: ['chest', 'triceps', 'shoulders'],
-      description: 'Bodyweight chest exercise', mets: 3.8
-    },
-    {
-      id: '3', name: 'Squats', category: 'strength', muscleGroups: ['legs', 'glutes'],
-      description: 'Bodyweight or weighted squats', mets: 5.0
-    },
-    {
-      id: '4', name: 'Cycling', category: 'cardio', muscleGroups: ['legs'],
-      description: 'Outdoor or stationary cycling', mets: 7.5
-    },
-    {
-      id: '5', name: 'Yoga', category: 'flexibility', muscleGroups: ['full-body'],
-      description: 'Various yoga poses and flows', mets: 2.5
-    },
+  const sampleWorkoutTemplates: WorkoutTemplate[] = [
+    { id: '1', name: 'Leg Day' },
+    { id: '2', name: 'Push Day' },
+    { id: '3', name: 'Pull Day' },
+  ];
+
+  const sampleExerciseTemplates: ExerciseTemplate[] = [
+    { id: '1', name: 'Squats', default_sets: 3, default_reps: '8-12' },
+    { id: '2', name: 'Leg Press', default_sets: 3, default_reps: '8-12' },
+    { id: '3', name: 'Leg Curls', default_sets: 3, default_reps: '10-15' },
+    { id: '4', name: 'Bench Press', default_sets: 3, default_reps: '8-12' },
+    { id: '5', name: 'Overhead Press', default_sets: 3, default_reps: '8-12' },
+    { id: '6', name: 'Tricep Pushdowns', default_sets: 3, default_reps: '10-15' },
+    { id: '7', name: 'Pull Ups', default_sets: 3, default_reps: '5-10' },
+    { id: '8', name: 'Rows', default_sets: 3, default_reps: '8-12' },
+    { id: '9', name: 'Bicep Curls', default_sets: 3, default_reps: '10-15' },
+  ];
+
+  const sampleWorkoutTemplateExercises: WorkoutTemplateExercise[] = [
+    { id: '1', workout_template_id: '1', exercise_template_id: '1', sets: 3, reps: '8-12' },
+    { id: '2', workout_template_id: '1', exercise_template_id: '2', sets: 3, reps: '8-12' },
+    { id: '3', workout_template_id: '1', exercise_template_id: '3', sets: 3, reps: '10-15' },
+    { id: '4', workout_template_id: '2', exercise_template_id: '4', sets: 3, reps: '8-12' },
+    { id: '5', workout_template_id: '2', exercise_template_id: '5', sets: 3, reps: '8-12' },
+    { id: '6', workout_template_id: '2', exercise_template_id: '6', sets: 3, reps: '10-15' },
+    { id: '7', workout_template_id: '3', exercise_template_id: '7', sets: 3, reps: '5-10' },
+    { id: '8', workout_template_id: '3', exercise_template_id: '8', sets: 3, reps: '8-12' },
+    { id: '9', workout_template_id: '3', exercise_template_id: '9', sets: 3, reps: '10-15' },
   ];
 
   // Insert sample data
   sampleFoods.forEach(food => addFoodItem(food));
-  sampleExercises.forEach(exercise => addWorkoutExercise(exercise));
+  sampleExerciseTemplates.forEach(template => addExerciseTemplate(template));
+  sampleWorkoutTemplates.forEach(template => addWorkoutTemplate(template));
+  sampleWorkoutTemplateExercises.forEach(exercise => addWorkoutTemplateExercise(exercise));
 };
 
 // Legacy functions for backward compatibility
@@ -850,7 +921,6 @@ export const resetDatabase = (): void => {
     DELETE FROM food_entries;
     DELETE FROM recipes;
     DELETE FROM recipe_ingredients;
-    DELETE FROM workout_exercises;
     DELETE FROM workout_entries;
     DELETE FROM user_profile;
     DELETE FROM weight_entries;

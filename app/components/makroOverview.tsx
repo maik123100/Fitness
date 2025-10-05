@@ -32,7 +32,7 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
   const chartConfig = {
     backgroundGradientFrom: draculaTheme.surface.card,
     backgroundGradientTo: draculaTheme.surface.card,
-    color: (opacity = 1, index) => {
+    color: (opacity: number, index?: number) => {
       // The library has a bug, so we pass colors via data property
       return `rgba(255, 255, 255, ${opacity})`;
     },

@@ -26,7 +26,7 @@ export default function FoodDiaryScreen() {
 
   const loadFoodEntries = () => {
     const entries = getFoodEntriesForDate(date);
-    const groupedEntries = { breakfast: [], lunch: [], dinner: [], snack: [] };
+    const groupedEntries: Record<MealType, FoodEntry[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
     entries.forEach(entry => {
       groupedEntries[entry.mealType].push(entry);
     });

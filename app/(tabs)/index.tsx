@@ -10,9 +10,8 @@ import {
   getUserProfile, 
   getNutritionSummary, 
   getFoodEntriesForDate, 
-  getWorkoutEntriesForDate, 
-  FoodEntry, 
-  WorkoutEntry 
+  getWorkoutEntries, 
+  FoodEntry 
 } from '../../services/database';
 import { draculaTheme, spacing, typography } from '../../styles/theme';
 
@@ -23,7 +22,7 @@ export default function DashboardScreen() {
     current: { protein: 0, carbs: 0, fat: 0 },
     target: { protein: 100, carbs: 200, fat: 50 } 
   });
-  const [recentActivities, setRecentActivities] = useState<(FoodEntry | WorkoutEntry)[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -35,7 +34,7 @@ export default function DashboardScreen() {
     const userProfile = getUserProfile();
     const nutritionSummary = getNutritionSummary(date);
     const foodEntries = getFoodEntriesForDate(date);
-    const workoutEntries = getWorkoutEntriesForDate(date);
+    const workoutEntries = getWorkoutEntries();
 
     const targetCalories = userProfile?.targetCalories || 2000;
     const eaten = nutritionSummary.totalCalories;
@@ -82,7 +81,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   header: {
-    ...typography.sizes,
+    fontSize: typography.sizes.heading,
     color: draculaTheme.foreground,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.md,

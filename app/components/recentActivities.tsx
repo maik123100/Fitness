@@ -1,8 +1,8 @@
 
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { FoodEntry, WorkoutEntry, getFoodItem } from '../../services/database';
+import { FoodEntry, WorkoutEntry, getFoodItem, getWorkoutTemplate } from '../../services/database';
 import { draculaTheme, spacing, typography, borderRadius } from '../../styles/theme';
-import { getWorkoutExercise } from '../../services/database';
+
 
 // Helper to check if an item is a FoodEntry
 function isFoodEntry(item: any): item is FoodEntry {
@@ -20,11 +20,11 @@ export default function RecentActivities({ recentActivities }: { recentActivitie
         </View>
       );
     } else {
-      const workoutExercise = getWorkoutExercise(item.exerciseId);
+      const workoutTemplate = getWorkoutTemplate(item.workout_template_id);
       return (
         <View style={styles.activityItem}>
-          <Text style={styles.activityText}>{workoutExercise?.name || 'Workout'}</Text>
-          <Text style={styles.burnedCalories}>{item.calories} kcal</Text>
+          <Text style={styles.activityText}>{workoutTemplate?.name || 'Workout'}</Text>
+          <Text style={styles.burnedCalories}>Workout</Text>
         </View>
       );
     }

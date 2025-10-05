@@ -1,3 +1,4 @@
+import React, { JSX } from 'react';
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -25,7 +26,7 @@ const tabs: TabLayoutProps[] = [
   },
   {
     name: 'training',
-    title: 'Training',
+    title: 'Workouts',
     iconElement:  ({ color, focused }) => (
       <Ionicons name={focused ? 'barbell-sharp' : 'barbell-outline'} color={color} size={24} />
     ),
