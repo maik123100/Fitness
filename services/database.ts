@@ -878,7 +878,16 @@ const populateSampleData = (): void => {
   sampleWorkoutTemplateExercises.forEach(exercise => addWorkoutTemplateExercise(exercise));
 };
 
-// Legacy functions for backward compatibility
+export const deleteExerciseTemplate = (id: string): void => {
+  db.runSync('DELETE FROM exercise_templates WHERE id = ?', [id]);
+};
+
+export const updateExerciseTemplate = (template: ExerciseTemplate): void => {
+  db.runSync(
+    'UPDATE exercise_templates SET name = ?, default_sets = ?, default_reps = ? WHERE id = ?',
+    [template.name, template.default_sets, template.default_reps, template.id]
+  );
+};
 export const addActivity = (activity: Activity): void => {
   db.runSync(
     'INSERT INTO activities (id, activity, calories, type, timestamp) VALUES (?, ?, ?, ?, ?)',

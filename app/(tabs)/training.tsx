@@ -16,17 +16,11 @@ export default function WorkoutScreen() {
   const [newExerciseName, setNewExerciseName] = useState('');
   const [newExerciseSets, setNewExerciseSets] = useState('3');
   const [newExerciseReps, setNewExerciseReps] = useState('8-12');
-  const [exerciseModalVisible, setExerciseModalVisible] = useState(false);
   const [exerciseTemplates, setExerciseTemplates] = useState<any[]>([]);
-  const [newExerciseTemplateName, setNewExerciseTemplateName] = useState('');
-  const [newExerciseTemplateSets, setNewExerciseTemplateSets] = useState('3');
-  const [newExerciseTemplateReps, setNewExerciseTemplateReps] = useState('8-12');
-  const [selectedExerciseTemplateId, setSelectedExerciseTemplateId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-    loadExerciseTemplates();
-  }, []);
+
+
+  const [selectedExerciseTemplateId, setSelectedExerciseTemplateId] = useState<string | null>(null);
 
   const loadData = () => {
     const templatesData = getWorkoutTemplates();
@@ -39,6 +33,13 @@ export default function WorkoutScreen() {
     const data = getExerciseTemplates();
     setExerciseTemplates(data);
   };
+
+  useEffect(() => {
+    loadData();
+    loadExerciseTemplates();
+  }, []);
+
+
 
   const handleCreateTemplate = () => {
     const newTemplate = { id: Date.now().toString(), name: newTemplateName };
@@ -77,23 +78,7 @@ export default function WorkoutScreen() {
     }
   };
 
-  const handleAddExerciseTemplate = () => {
-    if (!newExerciseTemplateName) {
-      Alert.alert('Error', 'Please enter a template name.');
-      return;
-    }
 
-    addExerciseTemplate({
-      id: Date.now().toString(),
-      name: newExerciseTemplateName,
-      default_sets: parseInt(newExerciseTemplateSets),
-      default_reps: newExerciseTemplateReps,
-    });
-    setNewExerciseTemplateName('');
-    setNewExerciseTemplateSets('3');
-    setNewExerciseTemplateReps('8-12');
-    loadExerciseTemplates();
-  };
 
   const handleSelectExerciseTemplate = (templateId: string | null) => {
     if (!templateId) {
@@ -151,7 +136,7 @@ export default function WorkoutScreen() {
         <Text style={styles.createButtonText}>Create New Workout</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.createButton} onPress={() => setExerciseModalVisible(true)}>
+      <TouchableOpacity style={styles.createButton} onPress={() => router.push('/manageExerciseTemplates')}>
         <Text style={styles.createButtonText}>Manage Exercise Templates</Text>
       </TouchableOpacity>
 
@@ -206,62 +191,7 @@ export default function WorkoutScreen() {
         </View>
       </Modal>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={exerciseModalVisible}
-        onRequestClose={() => {
-          setExerciseModalVisible(!exerciseModalVisible);
-        }}>
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Manage Exercise Templates</Text>
-            <FlatList
-              data={exerciseTemplates}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <Text style={styles.exerciseText}>{item.name} {item.default_sets}x{item.default_reps}</Text>}
-              ListHeaderComponent={
-                <View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Exercise Name"
-                    placeholderTextColor={draculaTheme.comment}
-                    value={newExerciseTemplateName}
-                    onChangeText={setNewExerciseTemplateName}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Sets"
-                    placeholderTextColor={draculaTheme.comment}
-                    keyboardType="numeric"
-                    value={newExerciseTemplateSets}
-                    onChangeText={setNewExerciseTemplateSets}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Reps"
-                    placeholderTextColor={draculaTheme.comment}
-                    value={newExerciseTemplateReps}
-                    onChangeText={setNewExerciseTemplateReps}
-                  />
-                  <TouchableOpacity
-                    style={[styles.button, styles.buttonClose]}
-                    onPress={handleAddExerciseTemplate}>
-                    <Text style={styles.textStyle}>Add Exercise Template</Text>
-                  </TouchableOpacity>
-                </View>
-              }
-              ListFooterComponent={
-                <TouchableOpacity
-                  style={[styles.button, styles.buttonClose]}
-                  onPress={() => setExerciseModalVisible(!exerciseModalVisible)}>
-                  <Text style={styles.textStyle}>Close</Text>
-                </TouchableOpacity>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
+
     </View>
   );
 }

@@ -20,11 +20,12 @@ export default function RootLayout() {
     );
   }
 
-  return(
+  return (
     <>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
+        <Stack.Screen name="manageExerciseTemplates" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="light" />
     </>
