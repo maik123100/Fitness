@@ -1,13 +1,16 @@
 
 import { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { getWeightEntries, getNutritionSummary, NutritionSummary } from '../../services/database';
+import { getWeightEntries, getNutritionSummary, NutritionSummary, addWeightEntry } from '../../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function DietReportScreen() {
   const [weightData, setWeightData] = useState<{ labels: string[]; datasets: { data: number[] }[] }>({ labels: [], datasets: [{ data: [] }] });
   const [nutritionData, setNutritionData] = useState<NutritionSummary[]>([]);
+  const [weightModalVisible, setWeightModalVisible] = useState(false);
+  const [newWeightInput, setNewWeightInput] = useState('');
 
   useEffect(() => {
     loadReportData();
@@ -36,6 +39,23 @@ export default function DietReportScreen() {
     setNutritionData(summaries);
   };
 
+  const handleAddWeight = () => {
+    const weight = parseFloat(newWeightInput);
+    if (isNaN(weight) || weight <= 0) {
+      Alert.alert('Invalid Input', 'Please enter a valid positive number for weight.');
+      return;
+    }
+    addWeightEntry({
+      id: Date.now().toString(),
+      weight: weight,
+      date: new Date().toISOString().split('T')[0],
+      createdAt: Date.now(),
+    });
+    setWeightModalVisible(false);
+    setNewWeightInput('');
+    loadReportData();
+  };
+
   const chartConfig = {
     backgroundGradientFrom: draculaTheme.surface.card,
     backgroundGradientTo: draculaTheme.surface.card,
@@ -54,7 +74,12 @@ export default function DietReportScreen() {
       <Text style={styles.header}>Diet Report</Text>
 
       <View style={styles.chartSection}>
-        <Text style={styles.sectionTitle}>Weight History (Last 30 entries)</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Weight History (Last 30 entries)</Text>
+          <TouchableOpacity onPress={() => setWeightModalVisible(true)} style={styles.addButton}>
+            <Ionicons name="add" size={24} color={draculaTheme.text.inverse} />
+          </TouchableOpacity>
+        </View>
         {weightData.labels.length > 0 ? (
           <LineChart
             data={weightData}
@@ -68,20 +93,28 @@ export default function DietReportScreen() {
         )}
       </View>
 
-      <View style={styles.summarySection}>
-        <Text style={styles.sectionTitle}>7-Day Nutrition Summary</Text>
-        {nutritionData.map((summary, index) => (
-          <View key={index} style={styles.summaryDay}>
-            <Text style={styles.summaryDate}>{new Date(summary.date).toLocaleDateString()}</Text>
-            <View style={styles.summaryMetrics}>
-              <Text style={styles.summaryText}>Calories: {summary.totalCalories.toFixed(0)}</Text>
-              <Text style={styles.summaryText}>Protein: {summary.totalProtein.toFixed(0)}g</Text>
-              <Text style={styles.summaryText}>Carbs: {summary.totalCarbs.toFixed(0)}g</Text>
-              <Text style={styles.summaryText}>Fat: {summary.totalFat.toFixed(0)}g</Text>
-            </View>
-          </View>
-        ))}
-      </View>
+      <Modal visible={weightModalVisible} animationType="slide" onRequestClose={() => setWeightModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.sectionTitle}>Add New Weight</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Weight in kg"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newWeightInput}
+            onChangeText={setNewWeightInput}
+          />
+          <TouchableOpacity style={styles.addButton} onPress={handleAddWeight}>
+            <Text style={styles.addButtonText}>Add Weight</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
+            onPress={() => setWeightModalVisible(false)}
+          >
+            <Text style={styles.addButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -104,6 +137,17 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  addButton: {
+    backgroundColor: draculaTheme.green,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   summarySection: {
     backgroundColor: draculaTheme.surface.card,
@@ -143,5 +187,24 @@ const styles = StyleSheet.create({
     color: draculaTheme.foreground,
     width: '48%',
     marginBottom: spacing.xs,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: draculaTheme.background,
+    padding: spacing.md,
+  },
+  searchInput: {
+    backgroundColor: draculaTheme.surface.input,
+    color: draculaTheme.foreground,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    fontSize: typography.sizes.md,
+    marginBottom: spacing.md,
+  },
+  addButtonText: {
+    color: draculaTheme.text.inverse,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    marginLeft: spacing.sm,
   },
 });

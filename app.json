@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Fitness",
-    "slug": "Fitness",
+    "slug": "fitnessapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -38,6 +38,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3f2dc7dc-02a6-49d0-b165-4f94d458cee2"
+      }
+    },
+    "owner": "maik123100"
   }
 }

@@ -26,6 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
         <Stack.Screen name="manageExerciseTemplates" options={{ headerShown: false }} />
+        <Stack.Screen name="macroGraphs" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="light" />
     </>

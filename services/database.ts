@@ -214,213 +214,215 @@ export type GoalType =
 
 export let dbInitialized: Promise<void>;
 
+const DATABASE_VERSION = 1;
+
+const createSchemaVersionTable = async (db: SQLite.SQLiteDatabase) => {
+  await db.runAsync(
+    `CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)`
+  );
+};
+
+const getDatabaseVersion = async (db: SQLite.SQLiteDatabase): Promise<number> => {
+  const result = await db.getFirstAsync<{version: number}>(
+    `SELECT version FROM schema_version LIMIT 1`
+  );
+  return result ? result.version : 0;
+};
+
+const updateDatabaseVersion = async (db: SQLite.SQLiteDatabase, version: number) => {
+  await db.runAsync(
+    `INSERT OR REPLACE INTO schema_version (version) VALUES (?)`,
+    [version]
+  );
+};
+
 export const initDatabase = (): void => {
-  dbInitialized = new Promise<void>((resolve, reject) => {
+  dbInitialized = new Promise<void>(async (resolve, reject) => {
     try {
       db = SQLite.openDatabaseSync('fitness.db');
-      db.execSync('DROP TABLE IF EXISTS activities');
-      db.execSync('DROP TABLE IF EXISTS daily_nutrition');
-      db.execSync('DROP TABLE IF EXISTS food_items');
-      db.execSync('DROP TABLE IF EXISTS food_entries');
-      db.execSync('DROP TABLE IF EXISTS recipes');
-      db.execSync('DROP TABLE IF EXISTS recipe_ingredients');
-      db.execSync('DROP TABLE IF EXISTS workout_entries');
-      db.execSync('DROP TABLE IF EXISTS active_workout_session');
-      db.execSync('DROP TABLE IF EXISTS user_profile');
-      db.execSync('DROP TABLE IF EXISTS weight_entries');
-      db.execSync('DROP TABLE IF EXISTS workout_templates');
-      db.execSync('DROP TABLE IF EXISTS workout_template_exercises');
-      db.execSync('DROP TABLE IF EXISTS exercise_templates');
-      
-      db.execSync(`
-        PRAGMA journal_mode = WAL;
-      `);
 
-      // Always run the create table statements to ensure they exist
-      db.execSync(`
-        CREATE TABLE IF NOT EXISTS activities (
-          id TEXT PRIMARY KEY,
-          activity TEXT NOT NULL,
-          calories INTEGER NOT NULL,
-          type TEXT NOT NULL,
-          timestamp INTEGER NOT NULL
-        );
+      await db.withTransactionAsync(async () => {
+        await createSchemaVersionTable(db);
+        const currentVersion = await getDatabaseVersion(db);
 
-        CREATE TABLE IF NOT EXISTS daily_nutrition (
-          id TEXT PRIMARY KEY,
-          date TEXT NOT NULL,
-          protein REAL NOT NULL,
-          carbs REAL NOT NULL,
-          fat REAL NOT NULL
-        );
+        if (currentVersion < DATABASE_VERSION) {
+          // This is a new database or an old version, create/update tables
+          await db.runAsync(`
+            PRAGMA journal_mode = WAL;
+          `);
 
-        CREATE TABLE IF NOT EXISTS food_items (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          brand TEXT,
-          barcode TEXT,
-          category TEXT NOT NULL,
-          calories REAL NOT NULL,
-          protein REAL NOT NULL,
-          carbs REAL NOT NULL,
-          fat REAL NOT NULL,
-          fiber REAL NOT NULL DEFAULT 0,
-          sugar REAL NOT NULL DEFAULT 0,
-          sodium REAL NOT NULL DEFAULT 0,
-          cholesterol REAL NOT NULL DEFAULT 0,
-          saturated_fat REAL NOT NULL DEFAULT 0,
-          trans_fat REAL NOT NULL DEFAULT 0,
-          vitamin_a REAL DEFAULT 0,
-          vitamin_c REAL DEFAULT 0,
-          vitamin_d REAL DEFAULT 0,
-          calcium REAL DEFAULT 0,
-          iron REAL DEFAULT 0,
-          potassium REAL DEFAULT 0,
-          serving_size REAL NOT NULL,
-          serving_unit TEXT NOT NULL,
-          is_verified INTEGER NOT NULL DEFAULT 0,
-          created_at INTEGER NOT NULL,
-          updated_at INTEGER NOT NULL
-        );
+          // Create all tables if they don't exist
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS activities (
+              id TEXT PRIMARY KEY,
+              activity TEXT NOT NULL,
+              calories INTEGER NOT NULL,
+              type TEXT NOT NULL,
+              timestamp INTEGER NOT NULL
+            );`);
 
-        CREATE TABLE IF NOT EXISTS food_entries (
-          id TEXT PRIMARY KEY,
-          food_id TEXT NOT NULL,
-          user_id TEXT,
-          date TEXT NOT NULL,
-          meal_type TEXT NOT NULL,
-          quantity REAL NOT NULL,
-          unit TEXT NOT NULL,
-          total_calories REAL NOT NULL,
-          total_protein REAL NOT NULL,
-          total_carbs REAL NOT NULL,
-          total_fat REAL NOT NULL,
-          total_fiber REAL NOT NULL,
-          total_sugar REAL NOT NULL,
-          total_sodium REAL NOT NULL,
-          created_at INTEGER NOT NULL,
-          FOREIGN KEY (food_id) REFERENCES food_items(id)
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS daily_nutrition (
+              id TEXT PRIMARY KEY,
+              date TEXT NOT NULL,
+              protein REAL NOT NULL,
+              carbs REAL NOT NULL,
+              fat REAL NOT NULL
+            );`);
 
-        CREATE TABLE IF NOT EXISTS recipes (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          description TEXT,
-          instructions TEXT,
-          servings INTEGER NOT NULL,
-          prep_time INTEGER,
-          cook_time INTEGER,
-          calories_per_serving REAL NOT NULL,
-          protein_per_serving REAL NOT NULL,
-          carbs_per_serving REAL NOT NULL,
-          fat_per_serving REAL NOT NULL,
-          created_at INTEGER NOT NULL,
-          updated_at INTEGER NOT NULL
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS food_items (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              brand TEXT,
+              barcode TEXT,
+              category TEXT NOT NULL,
+              calories REAL NOT NULL,
+              protein REAL NOT NULL,
+              carbs REAL NOT NULL,
+              fat REAL NOT NULL,
+              fiber REAL NOT NULL DEFAULT 0,
+              sugar REAL NOT NULL DEFAULT 0,
+              sodium REAL NOT NULL DEFAULT 0,
+              cholesterol REAL NOT NULL DEFAULT 0,
+              saturated_fat REAL NOT NULL DEFAULT 0,
+              trans_fat REAL NOT NULL DEFAULT 0,
+              vitamin_a REAL DEFAULT 0,
+              vitamin_c REAL DEFAULT 0,
+              vitamin_d REAL DEFAULT 0,
+              calcium REAL DEFAULT 0,
+              iron REAL DEFAULT 0,
+              potassium REAL DEFAULT 0,
+              serving_size REAL NOT NULL,
+              serving_unit TEXT NOT NULL,
+              is_verified INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL
+            );`);
 
-        CREATE TABLE IF NOT EXISTS recipe_ingredients (
-          id TEXT PRIMARY KEY,
-          recipe_id TEXT NOT NULL,
-          food_id TEXT NOT NULL,
-          quantity REAL NOT NULL,
-          unit TEXT NOT NULL,
-          FOREIGN KEY (recipe_id) REFERENCES recipes(id),
-          FOREIGN KEY (food_id) REFERENCES food_items(id)
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS food_entries (
+              id TEXT PRIMARY KEY,
+              food_id TEXT NOT NULL,
+              user_id TEXT,
+              date TEXT NOT NULL,
+              meal_type TEXT NOT NULL,
+              quantity REAL NOT NULL,
+              unit TEXT NOT NULL,
+              total_calories REAL NOT NULL,
+              total_protein REAL NOT NULL,
+              total_carbs REAL NOT NULL,
+              total_fat REAL NOT NULL,
+              total_fiber REAL NOT NULL,
+              total_sugar REAL NOT NULL,
+              total_sodium REAL NOT NULL,
+              created_at INTEGER NOT NULL,
+              FOREIGN KEY (food_id) REFERENCES food_items(id)
+            );`);
 
-        CREATE TABLE IF NOT EXISTS workout_templates (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS recipes (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              description TEXT,
+              instructions TEXT,
+              servings INTEGER NOT NULL,
+              prep_time INTEGER,
+              cook_time INTEGER,
+              calories_per_serving REAL NOT NULL,
+              protein_per_serving REAL NOT NULL,
+              carbs_per_serving REAL NOT NULL,
+              fat_per_serving REAL NOT NULL,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL
+            );`);
 
-        CREATE TABLE IF NOT EXISTS workout_template_exercises (
-          id TEXT PRIMARY KEY,
-          workout_template_id TEXT NOT NULL,
-          exercise_template_id TEXT NOT NULL,
-          sets INTEGER NOT NULL,
-          reps TEXT NOT NULL,
-          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),
-          FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS recipe_ingredients (
+              id TEXT PRIMARY KEY,
+              recipe_id TEXT NOT NULL,
+              food_id TEXT NOT NULL,
+              quantity REAL NOT NULL,
+              unit TEXT NOT NULL,
+              FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+              FOREIGN KEY (food_id) REFERENCES food_items(id)
+            );`);
 
-        CREATE TABLE IF NOT EXISTS exercise_templates (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          default_sets INTEGER NOT NULL,
-          default_reps TEXT NOT NULL
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS workout_templates (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL
+            );`);
 
-        CREATE TABLE IF NOT EXISTS workout_template_exercises (
-          id TEXT PRIMARY KEY,
-          workout_template_id TEXT NOT NULL,
-          exercise_template_id TEXT NOT NULL,
-          sets INTEGER NOT NULL,
-          reps TEXT NOT NULL,
-          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),
-          FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS workout_template_exercises (
+              id TEXT PRIMARY KEY,
+              workout_template_id TEXT NOT NULL,
+              exercise_template_id TEXT NOT NULL,
+              sets INTEGER NOT NULL,
+              reps TEXT NOT NULL,
+              FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),
+              FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)
+            );`);
 
-        CREATE TABLE IF NOT EXISTS exercise_templates (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          default_sets INTEGER NOT NULL,
-          default_reps TEXT NOT NULL
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS exercise_templates (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              default_sets INTEGER NOT NULL,
+              default_reps TEXT NOT NULL
+            );`);
 
-        CREATE TABLE IF NOT EXISTS workout_entries (
-          id TEXT PRIMARY KEY,
-          workout_template_id TEXT NOT NULL,
-          date TEXT NOT NULL,
-          duration INTEGER NOT NULL,
-          sets TEXT NOT NULL, -- JSON string of WorkoutSet[]
-          created_at INTEGER NOT NULL,
-          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS workout_entries (
+              id TEXT PRIMARY KEY,
+              workout_template_id TEXT NOT NULL,
+              date TEXT NOT NULL,
+              duration INTEGER NOT NULL,
+              sets TEXT NOT NULL, -- JSON string of WorkoutSet[]
+              created_at INTEGER NOT NULL,
+              FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)
+            );`);
 
-        CREATE TABLE IF NOT EXISTS active_workout_session (
-          id TEXT PRIMARY KEY,
-          workout_template_id TEXT NOT NULL,
-          start_time INTEGER NOT NULL,
-          sets TEXT NOT NULL, -- JSON string of WorkoutSet[]
-          FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS active_workout_session (
+              id TEXT PRIMARY KEY,
+              workout_template_id TEXT NOT NULL,
+              start_time INTEGER NOT NULL,
+              sets TEXT NOT NULL, -- JSON string of WorkoutSet[]
+              FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)
+            );`);
 
-        CREATE TABLE IF NOT EXISTS user_profile (
-          id TEXT PRIMARY KEY,
-          age INTEGER NOT NULL,
-          gender TEXT NOT NULL,
-          height REAL NOT NULL,
-          weight REAL NOT NULL,
-          activity_level TEXT NOT NULL,
-          goal_type TEXT NOT NULL,
-          target_weight REAL,
-          target_calories REAL NOT NULL,
-          target_protein REAL NOT NULL,
-          target_carbs REAL NOT NULL,
-          target_fat REAL NOT NULL,
-          created_at INTEGER NOT NULL,
-          updated_at INTEGER NOT NULL
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS user_profile (
+              id TEXT PRIMARY KEY,
+              age INTEGER NOT NULL,
+              gender TEXT NOT NULL,
+              height REAL NOT NULL,
+              weight REAL NOT NULL,
+              activity_level TEXT NOT NULL,
+              goal_type TEXT NOT NULL,
+              target_weight REAL,
+              target_calories REAL NOT NULL,
+              target_protein REAL NOT NULL,
+              target_carbs REAL NOT NULL,
+              target_fat REAL NOT NULL,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL
+            );`);
 
-        CREATE TABLE IF NOT EXISTS weight_entries (
-          id TEXT PRIMARY KEY,
-          weight REAL NOT NULL,
-          date TEXT NOT NULL,
-          created_at INTEGER NOT NULL
-        );
+          await db.runAsync(`CREATE TABLE IF NOT EXISTS weight_entries (
+              id TEXT PRIMARY KEY,
+              weight REAL NOT NULL,
+              date TEXT NOT NULL,
+              created_at INTEGER NOT NULL
+            );`);
 
-        -- Create indexes for better performance
-        CREATE INDEX IF NOT EXISTS idx_food_entries_date ON food_entries(date);
-        CREATE INDEX IF NOT EXISTS idx_food_entries_meal_type ON food_entries(meal_type);
-        CREATE INDEX IF NOT EXISTS idx_workout_entries_date ON workout_entries(date);
-        CREATE INDEX IF NOT EXISTS idx_food_items_name ON food_items(name);
-        CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category);
-        CREATE INDEX IF NOT EXISTS idx_weight_entries_date ON weight_entries(date);
-      `);
+          // Create indexes for better performance
+          await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_food_entries_date ON food_entries(date);`);
+          await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_food_entries_meal_type ON food_entries(meal_type);`);
+          await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_workout_entries_date ON workout_entries(date);`);
+          await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_food_items_name ON food_items(name);`);
+          await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category);`);
+          await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_weight_entries_date ON weight_entries(date);`);
 
-      
-      // Populate with sample data
-      populateSampleData();
+          // Update the schema version
+          await updateDatabaseVersion(db, DATABASE_VERSION);
+        }
+
+        // Populate with sample data only if it's a brand new database (version 0)
+        if (currentVersion === 0) {
+          populateSampleData();
+        }
+      });
       resolve();
     } catch (error) {
       reject(error);
@@ -445,6 +447,37 @@ export const addFoodItem = (food: FoodItem): void => {
       food.isVerified ? 1 : 0, food.createdAt || now, food.updatedAt || now
     ]
   );
+};
+
+export const getAllFoodItems = (): FoodItem[] => {
+  return db.getAllSync<any>('SELECT * FROM food_items').map(row => ({
+    id: row.id,
+    name: row.name,
+    brand: row.brand,
+    barcode: row.barcode,
+    category: row.category as FoodCategory,
+    calories: row.calories,
+    protein: row.protein,
+    carbs: row.carbs,
+    fat: row.fat,
+    fiber: row.fiber,
+    sugar: row.sugar,
+    sodium: row.sodium,
+    cholesterol: row.cholesterol,
+    saturatedFat: row.saturated_fat,
+    transFat: row.trans_fat,
+    vitaminA: row.vitamin_a,
+    vitaminC: row.vitamin_c,
+    vitaminD: row.vitamin_d,
+    calcium: row.calcium,
+    iron: row.iron,
+    potassium: row.potassium,
+    servingSize: row.serving_size,
+    servingUnit: row.serving_unit,
+    isVerified: row.is_verified === 1,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
 };
 
 export const searchFoodItems = (query: string, category?: FoodCategory, limit: number = 20): FoodItem[] => {

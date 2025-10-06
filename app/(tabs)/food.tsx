@@ -1,9 +1,25 @@
 
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Alert, ScrollView } from 'react-native';
-import { addFoodEntry, getFoodEntriesForDate, deleteFoodEntry, searchFoodItems, FoodItem, FoodEntry, MealType, getFoodItem } from '../../services/database';
+import { addFoodEntry, getFoodEntriesForDate, deleteFoodEntry, searchFoodItems, FoodItem, FoodEntry, MealType, getFoodItem, getAllFoodItems, addFoodItem, FoodCategory } from '../../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Picker } from '@react-native-picker/picker';
+
+interface NewFoodItem {
+  name: string;
+  brand: string;
+  category: FoodCategory;
+  calories: string;
+  protein: string;
+  carbs: string;
+  fat: string;
+  fiber: string;
+  sugar: string;
+  sodium: string;
+  servingSize: string;
+  servingUnit: string;
+}
 
 export default function FoodDiaryScreen() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -12,17 +28,46 @@ export default function FoodDiaryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FoodItem[]>([]);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+  const [debounceTimeout, setDebounceTimeout] = useState<number | null>(null);
+  const [quantityModalVisible, setQuantityModalVisible] = useState(false);
+  const [selectedFoodItemForQuantity, setSelectedFoodItemForQuantity] = useState<FoodItem | null>(null);
+  const [quantityInput, setQuantityInput] = useState('100'); // Default to 100g
+
+  // State for Add New Food Modal
+  const [addFoodModalVisible, setAddFoodModalVisible] = useState(false);
+  const [newFood, setNewFood] = useState<NewFoodItem>({
+    name: '',
+    brand: '',
+    category: 'other',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
+    sugar: '',
+    sodium: '',
+    servingSize: '100',
+    servingUnit: 'g',
+  });
+
+  const foodCategories: FoodCategory[] = [
+    'vegetables',
+    'fruits',
+    'grains',
+    'proteins',
+    'dairy',
+    'fats',
+    'beverages',
+    'snacks',
+    'prepared',
+    'supplements',
+    'condiments',
+    'other',
+  ];
 
   useEffect(() => {
     loadFoodEntries();
   }, [date]);
-
-  useEffect(() => {
-    if (searchQuery.length > 2) {
-      const results = searchFoodItems(searchQuery);
-      setSearchResults(results);
-    }
-  }, [searchQuery]);
 
   const loadFoodEntries = () => {
     const entries = getFoodEntriesForDate(date);
@@ -33,26 +78,89 @@ export default function FoodDiaryScreen() {
     setFoodEntries(groupedEntries);
   };
 
-  const handleAddFood = (foodItem: FoodItem) => {
+  const addFoodEntryToDatabase = (foodItem: FoodItem, quantity: number) => {
     const newEntry: FoodEntry = {
       id: Date.now().toString(),
       foodId: foodItem.id,
       date,
       mealType: selectedMealType,
-      quantity: 1, // Default quantity
-      unit: foodItem.servingUnit,
-      totalCalories: foodItem.calories,
-      totalProtein: foodItem.protein,
-      totalCarbs: foodItem.carbs,
-      totalFat: foodItem.fat,
-      totalFiber: foodItem.fiber,
-      totalSugar: foodItem.sugar,
-      totalSodium: foodItem.sodium,
+      quantity: quantity, // Use the provided quantity
+      unit: 'g', // Assuming grams as unit for now
+      totalCalories: (foodItem.calories / foodItem.servingSize) * quantity,
+      totalProtein: (foodItem.protein / foodItem.servingSize) * quantity,
+      totalCarbs: (foodItem.carbs / foodItem.servingSize) * quantity,
+      totalFat: (foodItem.fat / foodItem.servingSize) * quantity,
+      totalFiber: (foodItem.fiber / foodItem.servingSize) * quantity,
+      totalSugar: (foodItem.sugar / foodItem.servingSize) * quantity,
+      totalSodium: (foodItem.sodium / foodItem.servingSize) * quantity,
       createdAt: Date.now(),
     };
     addFoodEntry(newEntry);
-    setModalVisible(false);
+    setModalVisible(false); // Close search modal
+    setQuantityModalVisible(false); // Close quantity modal
     loadFoodEntries();
+  };
+
+  const handleAddFood = (foodItem: FoodItem) => {
+    setSelectedFoodItemForQuantity(foodItem);
+    setQuantityInput('100'); // Default to 100g
+    setQuantityModalVisible(true);
+  };
+
+  const handleAddNewFood = () => {
+    if (!newFood.name || !newFood.calories || !newFood.protein || !newFood.carbs || !newFood.fat || !newFood.servingSize) {
+      Alert.alert('Error', 'Please fill in all required fields (Name, Calories, Protein, Carbs, Fat, Serving Size).');
+      return;
+    }
+
+    const foodToAdd: FoodItem = {
+      id: Date.now().toString(),
+      name: newFood.name,
+      brand: newFood.brand || undefined,
+      category: newFood.category,
+      calories: parseFloat(newFood.calories),
+      protein: parseFloat(newFood.protein),
+      carbs: parseFloat(newFood.carbs),
+      fat: parseFloat(newFood.fat),
+      fiber: parseFloat(newFood.fiber || '0'),
+      sugar: parseFloat(newFood.sugar || '0'),
+      sodium: parseFloat(newFood.sodium || '0'),
+      cholesterol: 0, // Assuming default 0 for now
+      saturatedFat: 0, // Assuming default 0 for now
+      transFat: 0, // Assuming default 0 for now
+      vitaminA: 0, // Assuming default 0 for now
+      vitaminC: 0, // Assuming default 0 for now
+      vitaminD: 0, // Assuming default 0 for now
+      calcium: 0, // Assuming default 0 for now
+      iron: 0, // Assuming default 0 for now
+      potassium: 0, // Assuming default 0 for now
+      servingSize: parseFloat(newFood.servingSize),
+      servingUnit: newFood.servingUnit,
+      isVerified: false, // Newly added food is not verified by default
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    addFoodItem(foodToAdd);
+    setAddFoodModalVisible(false);
+    // Clear the form
+    setNewFood({
+      name: '',
+      brand: '',
+      category: 'other',
+      calories: '',
+      protein: '',
+      carbs: '',
+      fat: '',
+      fiber: '',
+      sugar: '',
+      sodium: '',
+      servingSize: '100',
+      servingUnit: 'g',
+    });
+    // Refresh search results to include the new food item
+    const allFoods = getAllFoodItems().sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name));
+    setSearchResults(allFoods);
   };
 
   const handleDeleteFood = (id: string) => {
@@ -68,7 +176,9 @@ export default function FoodDiaryScreen() {
   const openSearchModal = (mealType: MealType) => {
     setSelectedMealType(mealType);
     setSearchQuery('');
-    setSearchResults([]);
+    // Load all food items in lexicographical order initially
+    const allFoods = getAllFoodItems().sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name));
+    setSearchResults(allFoods); // Show all initially
     setModalVisible(true);
   };
 
@@ -99,8 +209,30 @@ export default function FoodDiaryScreen() {
             placeholder="Search for food..."
             placeholderTextColor={draculaTheme.comment}
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (debounceTimeout) {
+                clearTimeout(debounceTimeout);
+              }
+              setDebounceTimeout(
+                setTimeout(() => {
+                  const allFoods = getAllFoodItems();
+                  if (text.length > 0) {
+                    const filteredResults = allFoods.filter(food =>
+                      food.name.toLowerCase().includes(text.toLowerCase())
+                    ).sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name));
+                    setSearchResults(filteredResults);
+                  } else {
+                    // If search query is empty, show all food items in lexicographical order
+                    setSearchResults(allFoods.sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name)));
+                  }
+                }, 500) // 500ms debounce delay
+              );
+            }}
           />
+          <TouchableOpacity style={styles.addNewFoodButton} onPress={() => setAddFoodModalVisible(true)}>
+            <Text style={styles.addNewFoodButtonText}>Add New Food</Text>
+          </TouchableOpacity>
           <FlatList
             data={searchResults}
             keyExtractor={(item) => item.id}
@@ -112,6 +244,151 @@ export default function FoodDiaryScreen() {
             )}
           />
         </View>
+      </Modal>
+
+      <Modal visible={quantityModalVisible} animationType="slide" onRequestClose={() => setQuantityModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.mealTitle}>Enter Quantity for {selectedFoodItemForQuantity?.name}</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Quantity in grams"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={quantityInput}
+            onChangeText={setQuantityInput}
+          />
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => {
+              if (selectedFoodItemForQuantity && quantityInput) {
+                addFoodEntryToDatabase(selectedFoodItemForQuantity, parseFloat(quantityInput));
+              } else {
+                Alert.alert('Error', 'Please enter a valid quantity.');
+              }
+            }}
+          >
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
+            onPress={() => setQuantityModalVisible(false)}
+          >
+            <Text style={styles.addButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      <Modal visible={addFoodModalVisible} animationType="slide" onRequestClose={() => setAddFoodModalVisible(false)}>
+        <ScrollView style={styles.modalContainer} contentContainerStyle={styles.scrollViewContent}>
+          <Text style={styles.mealTitle}>Add New Food Item</Text>
+
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Food Name"
+            placeholderTextColor={draculaTheme.comment}
+            value={newFood.name}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, name: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Brand (Optional)"
+            placeholderTextColor={draculaTheme.comment}
+            value={newFood.brand}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, brand: text }))}
+          />
+          <Text style={styles.label}>Category:</Text>
+          <Picker
+            selectedValue={newFood.category}
+            style={styles.picker}
+            onValueChange={(itemValue) => setNewFood(prev => ({ ...prev, category: itemValue as FoodCategory }))}
+          >
+            {foodCategories.map((category) => (
+              <Picker.Item key={category} label={category} value={category} />
+            ))}
+          </Picker>
+
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Calories (per 100g)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.calories}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, calories: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Protein (per 100g)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.protein}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, protein: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Carbs (per 100g)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.carbs}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, carbs: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Fat (per 100g)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.fat}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, fat: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Fiber (per 100g, Optional)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.fiber}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, fiber: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Sugar (per 100g, Optional)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.sugar}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, sugar: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Sodium (per 100g, Optional)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.sodium}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, sodium: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Serving Size (e.g., 100)"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={newFood.servingSize}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, servingSize: text }))}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Serving Unit (e.g., g, ml, piece)"
+            placeholderTextColor={draculaTheme.comment}
+            value={newFood.servingUnit}
+            onChangeText={(text) => setNewFood(prev => ({ ...prev, servingUnit: text }))}
+          />
+
+          <TouchableOpacity style={styles.addButton} onPress={handleAddNewFood}>
+            <Text style={styles.addButtonText}>Save Food</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
+            onPress={() => setAddFoodModalVisible(false)}
+          >
+            <Text style={styles.addButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </Modal>
     </View>
   );
@@ -194,5 +471,32 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: draculaTheme.comment,
     marginTop: spacing.xs,
+  },
+  addNewFoodButton: {
+    backgroundColor: draculaTheme.purple,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  addNewFoodButtonText: {
+    color: draculaTheme.text.inverse,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+  },
+  label: {
+    fontSize: typography.sizes.md,
+    color: draculaTheme.foreground,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  picker: {
+    backgroundColor: draculaTheme.surface.input,
+    color: draculaTheme.foreground,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  scrollViewContent: {
+    paddingBottom: spacing.lg * 2, // Extra space for buttons
   },
 });

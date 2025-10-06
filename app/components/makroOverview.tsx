@@ -1,7 +1,8 @@
 
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { ProgressChart } from 'react-native-chart-kit';
 import { draculaTheme, spacing, typography, borderRadius } from '../../styles/theme';
+import { useRouter } from 'expo-router';
 
 export type Makro = {
   protein: number;
@@ -15,6 +16,7 @@ export type MakroOverviewProps = {
 };
 
 export default function MakroOverview({ targetMakro, currentMakro }: MakroOverviewProps) {
+  const router = useRouter();
   const data = {
     labels: ['Protein', 'Carbs', 'Fat'],
     data: [
@@ -33,8 +35,13 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
     backgroundGradientFrom: draculaTheme.surface.card,
     backgroundGradientTo: draculaTheme.surface.card,
     color: (opacity: number, index?: number) => {
-      // The library has a bug, so we pass colors via data property
-      return `rgba(255, 255, 255, ${opacity})`;
+      const rgbColors = [
+        '255, 121, 198', // Protein: #ff79c6
+        '255, 184, 108', // Carbs: #ffb86c
+        '241, 250, 140', // Fat: #f1fa8c
+      ];
+      const rgb = rgbColors[index || 0];
+      return `rgba(${rgb}, ${opacity})`;
     },
     labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
     propsForLabels: {
@@ -44,7 +51,7 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
   };
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity onPress={() => router.push('/macroGraphs')} style={styles.container}>
       <Text style={styles.title}>Makro Overview</Text>
       <ProgressChart
         data={data}
@@ -55,7 +62,7 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
         chartConfig={chartConfig}
         hideLegend={false}
       />
-    </View>
+    </TouchableOpacity>
   );
 }
 
