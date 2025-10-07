@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { initDatabase, dbInitialized } from "@/services/database";
 import { Text, View } from "react-native";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
   const [isDbInitialized, setIsDbInitialized] = useState(false);
@@ -21,14 +22,16 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
         <Stack.Screen name="manageExerciseTemplates" options={{ headerShown: false }} />
         <Stack.Screen name="macroGraphs" options={{ headerShown: false }} />
+        <Stack.Screen name="createWorkoutTemplate" options={{ headerShown: false }} />
+        <Stack.Screen name="workoutSession" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="light" />
-    </>
+    </GestureHandlerRootView>
   );
 }

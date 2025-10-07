@@ -107,6 +107,7 @@ export interface WorkoutTemplateExercise {
   exercise_template_id: string;
   sets: number;
   reps: string;
+  order: number;
 }
 
 export interface ExerciseTemplate {
@@ -214,7 +215,7 @@ export type GoalType =
 
 export let dbInitialized: Promise<void>;
 
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 const createSchemaVersionTable = async (db: SQLite.SQLiteDatabase) => {
   await db.runAsync(
@@ -246,7 +247,18 @@ export const initDatabase = (): void => {
         const currentVersion = await getDatabaseVersion(db);
 
         if (currentVersion < DATABASE_VERSION) {
-          // This is a new database or an old version, create/update tables
+          console.log(`Database schema mismatch. Found version ${currentVersion}, expected ${DATABASE_VERSION}. Resetting database.`);
+
+          const tablesResult = await db.getAllAsync<{ name: string }>(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';`);
+          const tables = tablesResult.map(row => row.name);
+          for (const table of tables) {
+            if (table !== 'schema_version') {
+              await db.runAsync(`DROP TABLE IF EXISTS ${table};`);
+            }
+          }
+
+          await createSchemaVersionTable(db);
+
           await db.runAsync(`
             PRAGMA journal_mode = WAL;
           `);
@@ -353,6 +365,7 @@ export const initDatabase = (): void => {
               exercise_template_id TEXT NOT NULL,
               sets INTEGER NOT NULL,
               reps TEXT NOT NULL,
+              "order" INTEGER NOT NULL DEFAULT 0,
               FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),
               FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)
             );`);
@@ -414,12 +427,7 @@ export const initDatabase = (): void => {
           await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category);`);
           await db.runAsync(`CREATE INDEX IF NOT EXISTS idx_weight_entries_date ON weight_entries(date);`);
 
-          // Update the schema version
           await updateDatabaseVersion(db, DATABASE_VERSION);
-        }
-
-        // Populate with sample data only if it's a brand new database (version 0)
-        if (currentVersion === 0) {
           populateSampleData();
         }
       });
@@ -615,8 +623,8 @@ export const getExerciseTemplate = (id: string): ExerciseTemplate | null => {
 
 export const addWorkoutTemplateExercise = (exercise: WorkoutTemplateExercise): void => {
   db.runSync(
-    'INSERT INTO workout_template_exercises (id, workout_template_id, exercise_template_id, sets, reps) VALUES (?, ?, ?, ?, ?)',
-    [exercise.id, exercise.workout_template_id, exercise.exercise_template_id, exercise.sets, exercise.reps]
+    'INSERT INTO workout_template_exercises (id, workout_template_id, exercise_template_id, sets, reps, "order") VALUES (?, ?, ?, ?, ?, ?)',
+    [exercise.id, exercise.workout_template_id, exercise.exercise_template_id, exercise.sets, exercise.reps, exercise.order]
   );
 };
 
@@ -630,7 +638,7 @@ export const getExerciseTemplates = (): ExerciseTemplate[] => {
 
 export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplateExercise[] => {
   return db.getAllSync<WorkoutTemplateExercise>(
-    'SELECT * FROM workout_template_exercises WHERE workout_template_id = ?',
+    'SELECT * FROM workout_template_exercises WHERE workout_template_id = ? ORDER BY "order" ASC',
     [templateId]
   );
 };
@@ -893,15 +901,15 @@ const populateSampleData = (): void => {
   ];
 
   const sampleWorkoutTemplateExercises: WorkoutTemplateExercise[] = [
-    { id: '1', workout_template_id: '1', exercise_template_id: '1', sets: 3, reps: '8-12' },
-    { id: '2', workout_template_id: '1', exercise_template_id: '2', sets: 3, reps: '8-12' },
-    { id: '3', workout_template_id: '1', exercise_template_id: '3', sets: 3, reps: '10-15' },
-    { id: '4', workout_template_id: '2', exercise_template_id: '4', sets: 3, reps: '8-12' },
-    { id: '5', workout_template_id: '2', exercise_template_id: '5', sets: 3, reps: '8-12' },
-    { id: '6', workout_template_id: '2', exercise_template_id: '6', sets: 3, reps: '10-15' },
-    { id: '7', workout_template_id: '3', exercise_template_id: '7', sets: 3, reps: '5-10' },
-    { id: '8', workout_template_id: '3', exercise_template_id: '8', sets: 3, reps: '8-12' },
-    { id: '9', workout_template_id: '3', exercise_template_id: '9', sets: 3, reps: '10-15' },
+    { id: '1', workout_template_id: '1', exercise_template_id: '1', sets: 3, reps: '8-12', order: 0 },
+    { id: '2', workout_template_id: '1', exercise_template_id: '2', sets: 3, reps: '8-12', order: 1 },
+    { id: '3', workout_template_id: '1', exercise_template_id: '3', sets: 3, reps: '10-15', order: 2 },
+    { id: '4', workout_template_id: '2', exercise_template_id: '4', sets: 3, reps: '8-12', order: 0 },
+    { id: '5', workout_template_id: '2', exercise_template_id: '5', sets: 3, reps: '8-12', order: 1 },
+    { id: '6', workout_template_id: '2', exercise_template_id: '6', sets: 3, reps: '10-15', order: 2 },
+    { id: '7', workout_template_id: '3', exercise_template_id: '7', sets: 3, reps: '5-10', order: 0 },
+    { id: '8', workout_template_id: '3', exercise_template_id: '8', sets: 3, reps: '8-12', order: 1 },
+    { id: '9', workout_template_id: '3', exercise_template_id: '9', sets: 3, reps: '10-15', order: 2 },
   ];
 
   // Insert sample data

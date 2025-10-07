@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'r
 import { getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutTemplateExercises, getExerciseTemplate, ActiveWorkoutSession, WorkoutTemplateExercise, WorkoutSet } from '../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface WorkoutSessionState {
   session: ActiveWorkoutSession | null;
@@ -12,6 +13,7 @@ interface WorkoutSessionState {
 export default function WorkoutSessionScreen() {
   const [state, setState] = useState<WorkoutSessionState>({ session: null, exercises: [] });
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const { session, exercises } = state;
 
@@ -59,14 +61,14 @@ export default function WorkoutSessionScreen() {
 
   if (!session) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top * 2 }]}>
         <Text style={styles.errorText}>No active workout session found.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top * 2 }]}>
       <FlatList
         data={exercises}
         keyExtractor={(item) => item.id}
@@ -74,27 +76,37 @@ export default function WorkoutSessionScreen() {
           <View style={styles.exerciseCard}>
             <Text style={styles.exerciseTitle}>{item.exercise_name} ({item.default_sets}x{item.default_reps})</Text>
             {session.sets.filter((set: WorkoutSet) => set.workout_template_exercise_id === item.id).map((set: WorkoutSet, index: number) => (
-              <View key={set.id} style={styles.setContainer}>
-                <Text style={styles.setText}>Set {index + 1}</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Weight"
-                  placeholderTextColor={draculaTheme.comment}
-                  keyboardType="numeric"
-                  value={set.weight.toString()}
-                  onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Reps"
-                  placeholderTextColor={draculaTheme.comment}
-                  keyboardType="numeric"
-                  value={set.reps.toString()}
-                  onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
-                />
-                <TouchableOpacity onPress={() => handleSetUpdate(set.id, 'completed', !set.completed)}>
-                  <Text>{set.completed ? '✅' : '🔲'}</Text>
-                </TouchableOpacity>
+              <View key={set.id}>
+                {index === 0 && (
+                  <View style={styles.setLabelsRow}>
+                    <View style={styles.setNumberPlaceholder} />
+                    <Text style={styles.inputLabel}>Weight</Text>
+                    <Text style={styles.inputLabel}>Reps</Text>
+                    <View style={styles.checkboxPlaceholder} />
+                  </View>
+                )}
+                <View style={styles.setContainer}>
+                  <Text style={styles.setText}>Set {index + 1}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Weight"
+                    placeholderTextColor={draculaTheme.comment}
+                    keyboardType="numeric"
+                    value={set.weight.toString()}
+                    onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Reps"
+                    placeholderTextColor={draculaTheme.comment}
+                    keyboardType="numeric"
+                    value={set.reps.toString()}
+                    onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
+                  />
+                  <TouchableOpacity onPress={() => handleSetUpdate(set.id, 'completed', !set.completed)}>
+                    <Text>{set.completed ? '✅' : '🔲'}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>
@@ -129,6 +141,25 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
     color: draculaTheme.foreground,
     marginBottom: spacing.md,
+  },
+  setLabelsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  setNumberPlaceholder: {
+    width: 50, // Approximate width of "Set X"
+    marginRight: spacing.md,
+  },
+  inputLabel: {
+    color: draculaTheme.comment,
+    fontSize: typography.sizes.sm,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: spacing.md,
+  },
+  checkboxPlaceholder: {
+    width: 24, // Approximate width of the checkbox/icon
   },
   setContainer: {
     flexDirection: 'row',
