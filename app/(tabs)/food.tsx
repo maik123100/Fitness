@@ -4,6 +4,7 @@ import { addFoodEntry, getFoodEntriesForDate, deleteFoodEntry, FoodItem, FoodEnt
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
+import { useSnackbar } from '../../app/components/SnackbarProvider'; // Import useSnackbar
 
 interface NewFoodItem {
   name: string;
@@ -57,6 +58,7 @@ const initialNewFoodState: NewFoodItem = {
 };
 
 export default function FoodDiaryScreen() {
+  const { showSnackbar } = useSnackbar(); // Get showSnackbar from context
   const [state, setState] = useState<FoodDiaryState>({
     date: new Date().toISOString().split('T')[0],
     foodEntries: { breakfast: [], lunch: [], dinner: [], snack: [] },
@@ -132,6 +134,7 @@ export default function FoodDiaryScreen() {
       quantityModal: { ...prev.quantityModal, visible: false },
     }));
     loadFoodEntries();
+    showSnackbar('Food logged successfully!', 3000); // Success snackbar
   };
 
   const handleAddFood = (foodItem: FoodItem) => {
@@ -149,7 +152,7 @@ export default function FoodDiaryScreen() {
   const handleAddNewFood = () => {
     const { newFood } = addFoodModal;
     if (!newFood.name || !newFood.calories || !newFood.protein || !newFood.carbs || !newFood.fat || !newFood.servingSize) {
-      Alert.alert('Error', 'Please fill in all required fields (Name, Calories, Protein, Carbs, Fat, Serving Size).');
+      showSnackbar('Please fill in all required fields (Name, Calories, Protein, Carbs, Fat, Serving Size).', 3000); // Error snackbar
       return;
     }
 
@@ -188,6 +191,7 @@ export default function FoodDiaryScreen() {
       addFoodModal: { ...prev.addFoodModal, visible: false, newFood: { ...initialNewFoodState } },
       searchModal: { ...prev.searchModal, results: allFoods },
     }));
+    showSnackbar('New food item added successfully!', 3000); // Success snackbar
   };
 
   const handleDeleteFood = (id: string) => {
@@ -196,6 +200,7 @@ export default function FoodDiaryScreen() {
       { text: 'Delete', style: 'destructive', onPress: () => {
         deleteFoodEntry(id);
         loadFoodEntries();
+        showSnackbar('Food entry deleted.', 3000); // Success snackbar
       }},
     ]);
   };
@@ -308,7 +313,7 @@ export default function FoodDiaryScreen() {
               if (quantityModal.selectedFoodItem && quantityModal.quantity) {
                 addFoodEntryToDatabase(quantityModal.selectedFoodItem, parseFloat(quantityModal.quantity));
               } else {
-                Alert.alert('Error', 'Please enter a valid quantity.');
+                showSnackbar('Please enter a valid quantity.', 3000); // Error snackbar
               }
             }}
           >
