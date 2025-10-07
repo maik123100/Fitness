@@ -1,5 +1,4 @@
-
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
@@ -11,18 +10,37 @@ import {
   getNutritionSummary, 
   getFoodEntriesForDate, 
   getWorkoutEntries, 
-  FoodEntry 
+  FoodEntry,
+  WorkoutEntry
 } from '../../services/database';
 import { draculaTheme, spacing, typography } from '../../styles/theme';
 
+interface DashboardState {
+  date: string;
+  calorieData: {
+    eaten: number;
+    burned: number;
+    remaining: number;
+  };
+  makroData: {
+    current: { protein: number; carbs: number; fat: number };
+    target: { protein: number; carbs: number; fat: number };
+  };
+  recentActivities: (FoodEntry | WorkoutEntry)[];
+}
+
 export default function DashboardScreen() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [calorieData, setCalorieData] = useState({ eaten: 0, burned: 0, remaining: 2000 });
-  const [makroData, setMakroData] = useState({ 
-    current: { protein: 0, carbs: 0, fat: 0 },
-    target: { protein: 100, carbs: 200, fat: 50 } 
+  const [state, setState] = useState<DashboardState>({
+    date: new Date().toISOString().split('T')[0],
+    calorieData: { eaten: 0, burned: 0, remaining: 2000 },
+    makroData: {
+      current: { protein: 0, carbs: 0, fat: 0 },
+      target: { protein: 100, carbs: 200, fat: 50 },
+    },
+    recentActivities: [],
   });
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+
+  const { date, calorieData, makroData, recentActivities } = state;
 
   useFocusEffect(
     useCallback(() => {
@@ -40,13 +58,13 @@ export default function DashboardScreen() {
     const eaten = nutritionSummary.totalCalories;
     const burned = nutritionSummary.caloriesBurned;
 
-    setCalorieData({
+    const newCalorieData = {
       eaten,
       burned,
       remaining: targetCalories - eaten + burned,
-    });
+    };
 
-    setMakroData({
+    const newMakroData = {
       current: {
         protein: nutritionSummary.totalProtein,
         carbs: nutritionSummary.totalCarbs,
@@ -57,11 +75,16 @@ export default function DashboardScreen() {
         carbs: userProfile?.targetCarbs || 200,
         fat: userProfile?.targetFat || 50,
       },
-    });
+    };
 
-    // Combine and sort recent activities
     const activities = [...foodEntries, ...workoutEntries].sort((a, b) => b.createdAt - a.createdAt);
-    setRecentActivities(activities);
+
+    setState(prev => ({
+      ...prev,
+      calorieData: newCalorieData,
+      makroData: newMakroData,
+      recentActivities: activities,
+    }));
   };
 
   return (

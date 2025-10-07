@@ -1,5 +1,5 @@
 
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { FoodEntry, WorkoutEntry, getFoodItem, getWorkoutTemplate } from '../../services/database';
 import { draculaTheme, spacing, typography, borderRadius } from '../../styles/theme';
 

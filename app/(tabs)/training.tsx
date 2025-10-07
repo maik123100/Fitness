@@ -1,50 +1,58 @@
-
 import { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, ScrollView, Alert } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession, addWorkoutTemplate, addWorkoutTemplateExercise, getExerciseTemplates, addExerciseTemplate } from '../../services/database';
+import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession, addWorkoutTemplate, addWorkoutTemplateExercise, getExerciseTemplates, WorkoutTemplate, ActiveWorkoutSession, ExerciseTemplate, WorkoutTemplateExercise } from '../../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import { useRouter } from 'expo-router';
 
+interface TrainingState {
+  templates: WorkoutTemplate[];
+  activeSession: ActiveWorkoutSession | null;
+  exerciseTemplates: ExerciseTemplate[];
+  modal: {
+    visible: boolean;
+    newTemplateName: string;
+    newExercises: (WorkoutTemplateExercise & { exercise_name: string })[];
+    selectedExerciseTemplateId: string | null;
+  };
+}
+
 export default function WorkoutScreen() {
   const router = useRouter();
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [activeSession, setActiveSession] = useState<any | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [newExercises, setNewExercises] = useState<any[]>([]);
-  const [newExerciseName, setNewExerciseName] = useState('');
-  const [newExerciseSets, setNewExerciseSets] = useState('3');
-  const [newExerciseReps, setNewExerciseReps] = useState('8-12');
-  const [exerciseTemplates, setExerciseTemplates] = useState<any[]>([]);
+  const [state, setState] = useState<TrainingState>({
+    templates: [],
+    activeSession: null,
+    exerciseTemplates: [],
+    modal: {
+      visible: false,
+      newTemplateName: '',
+      newExercises: [],
+      selectedExerciseTemplateId: null,
+    },
+  });
 
-
-
-  const [selectedExerciseTemplateId, setSelectedExerciseTemplateId] = useState<string | null>(null);
-
-  const loadData = () => {
-    const templatesData = getWorkoutTemplates();
-    const activeSessionData = getActiveWorkoutSession();
-    setTemplates(templatesData);
-    setActiveSession(activeSessionData);
-  };
-
-  const loadExerciseTemplates = () => {
-    const data = getExerciseTemplates();
-    setExerciseTemplates(data);
-  };
+  const { templates, activeSession, exerciseTemplates, modal } = state;
 
   useEffect(() => {
     loadData();
     loadExerciseTemplates();
   }, []);
 
+  const loadData = () => {
+    const templatesData = getWorkoutTemplates();
+    const activeSessionData = getActiveWorkoutSession();
+    setState(prev => ({ ...prev, templates: templatesData, activeSession: activeSessionData }));
+  };
 
+  const loadExerciseTemplates = () => {
+    const data = getExerciseTemplates();
+    setState(prev => ({ ...prev, exerciseTemplates: data }));
+  };
 
   const handleCreateTemplate = () => {
-    const newTemplate = { id: Date.now().toString(), name: newTemplateName };
+    const newTemplate = { id: Date.now().toString(), name: modal.newTemplateName };
     addWorkoutTemplate(newTemplate);
-    newExercises.forEach(ex => {
+    modal.newExercises.forEach(ex => {
       addWorkoutTemplateExercise({
         id: ex.id,
         workout_template_id: newTemplate.id,
@@ -53,48 +61,38 @@ export default function WorkoutScreen() {
         reps: ex.reps,
       });
     });
-    setModalVisible(false);
+    setState(prev => ({ ...prev, modal: { ...prev.modal, visible: false, newTemplateName: '', newExercises: [] } }));
     loadData();
   };
 
   const addExerciseToTemplate = () => {
-    if (!selectedExerciseTemplateId) {
+    if (!modal.selectedExerciseTemplateId) {
       Alert.alert('Error', 'Please select an exercise template.');
       return;
     }
-    const selectedTemplate = exerciseTemplates.find(t => t.id === selectedExerciseTemplateId);
+    const selectedTemplate = exerciseTemplates.find(t => t.id === modal.selectedExerciseTemplateId);
     if (selectedTemplate) {
-      setNewExercises([...newExercises, {
+      const newExercise: WorkoutTemplateExercise & { exercise_name: string } = {
         id: Date.now().toString(),
+        workout_template_id: '', // This will be set when the template is created
         exercise_template_id: selectedTemplate.id,
-        sets: parseInt(newExerciseSets),
-        reps: newExerciseReps,
+        sets: selectedTemplate.default_sets,
+        reps: selectedTemplate.default_reps,
         exercise_name: selectedTemplate.name,
-      }]);
-      setSelectedExerciseTemplateId(null);
-      setNewExerciseName('');
-      setNewExerciseSets('3');
-      setNewExerciseReps('8-12');
+      };
+      setState(prev => ({
+        ...prev,
+        modal: {
+          ...prev.modal,
+          newExercises: [...prev.modal.newExercises, newExercise],
+          selectedExerciseTemplateId: null,
+        },
+      }));
     }
   };
 
-
-
   const handleSelectExerciseTemplate = (templateId: string | null) => {
-    if (!templateId) {
-      setSelectedExerciseTemplateId(null);
-      setNewExerciseName('');
-      setNewExerciseSets('3');
-      setNewExerciseReps('8-12');
-      return;
-    }
-    setSelectedExerciseTemplateId(templateId);
-    const selectedTemplate = exerciseTemplates.find(t => t.id === templateId);
-    if (selectedTemplate) {
-      setNewExerciseName(selectedTemplate.name);
-      setNewExerciseSets(selectedTemplate.default_sets.toString());
-      setNewExerciseReps(selectedTemplate.default_reps);
-    }
+    setState(prev => ({ ...prev, modal: { ...prev.modal, selectedExerciseTemplateId: templateId } }));
   };
 
   const handleTemplatePress = (templateId: string) => {
@@ -114,7 +112,6 @@ export default function WorkoutScreen() {
         <TouchableOpacity onPress={() => router.push('/workoutSession')}>
           <View style={styles.activeSessionCard}>
             <Text style={styles.activeSessionTitle}>Active Workout</Text>
-            {/* Add more details about the active session */}
           </View>
         </TouchableOpacity>
       )}
@@ -132,7 +129,7 @@ export default function WorkoutScreen() {
         )}
       />
 
-      <TouchableOpacity style={styles.createButton} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity style={styles.createButton} onPress={() => setState(prev => ({ ...prev, modal: { ...prev.modal, visible: true } }))}>
         <Text style={styles.createButtonText}>Create New Workout</Text>
       </TouchableOpacity>
 
@@ -143,16 +140,16 @@ export default function WorkoutScreen() {
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible}
+        visible={modal.visible}
         onRequestClose={() => {
-          setModalVisible(!modalVisible);
+          setState(prev => ({ ...prev, modal: { ...prev.modal, visible: false } }));
         }}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <FlatList
-              data={newExercises}
+              data={modal.newExercises}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <Text style={styles.exerciseText}>{item.exercise_name} {item.default_sets}x{item.default_reps}</Text>}
+              renderItem={({ item }) => <Text style={styles.exerciseText}>{item.exercise_name} {item.sets}x{item.reps}</Text>}
               ListHeaderComponent={
                 <View>
                   <Text style={styles.modalText}>Create New Workout Template</Text>
@@ -160,12 +157,12 @@ export default function WorkoutScreen() {
                     style={styles.input}
                     placeholder="Template Name"
                     placeholderTextColor={draculaTheme.comment}
-                    value={newTemplateName}
-                    onChangeText={setNewTemplateName}
+                    value={modal.newTemplateName}
+                    onChangeText={(text) => setState(prev => ({ ...prev, modal: { ...prev.modal, newTemplateName: text } }))}
                   />
                   <View style={styles.addExerciseContainer}>
                     <Picker
-                      selectedValue={selectedExerciseTemplateId}
+                      selectedValue={modal.selectedExerciseTemplateId}
                       style={styles.picker}
                       onValueChange={(itemValue) => handleSelectExerciseTemplate(itemValue)}>
                       <Picker.Item label="-- Select an Exercise Template --" value={null} />
@@ -190,8 +187,6 @@ export default function WorkoutScreen() {
           </View>
         </View>
       </Modal>
-
-
     </View>
   );
 }

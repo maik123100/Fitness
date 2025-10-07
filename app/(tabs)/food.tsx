@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Alert, ScrollView } from 'react-native';
-import { addFoodEntry, getFoodEntriesForDate, deleteFoodEntry, searchFoodItems, FoodItem, FoodEntry, MealType, getFoodItem, getAllFoodItems, addFoodItem, FoodCategory } from '../../services/database';
+import { addFoodEntry, getFoodEntriesForDate, deleteFoodEntry, FoodItem, FoodEntry, MealType, getFoodItem, getAllFoodItems, addFoodItem, FoodCategory } from '../../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
@@ -21,34 +20,65 @@ interface NewFoodItem {
   servingUnit: string;
 }
 
-export default function FoodDiaryScreen() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [foodEntries, setFoodEntries] = useState<Record<MealType, FoodEntry[]>>({ breakfast: [], lunch: [], dinner: [], snack: [] });
-  const [modalVisible, setModalVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<FoodItem[]>([]);
-  const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
-  const [debounceTimeout, setDebounceTimeout] = useState<number | null>(null);
-  const [quantityModalVisible, setQuantityModalVisible] = useState(false);
-  const [selectedFoodItemForQuantity, setSelectedFoodItemForQuantity] = useState<FoodItem | null>(null);
-  const [quantityInput, setQuantityInput] = useState('100'); // Default to 100g
+interface FoodDiaryState {
+  date: string;
+  foodEntries: Record<MealType, FoodEntry[]>;
+  searchModal: {
+    visible: boolean;
+    query: string;
+    results: FoodItem[];
+    selectedMealType: MealType;
+    debounceTimeout: number | null;
+  };
+  quantityModal: {
+    visible: boolean;
+    selectedFoodItem: FoodItem | null;
+    quantity: string;
+  };
+  addFoodModal: {
+    visible: boolean;
+    newFood: NewFoodItem;
+  };
+}
 
-  // State for Add New Food Modal
-  const [addFoodModalVisible, setAddFoodModalVisible] = useState(false);
-  const [newFood, setNewFood] = useState<NewFoodItem>({
-    name: '',
-    brand: '',
-    category: 'other',
-    calories: '',
-    protein: '',
-    carbs: '',
-    fat: '',
-    fiber: '',
-    sugar: '',
-    sodium: '',
-    servingSize: '100',
-    servingUnit: 'g',
+const initialNewFoodState: NewFoodItem = {
+  name: '',
+  brand: '',
+  category: 'other',
+  calories: '',
+  protein: '',
+  carbs: '',
+  fat: '',
+  fiber: '',
+  sugar: '',
+  sodium: '',
+  servingSize: '100',
+  servingUnit: 'g',
+};
+
+export default function FoodDiaryScreen() {
+  const [state, setState] = useState<FoodDiaryState>({
+    date: new Date().toISOString().split('T')[0],
+    foodEntries: { breakfast: [], lunch: [], dinner: [], snack: [] },
+    searchModal: {
+      visible: false,
+      query: '',
+      results: [],
+      selectedMealType: 'breakfast',
+      debounceTimeout: null,
+    },
+    quantityModal: {
+      visible: false,
+      selectedFoodItem: null,
+      quantity: '100',
+    },
+    addFoodModal: {
+      visible: false,
+      newFood: { ...initialNewFoodState },
+    },
   });
+
+  const { date, foodEntries, searchModal, quantityModal, addFoodModal } = state;
 
   const foodCategories: FoodCategory[] = [
     'vegetables',
@@ -75,7 +105,7 @@ export default function FoodDiaryScreen() {
     entries.forEach(entry => {
       groupedEntries[entry.mealType].push(entry);
     });
-    setFoodEntries(groupedEntries);
+    setState(prev => ({ ...prev, foodEntries: groupedEntries }));
   };
 
   const addFoodEntryToDatabase = (foodItem: FoodItem, quantity: number) => {
@@ -83,9 +113,9 @@ export default function FoodDiaryScreen() {
       id: Date.now().toString(),
       foodId: foodItem.id,
       date,
-      mealType: selectedMealType,
-      quantity: quantity, // Use the provided quantity
-      unit: 'g', // Assuming grams as unit for now
+      mealType: searchModal.selectedMealType,
+      quantity: quantity,
+      unit: 'g',
       totalCalories: (foodItem.calories / foodItem.servingSize) * quantity,
       totalProtein: (foodItem.protein / foodItem.servingSize) * quantity,
       totalCarbs: (foodItem.carbs / foodItem.servingSize) * quantity,
@@ -96,18 +126,28 @@ export default function FoodDiaryScreen() {
       createdAt: Date.now(),
     };
     addFoodEntry(newEntry);
-    setModalVisible(false); // Close search modal
-    setQuantityModalVisible(false); // Close quantity modal
+    setState(prev => ({
+      ...prev,
+      searchModal: { ...prev.searchModal, visible: false },
+      quantityModal: { ...prev.quantityModal, visible: false },
+    }));
     loadFoodEntries();
   };
 
   const handleAddFood = (foodItem: FoodItem) => {
-    setSelectedFoodItemForQuantity(foodItem);
-    setQuantityInput('100'); // Default to 100g
-    setQuantityModalVisible(true);
+    setState(prev => ({
+      ...prev,
+      quantityModal: {
+        ...prev.quantityModal,
+        visible: true,
+        selectedFoodItem: foodItem,
+        quantity: '100',
+      },
+    }));
   };
 
   const handleAddNewFood = () => {
+    const { newFood } = addFoodModal;
     if (!newFood.name || !newFood.calories || !newFood.protein || !newFood.carbs || !newFood.fat || !newFood.servingSize) {
       Alert.alert('Error', 'Please fill in all required fields (Name, Calories, Protein, Carbs, Fat, Serving Size).');
       return;
@@ -125,42 +165,29 @@ export default function FoodDiaryScreen() {
       fiber: parseFloat(newFood.fiber || '0'),
       sugar: parseFloat(newFood.sugar || '0'),
       sodium: parseFloat(newFood.sodium || '0'),
-      cholesterol: 0, // Assuming default 0 for now
-      saturatedFat: 0, // Assuming default 0 for now
-      transFat: 0, // Assuming default 0 for now
-      vitaminA: 0, // Assuming default 0 for now
-      vitaminC: 0, // Assuming default 0 for now
-      vitaminD: 0, // Assuming default 0 for now
-      calcium: 0, // Assuming default 0 for now
-      iron: 0, // Assuming default 0 for now
-      potassium: 0, // Assuming default 0 for now
+      cholesterol: 0,
+      saturatedFat: 0,
+      transFat: 0,
+      vitaminA: 0,
+      vitaminC: 0,
+      vitaminD: 0,
+      calcium: 0,
+      iron: 0,
+      potassium: 0,
       servingSize: parseFloat(newFood.servingSize),
       servingUnit: newFood.servingUnit,
-      isVerified: false, // Newly added food is not verified by default
+      isVerified: false,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
 
     addFoodItem(foodToAdd);
-    setAddFoodModalVisible(false);
-    // Clear the form
-    setNewFood({
-      name: '',
-      brand: '',
-      category: 'other',
-      calories: '',
-      protein: '',
-      carbs: '',
-      fat: '',
-      fiber: '',
-      sugar: '',
-      sodium: '',
-      servingSize: '100',
-      servingUnit: 'g',
-    });
-    // Refresh search results to include the new food item
-    const allFoods = getAllFoodItems().sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name));
-    setSearchResults(allFoods);
+    const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
+    setState(prev => ({
+      ...prev,
+      addFoodModal: { ...prev.addFoodModal, visible: false, newFood: { ...initialNewFoodState } },
+      searchModal: { ...prev.searchModal, results: allFoods },
+    }));
   };
 
   const handleDeleteFood = (id: string) => {
@@ -174,12 +201,49 @@ export default function FoodDiaryScreen() {
   };
 
   const openSearchModal = (mealType: MealType) => {
-    setSelectedMealType(mealType);
-    setSearchQuery('');
-    // Load all food items in lexicographical order initially
-    const allFoods = getAllFoodItems().sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name));
-    setSearchResults(allFoods); // Show all initially
-    setModalVisible(true);
+    const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
+    setState(prev => ({
+      ...prev,
+      searchModal: {
+        ...prev.searchModal,
+        visible: true,
+        selectedMealType: mealType,
+        query: '',
+        results: allFoods,
+      },
+    }));
+  };
+
+  const handleSearchQueryChange = (text: string) => {
+    if (searchModal.debounceTimeout) {
+      clearTimeout(searchModal.debounceTimeout);
+    }
+    const newTimeout = setTimeout(() => {
+      const allFoods = getAllFoodItems();
+      if (text.length > 0) {
+        const filteredResults = allFoods.filter(food =>
+          food.name.toLowerCase().includes(text.toLowerCase())
+        ).sort((a, b) => a.name.localeCompare(b.name));
+        setState(prev => ({ ...prev, searchModal: { ...prev.searchModal, results: filteredResults } }));
+      } else {
+        setState(prev => ({ ...prev, searchModal: { ...prev.searchModal, results: allFoods.sort((a, b) => a.name.localeCompare(b.name)) } }));
+      }
+    }, 500);
+
+    setState(prev => ({
+      ...prev,
+      searchModal: { ...prev.searchModal, query: text, debounceTimeout: newTimeout },
+    }));
+  };
+
+  const handleNewFoodChange = (field: keyof NewFoodItem, value: string | FoodCategory) => {
+    setState(prev => ({
+      ...prev,
+      addFoodModal: {
+        ...prev.addFoodModal,
+        newFood: { ...prev.addFoodModal.newFood, [field]: value },
+      },
+    }));
   };
 
   return (
@@ -202,39 +266,20 @@ export default function FoodDiaryScreen() {
         </View>
       ))}
 
-      <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
+      <Modal visible={searchModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, searchModal: { ...prev.searchModal, visible: false } }))}>
         <View style={styles.modalContainer}>
           <TextInput
             style={styles.searchInput}
             placeholder="Search for food..."
             placeholderTextColor={draculaTheme.comment}
-            value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              if (debounceTimeout) {
-                clearTimeout(debounceTimeout);
-              }
-              setDebounceTimeout(
-                setTimeout(() => {
-                  const allFoods = getAllFoodItems();
-                  if (text.length > 0) {
-                    const filteredResults = allFoods.filter(food =>
-                      food.name.toLowerCase().includes(text.toLowerCase())
-                    ).sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name));
-                    setSearchResults(filteredResults);
-                  } else {
-                    // If search query is empty, show all food items in lexicographical order
-                    setSearchResults(allFoods.sort((a: FoodItem, b: FoodItem) => a.name.localeCompare(b.name)));
-                  }
-                }, 500) // 500ms debounce delay
-              );
-            }}
+            value={searchModal.query}
+            onChangeText={handleSearchQueryChange}
           />
-          <TouchableOpacity style={styles.addNewFoodButton} onPress={() => setAddFoodModalVisible(true)}>
+          <TouchableOpacity style={styles.addNewFoodButton} onPress={() => setState(prev => ({ ...prev, addFoodModal: { ...prev.addFoodModal, visible: true } }))}>
             <Text style={styles.addNewFoodButtonText}>Add New Food</Text>
           </TouchableOpacity>
           <FlatList
-            data={searchResults}
+            data={searchModal.results}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.searchResultItem} onPress={() => handleAddFood(item)}>
@@ -246,22 +291,22 @@ export default function FoodDiaryScreen() {
         </View>
       </Modal>
 
-      <Modal visible={quantityModalVisible} animationType="slide" onRequestClose={() => setQuantityModalVisible(false)}>
+      <Modal visible={quantityModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, visible: false } }))}>
         <View style={styles.modalContainer}>
-          <Text style={styles.mealTitle}>Enter Quantity for {selectedFoodItemForQuantity?.name}</Text>
+          <Text style={styles.mealTitle}>Enter Quantity for {quantityModal.selectedFoodItem?.name}</Text>
           <TextInput
             style={styles.searchInput}
             placeholder="Quantity in grams"
             placeholderTextColor={draculaTheme.comment}
             keyboardType="numeric"
-            value={quantityInput}
-            onChangeText={setQuantityInput}
+            value={quantityModal.quantity}
+            onChangeText={(text) => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, quantity: text } }))}
           />
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
-              if (selectedFoodItemForQuantity && quantityInput) {
-                addFoodEntryToDatabase(selectedFoodItemForQuantity, parseFloat(quantityInput));
+              if (quantityModal.selectedFoodItem && quantityModal.quantity) {
+                addFoodEntryToDatabase(quantityModal.selectedFoodItem, parseFloat(quantityModal.quantity));
               } else {
                 Alert.alert('Error', 'Please enter a valid quantity.');
               }
@@ -271,120 +316,41 @@ export default function FoodDiaryScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
-            onPress={() => setQuantityModalVisible(false)}
+            onPress={() => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, visible: false } }))}
           >
             <Text style={styles.addButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </Modal>
 
-      <Modal visible={addFoodModalVisible} animationType="slide" onRequestClose={() => setAddFoodModalVisible(false)}>
+      <Modal visible={addFoodModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, addFoodModal: { ...prev.addFoodModal, visible: false } }))}>
         <ScrollView style={styles.modalContainer} contentContainerStyle={styles.scrollViewContent}>
           <Text style={styles.mealTitle}>Add New Food Item</Text>
 
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Food Name"
-            placeholderTextColor={draculaTheme.comment}
-            value={newFood.name}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, name: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Brand (Optional)"
-            placeholderTextColor={draculaTheme.comment}
-            value={newFood.brand}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, brand: text }))}
-          />
+          <TextInput style={styles.searchInput} placeholder="Food Name" placeholderTextColor={draculaTheme.comment} value={addFoodModal.newFood.name} onChangeText={(text) => handleNewFoodChange('name', text)} />
+          <TextInput style={styles.searchInput} placeholder="Brand (Optional)" placeholderTextColor={draculaTheme.comment} value={addFoodModal.newFood.brand} onChangeText={(text) => handleNewFoodChange('brand', text)} />
           <Text style={styles.label}>Category:</Text>
-          <Picker
-            selectedValue={newFood.category}
-            style={styles.picker}
-            onValueChange={(itemValue) => setNewFood(prev => ({ ...prev, category: itemValue as FoodCategory }))}
-          >
+          <Picker selectedValue={addFoodModal.newFood.category} style={styles.picker} onValueChange={(itemValue) => handleNewFoodChange('category', itemValue as FoodCategory)}>
             {foodCategories.map((category) => (
               <Picker.Item key={category} label={category} value={category} />
             ))}
           </Picker>
-
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Calories (per 100g)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.calories}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, calories: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Protein (per 100g)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.protein}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, protein: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Carbs (per 100g)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.carbs}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, carbs: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Fat (per 100g)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.fat}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, fat: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Fiber (per 100g, Optional)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.fiber}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, fiber: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Sugar (per 100g, Optional)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.sugar}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, sugar: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Sodium (per 100g, Optional)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.sodium}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, sodium: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Serving Size (e.g., 100)"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={newFood.servingSize}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, servingSize: text }))}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Serving Unit (e.g., g, ml, piece)"
-            placeholderTextColor={draculaTheme.comment}
-            value={newFood.servingUnit}
-            onChangeText={(text) => setNewFood(prev => ({ ...prev, servingUnit: text }))}
-          />
+          <TextInput style={styles.searchInput} placeholder="Calories (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.calories} onChangeText={(text) => handleNewFoodChange('calories', text)} />
+          <TextInput style={styles.searchInput} placeholder="Protein (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.protein} onChangeText={(text) => handleNewFoodChange('protein', text)} />
+          <TextInput style={styles.searchInput} placeholder="Carbs (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.carbs} onChangeText={(text) => handleNewFoodChange('carbs', text)} />
+          <TextInput style={styles.searchInput} placeholder="Fat (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.fat} onChangeText={(text) => handleNewFoodChange('fat', text)} />
+          <TextInput style={styles.searchInput} placeholder="Fiber (per 100g, Optional)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.fiber} onChangeText={(text) => handleNewFoodChange('fiber', text)} />
+          <TextInput style={styles.searchInput} placeholder="Sugar (per 100g, Optional)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.sugar} onChangeText={(text) => handleNewFoodChange('sugar', text)} />
+          <TextInput style={styles.searchInput} placeholder="Sodium (per 100g, Optional)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.sodium} onChangeText={(text) => handleNewFoodChange('sodium', text)} />
+          <TextInput style={styles.searchInput} placeholder="Serving Size (e.g., 100)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.servingSize} onChangeText={(text) => handleNewFoodChange('servingSize', text)} />
+          <TextInput style={styles.searchInput} placeholder="Serving Unit (e.g., g, ml, piece)" placeholderTextColor={draculaTheme.comment} value={addFoodModal.newFood.servingUnit} onChangeText={(text) => handleNewFoodChange('servingUnit', text)} />
 
           <TouchableOpacity style={styles.addButton} onPress={handleAddNewFood}>
             <Text style={styles.addButtonText}>Save Food</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
-            onPress={() => setAddFoodModalVisible(false)}
+            onPress={() => setState(prev => ({ ...prev, addFoodModal: { ...prev.addFoodModal, visible: false } }))}
           >
             <Text style={styles.addButtonText}>Cancel</Text>
           </TouchableOpacity>
@@ -497,6 +463,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   scrollViewContent: {
-    paddingBottom: spacing.lg * 2, // Extra space for buttons
+    paddingBottom: spacing.lg * 2,
   },
 });

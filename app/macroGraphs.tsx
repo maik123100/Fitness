@@ -3,16 +3,15 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { ProgressBar } from 'react-native-paper';
 import { getNutritionSummary, NutritionSummary, getUserProfile } from '../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 interface MacroDisplayProps {
-  macroType: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium';
   actual: number;
   target: number;
 }
 
-const MacroDisplay: React.FC<MacroDisplayProps> = ({ macroType, actual, target }) => {
+const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target }) => {
   const percentage = target > 0 ? Math.min(actual / target, 1) : 0;
   const displayActual = actual.toFixed(0);
   const displayTarget = target.toFixed(0);
@@ -33,10 +32,23 @@ const MacroDisplay: React.FC<MacroDisplayProps> = ({ macroType, actual, target }
   );
 };
 
+interface MacroGraphsState {
+  nutritionSummary: NutritionSummary | null;
+  targetMacros: {
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+}
+
 export default function MacroGraphsScreen() {
-  const [nutritionData, setNutritionData] = useState<NutritionSummary[]>([]);
-  const [targetMacros, setTargetMacros] = useState({ protein: 0, carbs: 0, fat: 0 });
+  const [state, setState] = useState<MacroGraphsState>({
+    nutritionSummary: null,
+    targetMacros: { protein: 0, carbs: 0, fat: 0 },
+  });
   const router = useRouter();
+
+  const { nutritionSummary, targetMacros } = state;
 
   useEffect(() => {
     loadMacroData();
@@ -44,18 +56,18 @@ export default function MacroGraphsScreen() {
 
   const loadMacroData = () => {
     const userProfile = getUserProfile();
-    if (userProfile) {
-      setTargetMacros({
-        protein: userProfile.targetProtein,
-        carbs: userProfile.targetCarbs,
-        fat: userProfile.targetFat,
-      });
-    }
-
     const today = new Date();
     const todayString = today.toISOString().split('T')[0];
     const todaySummary = getNutritionSummary(todayString);
-    setNutritionData(todaySummary ? [todaySummary] : []);
+
+    setState({
+      nutritionSummary: todaySummary,
+      targetMacros: {
+        protein: userProfile?.targetProtein || 0,
+        carbs: userProfile?.targetCarbs || 0,
+        fat: userProfile?.targetFat || 0,
+      },
+    });
   };
 
   return (
@@ -68,10 +80,9 @@ export default function MacroGraphsScreen() {
       {['protein', 'carbs', 'fat'].map((macro) => (
         <View key={macro} style={styles.chartSection}>
           <Text style={styles.sectionTitle}>{macro.charAt(0).toUpperCase() + macro.slice(1)} Intake</Text>
-          {nutritionData.length > 0 ? (
+          {nutritionSummary ? (
             <MacroDisplay
-              macroType={macro as 'protein' | 'carbs' | 'fat'}
-              actual={nutritionData[0][`total${macro.charAt(0).toUpperCase() + macro.slice(1)}` as keyof NutritionSummary] as number}
+              actual={nutritionSummary[`total${macro.charAt(0).toUpperCase() + macro.slice(1)}` as keyof NutritionSummary] as number}
               target={targetMacros[macro as 'protein' | 'carbs' | 'fat']}
             />
           ) : (
@@ -85,10 +96,9 @@ export default function MacroGraphsScreen() {
       {['fiber', 'sugar', 'sodium'].map((nutrient) => (
         <View key={nutrient} style={styles.chartSection}>
           <Text style={styles.sectionTitle}>{nutrient.charAt(0).toUpperCase() + nutrient.slice(1)} Intake</Text>
-          {nutritionData.length > 0 ? (
+          {nutritionSummary ? (
             <MacroDisplay
-              macroType={nutrient as 'fiber' | 'sugar' | 'sodium'}
-              actual={nutritionData[0][`total${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}` as keyof NutritionSummary] as number}
+              actual={nutritionSummary[`total${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}` as keyof NutritionSummary] as number}
               target={0} // No explicit target for these nutrients
             />
           ) : (

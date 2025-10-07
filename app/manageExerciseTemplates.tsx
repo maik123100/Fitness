@@ -1,28 +1,38 @@
 import { useState, useEffect } from 'react';
-import { Alert, Button, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { getExerciseTemplates, addExerciseTemplate, deleteExerciseTemplate, updateExerciseTemplate, ExerciseTemplate } from '../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
-import { Stack } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-
 import { useRouter } from "expo-router";
 
-export default function manageExerciseTemplates() {
-  const router = useRouter();
+interface ManageExerciseTemplatesState {
+  exerciseTemplates: ExerciseTemplate[];
+  newTemplateForm: {
+    name: string;
+    sets: string;
+    reps: string;
+  };
+  editModal: {
+    visible: boolean;
+    template: ExerciseTemplate | null;
+    name: string;
+    sets: string;
+    reps: string;
+  };
+}
 
+export default function ManageExerciseTemplates() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [exerciseTemplates, setExerciseTemplates] = useState<ExerciseTemplate[]>([]);
-  const [newExerciseTemplateName, setNewExerciseTemplateName] = useState('');
-  const [newExerciseTemplateSets, setNewExerciseTemplateSets] = useState('3');
-  const [newExerciseTemplateReps, setNewExerciseTemplateReps] = useState('8-12');
-  const [editingTemplate, setEditingTemplate] = useState<ExerciseTemplate | null>(null);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editedName, setEditedName] = useState('');
-  const [editedSets, setEditedSets] = useState('');
-  const [editedReps, setEditedReps] = useState('');
+  const [state, setState] = useState<ManageExerciseTemplatesState>({
+    exerciseTemplates: [],
+    newTemplateForm: { name: '', sets: '3', reps: '8-12' },
+    editModal: { visible: false, template: null, name: '', sets: '', reps: '' },
+  });
+
+  const { exerciseTemplates, newTemplateForm, editModal } = state;
 
   useEffect(() => {
     loadExerciseTemplates();
@@ -30,49 +40,51 @@ export default function manageExerciseTemplates() {
 
   const loadExerciseTemplates = () => {
     const data = getExerciseTemplates();
-    setExerciseTemplates(data);
+    setState(prev => ({ ...prev, exerciseTemplates: data }));
   };
 
   const handleAddExerciseTemplate = () => {
-    if (!newExerciseTemplateName) {
+    if (!newTemplateForm.name) {
       Alert.alert('Error', 'Please enter a template name.');
       return;
     }
 
     addExerciseTemplate({
       id: Date.now().toString(),
-      name: newExerciseTemplateName,
-      default_sets: parseInt(newExerciseTemplateSets),
-      default_reps: newExerciseTemplateReps,
+      name: newTemplateForm.name,
+      default_sets: parseInt(newTemplateForm.sets),
+      default_reps: newTemplateForm.reps,
     });
-    setNewExerciseTemplateName('');
-    setNewExerciseTemplateSets('3');
-    setNewExerciseTemplateReps('8-12');
+    setState(prev => ({ ...prev, newTemplateForm: { name: '', sets: '3', reps: '8-12' } }));
     loadExerciseTemplates();
   };
 
   const handleEditPress = (template: ExerciseTemplate) => {
-    setEditingTemplate(template);
-    setEditedName(template.name);
-    setEditedSets(template.default_sets.toString());
-    setEditedReps(template.default_reps);
-    setEditModalVisible(true);
+    setState(prev => ({
+      ...prev,
+      editModal: {
+        visible: true,
+        template: template,
+        name: template.name,
+        sets: template.default_sets.toString(),
+        reps: template.default_reps,
+      },
+    }));
   };
 
   const handleUpdateExerciseTemplate = () => {
-    if (!editingTemplate || !editedName) {
+    if (!editModal.template || !editModal.name) {
       Alert.alert('Error', 'Please enter a template name.');
       return;
     }
 
     updateExerciseTemplate({
-      ...editingTemplate,
-      name: editedName,
-      default_sets: parseInt(editedSets),
-      default_reps: editedReps,
+      ...editModal.template,
+      name: editModal.name,
+      default_sets: parseInt(editModal.sets),
+      default_reps: editModal.reps,
     });
-    setEditModalVisible(false);
-    setEditingTemplate(null);
+    setState(prev => ({ ...prev, editModal: { visible: false, template: null, name: '', sets: '', reps: '' } }));
     loadExerciseTemplates();
   };
 
@@ -88,44 +100,29 @@ export default function manageExerciseTemplates() {
     ]);
   };
 
+  const handleFormChange = (field: keyof ManageExerciseTemplatesState['newTemplateForm'], value: string) => {
+    setState(prev => ({ ...prev, newTemplateForm: { ...prev.newTemplateForm, [field]: value } }));
+  };
+
+  const handleEditModalChange = (field: keyof ManageExerciseTemplatesState['editModal'], value: string) => {
+    setState(prev => ({ ...prev, editModal: { ...prev.editModal, [field]: value } }));
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.headerContainer}>
         <Text style={styles.sectionTitle}>Add New Exercise Template</Text>
-        <TouchableOpacity
-          style={styles.doneButton}
-          onPress={() => router.back()}>
+        <TouchableOpacity style={styles.doneButton} onPress={() => router.back()}>
           <Text style={styles.doneButtonText}>Done</Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.label}>Exercise Name</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter exercise name"
-        placeholderTextColor={draculaTheme.comment}
-        value={newExerciseTemplateName}
-        onChangeText={setNewExerciseTemplateName}
-      />
+      <TextInput style={styles.input} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
       <Text style={styles.label}>Default Sets</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter default sets"
-        placeholderTextColor={draculaTheme.comment}
-        keyboardType="numeric"
-        value={newExerciseTemplateSets}
-        onChangeText={setNewExerciseTemplateSets}
-      />
+      <TextInput style={styles.input} placeholder="Enter default sets" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={newTemplateForm.sets} onChangeText={(text) => handleFormChange('sets', text)} />
       <Text style={styles.label}>Default Reps</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter default reps"
-        placeholderTextColor={draculaTheme.comment}
-        value={newExerciseTemplateReps}
-        onChangeText={setNewExerciseTemplateReps}
-      />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={handleAddExerciseTemplate}>
+      <TextInput style={styles.input} placeholder="Enter default reps" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.reps} onChangeText={(text) => handleFormChange('reps', text)} />
+      <TouchableOpacity style={styles.addButton} onPress={handleAddExerciseTemplate}>
         <Text style={styles.addButtonText}>Add Exercise Template</Text>
       </TouchableOpacity>
 
@@ -133,7 +130,7 @@ export default function manageExerciseTemplates() {
       <FlatList
         data={exerciseTemplates}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }: { item: ExerciseTemplate }) => (
+        renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleEditPress(item)} style={styles.exerciseItem}>
             <Text style={styles.exerciseText}>{item.name} ({item.default_sets}x{item.default_reps})</Text>
             <TouchableOpacity onPress={() => handleDeleteExerciseTemplate(item.id)}>
@@ -146,44 +143,21 @@ export default function manageExerciseTemplates() {
       <Modal
         animationType="slide"
         transparent={true}
-        visible={editModalVisible}
-        onRequestClose={() => setEditModalVisible(false)}>
+        visible={editModal.visible}
+        onRequestClose={() => setState(prev => ({ ...prev, editModal: { ...prev.editModal, visible: false } }))}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <Text style={styles.modalText}>Edit Exercise Template</Text>
             <Text style={styles.label}>Exercise Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter exercise name"
-              placeholderTextColor={draculaTheme.comment}
-              value={editedName}
-              onChangeText={setEditedName}
-            />
+            <TextInput style={styles.input} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={editModal.name} onChangeText={(text) => handleEditModalChange('name', text)} />
             <Text style={styles.label}>Default Sets</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter default sets"
-              placeholderTextColor={draculaTheme.comment}
-              keyboardType="numeric"
-              value={editedSets}
-              onChangeText={setEditedSets}
-            />
+            <TextInput style={styles.input} placeholder="Enter default sets" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={editModal.sets} onChangeText={(text) => handleEditModalChange('sets', text)} />
             <Text style={styles.label}>Default Reps</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter default reps"
-              placeholderTextColor={draculaTheme.comment}
-              value={editedReps}
-              onChangeText={setEditedReps}
-            />
-            <TouchableOpacity
-              style={[styles.button, styles.buttonSave]}
-              onPress={handleUpdateExerciseTemplate}>
+            <TextInput style={styles.input} placeholder="Enter default reps" placeholderTextColor={draculaTheme.comment} value={editModal.reps} onChangeText={(text) => handleEditModalChange('reps', text)} />
+            <TouchableOpacity style={[styles.button, styles.buttonSave]} onPress={handleUpdateExerciseTemplate}>
               <Text style={styles.buttonText}>Save Changes</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonCancel]}
-              onPress={() => setEditModalVisible(false)}>
+            <TouchableOpacity style={[styles.button, styles.buttonCancel]} onPress={() => setState(prev => ({ ...prev, editModal: { ...prev.editModal, visible: false } }))}>
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
           </View>

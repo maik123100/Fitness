@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
@@ -6,29 +5,41 @@ import { getWeightEntries, getNutritionSummary, NutritionSummary, addWeightEntry
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
+interface DietReportState {
+  weightData: {
+    labels: string[];
+    datasets: { data: number[] }[];
+  };
+  weightModal: {
+    visible: boolean;
+    newWeight: string;
+  };
+}
+
 export default function DietReportScreen() {
-  const [weightData, setWeightData] = useState<{ labels: string[]; datasets: { data: number[] }[] }>({ labels: [], datasets: [{ data: [] }] });
-  const [nutritionData, setNutritionData] = useState<NutritionSummary[]>([]);
-  const [weightModalVisible, setWeightModalVisible] = useState(false);
-  const [newWeightInput, setNewWeightInput] = useState('');
+  const [state, setState] = useState<DietReportState>({
+    weightData: { labels: [], datasets: [{ data: [] }] },
+    weightModal: { visible: false, newWeight: '' },
+  });
+
+  const { weightData, weightModal } = state;
 
   useEffect(() => {
     loadReportData();
   }, []);
 
   const loadReportData = () => {
-    // Load weight data
-    const weightEntries = getWeightEntries(30).reverse(); // Get last 30 and reverse for chart
+    const weightEntries = getWeightEntries(30).reverse();
     if (weightEntries.length > 0) {
-      setWeightData({
-        labels: weightEntries.map(e => new Date(e.date).toLocaleDateString()),
-        datasets: [{
-          data: weightEntries.map(e => e.weight),
-        }],
-      });
+      setState(prev => ({
+        ...prev,
+        weightData: {
+          labels: weightEntries.map(e => new Date(e.date).toLocaleDateString()),
+          datasets: [{ data: weightEntries.map(e => e.weight) }],
+        },
+      }));
     }
 
-    // Load nutrition data for the last 7 days
     const summaries: NutritionSummary[] = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
@@ -36,11 +47,10 @@ export default function DietReportScreen() {
       const dateString = date.toISOString().split('T')[0];
       summaries.push(getNutritionSummary(dateString));
     }
-    setNutritionData(summaries);
   };
 
   const handleAddWeight = () => {
-    const weight = parseFloat(newWeightInput);
+    const weight = parseFloat(weightModal.newWeight);
     if (isNaN(weight) || weight <= 0) {
       Alert.alert('Invalid Input', 'Please enter a valid positive number for weight.');
       return;
@@ -51,16 +61,15 @@ export default function DietReportScreen() {
       date: new Date().toISOString().split('T')[0],
       createdAt: Date.now(),
     });
-    setWeightModalVisible(false);
-    setNewWeightInput('');
+    setState(prev => ({ ...prev, weightModal: { visible: false, newWeight: '' } }));
     loadReportData();
   };
 
   const chartConfig = {
     backgroundGradientFrom: draculaTheme.surface.card,
     backgroundGradientTo: draculaTheme.surface.card,
-    color: (opacity = 1) => `rgba(139, 233, 253, ${opacity})`, // Cyan
-    labelColor: (opacity = 1) => `rgba(248, 248, 242, ${opacity})`, // Foreground
+    color: (opacity = 1) => `rgba(139, 233, 253, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(248, 248, 242, ${opacity})`,
     strokeWidth: 2,
     propsForDots: {
       r: '6',
@@ -76,7 +85,7 @@ export default function DietReportScreen() {
       <View style={styles.chartSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Weight History (Last 30 entries)</Text>
-          <TouchableOpacity onPress={() => setWeightModalVisible(true)} style={styles.addButton}>
+          <TouchableOpacity onPress={() => setState(prev => ({ ...prev, weightModal: { ...prev.weightModal, visible: true } }))} style={styles.addButton}>
             <Ionicons name="add" size={24} color={draculaTheme.text.inverse} />
           </TouchableOpacity>
         </View>
@@ -93,7 +102,7 @@ export default function DietReportScreen() {
         )}
       </View>
 
-      <Modal visible={weightModalVisible} animationType="slide" onRequestClose={() => setWeightModalVisible(false)}>
+      <Modal visible={weightModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, weightModal: { ...prev.weightModal, visible: false } }))}>
         <View style={styles.modalContainer}>
           <Text style={styles.sectionTitle}>Add New Weight</Text>
           <TextInput
@@ -101,15 +110,15 @@ export default function DietReportScreen() {
             placeholder="Weight in kg"
             placeholderTextColor={draculaTheme.comment}
             keyboardType="numeric"
-            value={newWeightInput}
-            onChangeText={setNewWeightInput}
+            value={weightModal.newWeight}
+            onChangeText={(text) => setState(prev => ({ ...prev, weightModal: { ...prev.weightModal, newWeight: text } }))}
           />
           <TouchableOpacity style={styles.addButton} onPress={handleAddWeight}>
             <Text style={styles.addButtonText}>Add Weight</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
-            onPress={() => setWeightModalVisible(false)}
+            onPress={() => setState(prev => ({ ...prev, weightModal: { ...prev.weightModal, visible: false } }))}
           >
             <Text style={styles.addButtonText}>Cancel</Text>
           </TouchableOpacity>

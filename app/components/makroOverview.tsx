@@ -1,5 +1,5 @@
 
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { ProgressChart } from 'react-native-chart-kit';
 import { draculaTheme, spacing, typography, borderRadius } from '../../styles/theme';
 import { useRouter } from 'expo-router';

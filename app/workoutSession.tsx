@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert } from 'react-native';
-import { getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutTemplateExercises, getExerciseTemplate } from '../services/database';
+import { Text, View, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import { getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutTemplateExercises, getExerciseTemplate, ActiveWorkoutSession, WorkoutTemplateExercise, WorkoutSet } from '../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
 import { useRouter } from 'expo-router';
 
+interface WorkoutSessionState {
+  session: ActiveWorkoutSession | null;
+  exercises: (WorkoutTemplateExercise & { exercise_name: string; default_sets: number; default_reps: string })[];
+}
+
 export default function WorkoutSessionScreen() {
-  const [session, setSession] = useState<any | null>(null);
-  const [exercises, setExercises] = useState<any[]>([]);
+  const [state, setState] = useState<WorkoutSessionState>({ session: null, exercises: [] });
   const router = useRouter();
+
+  const { session, exercises } = state;
 
   useEffect(() => {
     loadSession();
@@ -26,21 +32,20 @@ export default function WorkoutSessionScreen() {
           default_reps: exerciseTemplate?.default_reps || '0',
         };
       });
-      setSession(activeSession);
-      setExercises(exercisesWithDetails);
+      setState({ session: activeSession, exercises: exercisesWithDetails });
     }
   };
 
-  const handleSetUpdate = (setId: string, field: string, value: string) => {
+  const handleSetUpdate = (setId: string, field: keyof WorkoutSet, value: string | number | boolean) => {
     if (session) {
-      const newSets = session.sets.map((set: any) => {
+      const newSets = session.sets.map((set: WorkoutSet) => {
         if (set.id === setId) {
           return { ...set, [field]: value };
         }
         return set;
       });
       const newSession = { ...session, sets: newSets };
-      setSession(newSession);
+      setState(prev => ({ ...prev, session: newSession }));
       updateActiveWorkoutSession(newSession);
     }
   };
@@ -68,7 +73,7 @@ export default function WorkoutSessionScreen() {
         renderItem={({ item }) => (
           <View style={styles.exerciseCard}>
             <Text style={styles.exerciseTitle}>{item.exercise_name} ({item.default_sets}x{item.default_reps})</Text>
-            {session.sets.filter((set: any) => set.workout_template_exercise_id === item.id).map((set: any, index: number) => (
+            {session.sets.filter((set: WorkoutSet) => set.workout_template_exercise_id === item.id).map((set: WorkoutSet, index: number) => (
               <View key={set.id} style={styles.setContainer}>
                 <Text style={styles.setText}>Set {index + 1}</Text>
                 <TextInput
@@ -77,7 +82,7 @@ export default function WorkoutSessionScreen() {
                   placeholderTextColor={draculaTheme.comment}
                   keyboardType="numeric"
                   value={set.weight.toString()}
-                  onChangeText={(value) => handleSetUpdate(set.id, 'weight', value)}
+                  onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
                 />
                 <TextInput
                   style={styles.input}
@@ -85,9 +90,9 @@ export default function WorkoutSessionScreen() {
                   placeholderTextColor={draculaTheme.comment}
                   keyboardType="numeric"
                   value={set.reps.toString()}
-                  onChangeText={(value) => handleSetUpdate(set.id, 'reps', value)}
+                  onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
                 />
-                <TouchableOpacity onPress={() => handleSetUpdate(set.id, 'completed', (!set.completed).toString())}>
+                <TouchableOpacity onPress={() => handleSetUpdate(set.id, 'completed', !set.completed)}>
                   <Text>{set.completed ? '✅' : '🔲'}</Text>
                 </TouchableOpacity>
               </View>
