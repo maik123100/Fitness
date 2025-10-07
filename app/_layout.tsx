@@ -4,18 +4,29 @@ import { useEffect, useState } from "react";
 import { initDatabase, dbInitialized } from "@/services/database";
 import { Text, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { PaperProvider } from 'react-native-paper'; // Import PaperProvider
-import { SnackbarProvider } from './components/SnackbarProvider'; // Import SnackbarProvider
+import { PaperProvider } from 'react-native-paper';
+import { SnackbarProvider } from './components/SnackbarProvider';
+import { getOnboardingCompleted } from '../services/onboardingService'; // Import getOnboardingCompleted
 
 export default function RootLayout() {
   const [isDbInitialized, setIsDbInitialized] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [onboardingLoaded, setOnboardingLoaded] = useState(false);
 
   useEffect(() => {
-    initDatabase();
-    dbInitialized.then(() => setIsDbInitialized(true));
+    const prepareApp = async () => {
+      await initDatabase();
+      await dbInitialized;
+      setIsDbInitialized(true);
+
+      const completed = await getOnboardingCompleted();
+      setOnboardingCompleted(completed);
+      setOnboardingLoaded(true);
+    };
+    prepareApp();
   }, []);
 
-  if (!isDbInitialized) {
+  if (!isDbInitialized || !onboardingLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text>Loading...</Text>
@@ -25,10 +36,14 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PaperProvider> {/* Wrap with PaperProvider */}
-        <SnackbarProvider> {/* Wrap with SnackbarProvider */}
+      <PaperProvider>
+        <SnackbarProvider>
           <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            {onboardingCompleted ? (
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+            ) : (
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            )}
             <Stack.Screen name="+not-found" />
             <Stack.Screen name="manageExerciseTemplates" options={{ headerShown: false }} />
             <Stack.Screen name="macroGraphs" options={{ headerShown: false }} />
