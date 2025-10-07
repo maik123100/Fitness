@@ -260,7 +260,12 @@ export default function FoodDiaryScreen() {
             <TouchableOpacity key={item.id} onLongPress={() => handleDeleteFood(item.id)}>
               <View style={styles.foodItem}>
                 <Text style={styles.foodName}>{getFoodItem(item.foodId)?.name}</Text>
-                <Text style={styles.foodCalories}>{item.totalCalories} kcal</Text>
+                <View style={styles.foodNutrients}>
+                  <Text style={styles.foodCalories}>{item.totalCalories.toFixed(0)} kcal</Text>
+                  <Text style={styles.foodMacro}>P: {item.totalProtein.toFixed(1)}g</Text>
+                  <Text style={styles.foodMacro}>C: {item.totalCarbs.toFixed(1)}g</Text>
+                  <Text style={styles.foodMacro}>F: {item.totalFat.toFixed(1)}g</Text>
+                </View>
               </View>
             </TouchableOpacity>
           ))}
@@ -289,7 +294,10 @@ export default function FoodDiaryScreen() {
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.searchResultItem} onPress={() => handleAddFood(item)}>
                 <Text style={styles.searchResultName}>{item.name}</Text>
-                <Text style={styles.searchResultDetails}>{item.calories} kcal per {item.servingSize}{item.servingUnit}</Text>
+                <Text style={styles.searchResultDetails}>
+                  {item.calories} kcal | P: {item.protein}g | C: {item.carbs}g | F: {item.fat}g
+                  per {item.servingSize}{item.servingUnit}
+                </Text>
               </TouchableOpacity>
             )}
           />
@@ -411,6 +419,15 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     color: draculaTheme.nutrition.calories,
     fontWeight: typography.weights.semibold,
+  },
+  foodNutrients: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  foodMacro: {
+    fontSize: typography.sizes.sm,
+    color: draculaTheme.comment,
+    marginLeft: spacing.sm,
   },
   addButton: {
     flexDirection: 'row',
