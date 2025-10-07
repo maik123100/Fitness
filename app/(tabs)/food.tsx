@@ -299,9 +299,22 @@ export default function FoodDiaryScreen() {
       <Modal visible={quantityModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, visible: false } }))}>
         <View style={styles.modalContainer}>
           <Text style={styles.mealTitle}>Enter Quantity for {quantityModal.selectedFoodItem?.name}</Text>
+
+          <View style={styles.quickQuantityButtonsContainer}>
+            {[50, 100, 150, 200, 250].map((q) => (
+              <TouchableOpacity
+                key={q}
+                style={styles.quickQuantityButton}
+                onPress={() => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, quantity: String(q) } }))}
+              >
+                <Text style={styles.quickQuantityButtonText}>{q} {quantityModal.selectedFoodItem?.servingUnit || 'g'}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <TextInput
             style={styles.searchInput}
-            placeholder="Quantity in grams"
+            placeholder={`Quantity in ${quantityModal.selectedFoodItem?.servingUnit || 'g'}`}
             placeholderTextColor={draculaTheme.comment}
             keyboardType="numeric"
             value={quantityModal.quantity}
@@ -469,5 +482,22 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     paddingBottom: spacing.lg * 2,
+  },
+  quickQuantityButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  quickQuantityButton: {
+    backgroundColor: draculaTheme.surface.secondary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    margin: spacing.xs,
+  },
+  quickQuantityButtonText: {
+    color: draculaTheme.foreground,
+    fontSize: typography.sizes.md,
   },
 });
