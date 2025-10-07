@@ -6,10 +6,12 @@ import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSnackbar } from './components/SnackbarProvider'; // Import useSnackbar
 
 export default function CreateWorkoutTemplateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { showSnackbar } = useSnackbar(); // Use the snackbar hook
   const [step, setStep] = useState(1);
   const [allExercises, setAllExercises] = useState<ExerciseTemplate[]>([]);
   const [selectedExerciseIds, setSelectedExerciseIds] = useState<Set<string>>(new Set());
@@ -40,7 +42,7 @@ export default function CreateWorkoutTemplateScreen() {
 
   const handleFinish = () => {
     if (!templateName) {
-      Alert.alert('Error', 'Please enter a name for the template.');
+      showSnackbar('Please enter a name for the template.', 3000); // Use snackbar for error
       return;
     }
 
@@ -61,6 +63,7 @@ export default function CreateWorkoutTemplateScreen() {
       });
     });
 
+    showSnackbar('Workout template created successfully!', 3000); // Show success snackbar
     router.back();
   };
 
