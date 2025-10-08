@@ -59,9 +59,9 @@ export default function DashboardScreen() {
     const burned = nutritionSummary.caloriesBurned;
 
     const newCalorieData = {
-      eaten,
-      burned,
-      remaining: targetCalories - eaten + burned,
+      eaten: Math.round(eaten),
+      burned: Math.round(burned),
+      remaining: Math.round(targetCalories - eaten + burned),
     };
 
     const newMakroData = {

@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { getUserProfile, saveUserProfile, UserProfile, ActivityLevel, GoalType } from '../../services/database';
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
+import { setOnboardingCompleted } from '../../services/onboardingService';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -13,6 +15,7 @@ export default function ProfileScreen() {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('sedentary');
   const [goalType, setGoalType] = useState<GoalType>('maintain-weight');
   const [targetWeight, setTargetWeight] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     loadProfile();
@@ -88,6 +91,11 @@ export default function ProfileScreen() {
     saveUserProfile(newProfile);
     Alert.alert('Success', 'Profile saved successfully!');
     loadProfile();
+  };
+
+  const handleResetOnboarding = async () => {
+    await setOnboardingCompleted(false);
+    router.replace('/onboarding');
   };
 
   return (
@@ -192,6 +200,10 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
         <Text style={styles.saveButtonText}>Save Profile</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.resetButton} onPress={handleResetOnboarding}>
+        <Text style={styles.resetButtonText}>Reset Onboarding</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -281,6 +293,18 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   saveButtonText: {
+    fontSize: typography.sizes.lg,
+    color: draculaTheme.text.inverse,
+    fontWeight: typography.weights.bold,
+  },
+  resetButton: {
+    backgroundColor: draculaTheme.red,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  resetButtonText: {
     fontSize: typography.sizes.lg,
     color: draculaTheme.text.inverse,
     fontWeight: typography.weights.bold,

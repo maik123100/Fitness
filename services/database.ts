@@ -733,6 +733,15 @@ export const saveUserProfile = (profile: UserProfile): void => {
       profile.createdAt || now, now
     ]
   );
+
+  // Add a corresponding weight entry
+  const weightEntry: WeightEntry = {
+    id: `weight-${now}`,
+    weight: profile.weight,
+    date: new Date().toISOString().split('T')[0],
+    createdAt: now,
+  };
+  addWeightEntry(weightEntry);
 };
 
 export const getUserProfile = (): UserProfile | null => {
