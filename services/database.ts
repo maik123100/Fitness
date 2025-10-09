@@ -1,5 +1,4 @@
 import * as SQLite from 'expo-sqlite';
-import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system/legacy';
 
 let db: SQLite.SQLiteDatabase;
@@ -215,87 +214,224 @@ export type GoalType =
   | 'build-muscle'
   | 'improve-fitness';
 
-export let dbInitialized: Promise<void>;
-
 const DATABASE_VERSION = 2;
 
-const createSchemaVersionTable = async (db: SQLite.SQLiteDatabase) => {
-  await db.runAsync(
-    `CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)`
+const SCHEMA_SQL =
+  'CREATE TABLE IF NOT EXISTS activities (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    activity TEXT NOT NULL,\n' +
+  '    calories REAL NOT NULL,\n' +
+  '    type TEXT NOT NULL,\n' +
+  '    timestamp INTEGER NOT NULL\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS daily_nutrition (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    date TEXT NOT NULL UNIQUE,\n' +
+  '    protein REAL NOT NULL,\n' +
+  '    carbs REAL NOT NULL,\n' +
+  '    fat REAL NOT NULL\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS food_items (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    name TEXT NOT NULL,\n' +
+  '    brand TEXT,\n' +
+  '    barcode TEXT,\n' +
+  '    category TEXT NOT NULL,\n' +
+  '    calories REAL NOT NULL,\n' +
+  '    protein REAL NOT NULL,\n' +
+  '    carbs REAL NOT NULL,\n' +
+  '    fat REAL NOT NULL,\n' +
+  '    fiber REAL NOT NULL,\n' +
+  '    sugar REAL NOT NULL,\n' +
+  '    sodium REAL NOT NULL,\n' +
+  '    cholesterol REAL NOT NULL,\n' +
+  '    saturated_fat REAL NOT NULL,\n' +
+  '    trans_fat REAL NOT NULL,\n' +
+  '    vitamin_a REAL NOT NULL DEFAULT 0,\n' +
+  '    vitamin_c REAL NOT NULL DEFAULT 0,\n' +
+  '    vitamin_d REAL NOT NULL DEFAULT 0,\n' +
+  '    calcium REAL NOT NULL DEFAULT 0,\n' +
+  '    iron REAL NOT NULL DEFAULT 0,\n' +
+  '    potassium REAL NOT NULL DEFAULT 0,\n' +
+  '    serving_size REAL NOT NULL,\n' +
+  '    serving_unit TEXT NOT NULL,\n' +
+  '    is_verified INTEGER NOT NULL,\n' +
+  '    created_at INTEGER NOT NULL,\n' +
+  '    updated_at INTEGER NOT NULL\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS food_entries (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    food_id TEXT NOT NULL,\n' +
+  '    user_id TEXT,\n' +
+  '    date TEXT NOT NULL,\n' +
+  '    meal_type TEXT NOT NULL,\n' +
+  '    quantity REAL NOT NULL,\n' +
+  '    unit TEXT NOT NULL,\n' +
+  '    total_calories REAL NOT NULL,\n' +
+  '    total_protein REAL NOT NULL,\n' +
+  '    total_carbs REAL NOT NULL,\n' +
+  '    total_fat REAL NOT NULL,\n' +
+  '    total_fiber REAL NOT NULL,\n' +
+  '    total_sugar REAL NOT NULL,\n' +
+  '    total_sodium REAL NOT NULL,\n' +
+  '    created_at INTEGER NOT NULL,\n' +
+  '    FOREIGN KEY (food_id) REFERENCES food_items(id)\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS recipes (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    name TEXT NOT NULL,\n' +
+  '    description TEXT,\n' +
+  '    instructions TEXT,\n' +
+  '    servings INTEGER NOT NULL,\n' +
+  '    prep_time INTEGER,\n' +
+  '    cook_time INTEGER,\n' +
+  '    calories_per_serving REAL NOT NULL,\n' +
+  '    protein_per_serving REAL NOT NULL,\n' +
+  '    carbs_per_serving REAL NOT NULL,\n' +
+  '    fat_per_serving REAL NOT NULL,\n' +
+  '    created_at INTEGER NOT NULL,\n' +
+  '    updated_at INTEGER NOT NULL\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS recipe_ingredients (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    recipe_id TEXT NOT NULL,\n' +
+  '    food_id TEXT NOT NULL,\n' +
+  '    quantity REAL NOT NULL,\n' +
+  '    unit TEXT NOT NULL,\n' +
+  '    FOREIGN KEY (recipe_id) REFERENCES recipes(id),\n' +
+  '    FOREIGN KEY (food_id) REFERENCES food_items(id)\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS workout_templates (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    name TEXT NOT NULL\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS exercise_templates (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    name TEXT NOT NULL,\n' +
+  '    default_sets INTEGER NOT NULL,\n' +
+  '    default_reps TEXT NOT NULL\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS workout_template_exercises (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    workout_template_id TEXT NOT NULL,\n' +
+  '    exercise_template_id TEXT NOT NULL,\n' +
+  '    sets INTEGER NOT NULL,\n' +
+  '    reps TEXT NOT NULL,\n' +
+  '    "order" INTEGER NOT NULL,\n' +
+  '    FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),\n' +
+  '    FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS active_workout_session (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    workout_template_id TEXT NOT NULL,\n' +
+  '    start_time INTEGER NOT NULL,\n' +
+  '    sets TEXT NOT NULL, -- Stored as JSON string\n' +
+  '    FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS workout_entries (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    workout_template_id TEXT NOT NULL,\n' +
+  '    date TEXT NOT NULL,\n' +
+  '    duration INTEGER NOT NULL,\n' +
+  '    sets TEXT NOT NULL, -- Stored as JSON string\n' +
+  '    created_at INTEGER NOT NULL,\n' +
+  '    FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS user_profile (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    age INTEGER NOT NULL,\n' +
+  '    gender TEXT NOT NULL,\n' +
+  '    height REAL NOT NULL,\n' +
+  '    weight REAL NOT NULL,\n' +
+  '    activity_level TEXT NOT NULL,\n' +
+  '    goal_type TEXT NOT NULL,\n' +
+  '    target_weight REAL,\n' +
+  '    target_calories REAL NOT NULL,\n' +
+  '    target_protein REAL NOT NULL,\n' +
+  '    target_carbs REAL NOT NULL,\n' +
+  '    target_fat REAL NOT NULL,\n' +
+  '    created_at INTEGER NOT NULL,\n' +
+  '    updated_at INTEGER NOT NULL\n' +
+  ');\n\n' +
+  'CREATE TABLE IF NOT EXISTS weight_entries (\n' +
+  '    id TEXT PRIMARY KEY NOT NULL,\n' +
+  '    weight REAL NOT NULL,\n' +
+  '    date TEXT NOT NULL,\n' +
+  '    created_at INTEGER NOT NULL\n' +
+  ');';
+
+const createSchemaVersionTable = (db: SQLite.SQLiteDatabase) => {
+  db.runSync(
+    'CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)'
   );
 };
 
-const getDatabaseVersion = async (db: SQLite.SQLiteDatabase): Promise<number> => {
-  const result = await db.getFirstAsync<{ version: number }>(
-    `SELECT version FROM schema_version LIMIT 1`
+const getDatabaseVersion = (db: SQLite.SQLiteDatabase): number => {
+  const result = db.getFirstSync<{ version: number }>(
+    'SELECT version FROM schema_version LIMIT 1'
   );
   return result ? result.version : 0;
 };
 
-const updateDatabaseVersion = async (db: SQLite.SQLiteDatabase, version: number) => {
-  await db.runAsync(
-    `INSERT OR REPLACE INTO schema_version (version) VALUES (?)`,
+const updateDatabaseVersion = (db: SQLite.SQLiteDatabase, version: number) => {
+  db.runSync(
+    'INSERT OR REPLACE INTO schema_version (version) VALUES (?)',
     [version]
   );
 };
 
-const readSchema = async (): Promise<string> => {
-  const asset = Asset.fromModule(require('./schema.sql'));
-  await asset.downloadAsync();
-  return FileSystem.readAsStringAsync(asset.localUri as string);
+const readSchema = (): string => {
+  return SCHEMA_SQL;
 };
 
 export const initDatabase = (): void => {
   console.log('Initializing database...');
-  dbInitialized = new Promise<void>(async (resolve, reject) => {
-    try {
-      db = SQLite.openDatabaseSync('fitness.db');
+  try {
+    db = SQLite.openDatabaseSync('fitness.db');
 
-      await db.withTransactionAsync(async () => {
-        await createSchemaVersionTable(db);
-        const currentVersion = await getDatabaseVersion(db);
+    db.withTransactionSync(() => {
+      createSchemaVersionTable(db);
+      const currentVersion = getDatabaseVersion(db);
 
-        if (currentVersion < DATABASE_VERSION) {
-          console.log(`Database schema mismatch. Found version ${currentVersion}, expected ${DATABASE_VERSION}. Resetting database.`);
+      if (currentVersion < DATABASE_VERSION) {
+        console.log(`Database schema mismatch. Found version ${currentVersion}, expected ${DATABASE_VERSION}. Resetting database.`);
 
-          console.log('Getting all tables...');
-          const tablesResult = await db.getAllAsync<{ name: string }>(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';`);
-          const tables = tablesResult.map(row => row.name);
-          console.log('Dropping tables...');
-          for (const table of tables) {
-            if (table !== 'schema_version') {
-              await db.runAsync(`DROP TABLE IF EXISTS ${table};`);
-            }
+        console.log('Getting all tables...');
+        const tablesResult = db.getAllSync<{ name: string }>(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';`);
+        const tables = tablesResult.map(row => row.name);
+        console.log('Dropping tables...');
+        for (const table of tables) {
+          if (table !== 'schema_version') {
+            db.runSync(`DROP TABLE IF EXISTS ${table};`);
           }
-
-          console.log('Creating schema version table...');
-          await createSchemaVersionTable(db);
-
-          console.log('Reading schema...');
-          const schema = await readSchema();
-          const schemaStatements = schema.split(';').filter(s => s.trim().length > 0);
-
-          console.log('Executing schema statements...');
-          for (const statement of schemaStatements) {
-            try {
-              await db.runAsync(statement);
-            } catch (error) {
-              console.error('Error executing statement:', statement, error);
-              throw error;
-            }
-          }
-
-          console.log('Updating database version...');
-          await updateDatabaseVersion(db, DATABASE_VERSION);
         }
-      });
-      console.log('Database initialized successfully.');
-      resolve();
-    } catch (error) {
-      console.error('Error initializing database:', error);
-      reject(error);
-    }
-  });
+
+        console.log('Creating schema version table...');
+        createSchemaVersionTable(db);
+
+        console.log('Reading schema...');
+        const schema = readSchema();
+        const schemaStatements = schema.split(';').filter(s => s.trim().length > 0);
+
+        console.log('Executing schema statements...');
+        for (const statement of schemaStatements) {
+          try {
+            db.runSync(statement);
+          } catch (error) {
+            console.error('Error executing statement:', statement, error);
+            throw error;
+          }
+        }
+
+        console.log('Updating database version...');
+        updateDatabaseVersion(db, DATABASE_VERSION);
+      }
+    });
+    console.log('Database initialized successfully.');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
 };
 
 // Enhanced Food Database Functions
@@ -736,17 +872,9 @@ export const getDailyNutrition = (date: string): DailyNutrition | null => {
 };
 
 export const resetDatabase = (): void => {
-  db.execSync(`
-    DELETE FROM activities;
-    DELETE FROM daily_nutrition;
-    DELETE FROM food_items;
-    DELETE FROM food_entries;
-    DELETE FROM recipes;
-    DELETE FROM recipe_ingredients;
-    DELETE FROM workout_entries;
-    DELETE FROM user_profile;
-    DELETE FROM weight_entries;
-  `);
+  console.log('Performing full database reset (clearing data and re-initializing schema)...');
+  initDatabase(); // Re-initialize the database, which will create schema if not exists
+  console.log('Database reset complete.');
 };
 
 export const updateActivity = (activity: Activity): void => {

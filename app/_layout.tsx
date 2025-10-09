@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { initDatabase, dbInitialized } from "@/services/database";
+import { initDatabase } from "@/services/database";
 import { Text, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
@@ -15,8 +15,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     const prepareApp = async () => {
-      await initDatabase();
-      await dbInitialized;
+      initDatabase();
       setIsDbInitialized(true);
 
       const completed = await getOnboardingCompleted();
