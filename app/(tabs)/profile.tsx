@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { getUserProfile, saveUserProfile, UserProfile, ActivityLevel, GoalType } from '../../services/database';
+import { getUserProfile, saveUserProfile } from '@/services/database';
+import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import { setOnboardingCompleted } from '../../services/onboardingService';
 import { useRouter } from 'expo-router';

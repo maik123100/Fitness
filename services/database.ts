@@ -1,388 +1,54 @@
 import * as SQLite from 'expo-sqlite';
-import * as FileSystem from 'expo-file-system/legacy';
+import { getDatabaseSchema } from './dbschema';
+import {
+  Activity,
+  DailyNutrition,
+  FoodItem,
+  FoodEntry,
+  Recipe,
+  RecipeIngredient,
+  WorkoutTemplate,
+  WorkoutTemplateExercise,
+  ExerciseTemplate,
+  WorkoutSet,
+  ActiveWorkoutSession,
+  WorkoutEntry,
+  UserProfile,
+  WeightEntry,
+  FoodCategory,
+  MealType,
+  ExerciseCategory,
+  MuscleGroup,
+  ActivityLevel,
+  GoalType,
+  NutritionSummary
+} from '@/types/types';
 
-let db: SQLite.SQLiteDatabase;
+  let db: SQLite.SQLiteDatabase;
 
-export interface Activity {
-  id: string;
-  activity: string;
-  calories: number;
-  type: 'eaten' | 'burned';
-  timestamp: number;
-}
+  const DATABASE_VERSION = 2;
 
-export interface DailyNutrition {
-  id: string;
-  date: string;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
+  const createSchemaVersionTable = (db: SQLite.SQLiteDatabase) => {
+    db.runSync(
+      'CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)'
+    );
+  };
 
-// Enhanced Food Database Interfaces
-export interface FoodItem {
-  id: string;
-  name: string;
-  brand?: string;
-  barcode?: string;
-  category: FoodCategory;
-  // Nutritional info per 100g
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  sugar: number;
-  sodium: number;
-  cholesterol: number;
-  saturatedFat: number;
-  transFat: number;
-  // Micronutrients (mg or mcg per 100g)
-  vitaminA?: number;
-  vitaminC?: number;
-  vitaminD?: number;
-  calcium?: number;
-  iron?: number;
-  potassium?: number;
-  // Serving information
-  servingSize: number;
-  servingUnit: string;
-  isVerified: boolean;
-  createdAt: number;
-  updatedAt: number;
-}
+  const getDatabaseVersion = (db: SQLite.SQLiteDatabase): number => {
+    const result = db.getFirstSync<{ version: number }>(
+      'SELECT version FROM schema_version LIMIT 1'
+    );
+    return result ? result.version : 0;
+  };
 
-export interface FoodEntry {
-  id: string;
-  foodId: string;
-  userId?: string;
-  date: string;
-  mealType: MealType;
-  quantity: number;
-  unit: string;
-  // Calculated nutritional values for this entry
-  totalCalories: number;
-  totalProtein: number;
-  totalCarbs: number;
-  totalFat: number;
-  totalFiber: number;
-  totalSugar: number;
-  totalSodium: number;
-  createdAt: number;
-}
+  const updateDatabaseVersion = (db: SQLite.SQLiteDatabase, version: number) => {
+    db.runSync(
+      'INSERT OR REPLACE INTO schema_version (version) VALUES (?)',
+      [version]
+    );
+  };
 
-export interface Recipe {
-  id: string;
-  name: string;
-  description?: string;
-  instructions?: string;
-  servings: number;
-  prepTime?: number;
-  cookTime?: number;
-  ingredients: RecipeIngredient[];
-  // Calculated per serving
-  caloriesPerServing: number;
-  proteinPerServing: number;
-  carbsPerServing: number;
-  fatPerServing: number;
-  createdAt: number;
-  updatedAt: number;
-}
 
-export interface RecipeIngredient {
-  id: string;
-  recipeId: string;
-  foodId: string;
-  quantity: number;
-  unit: string;
-}
-
-export interface WorkoutTemplate {
-  id: string;
-  name: string;
-}
-
-export interface WorkoutTemplateExercise {
-  id: string;
-  workout_template_id: string;
-  exercise_template_id: string;
-  sets: number;
-  reps: string;
-  order: number;
-}
-
-export interface ExerciseTemplate {
-  id: string;
-  name: string;
-  default_sets: number;
-  default_reps: string;
-}
-
-export interface WorkoutSet {
-  id: string;
-  workout_template_exercise_id: string;
-  weight: number;
-  reps: number;
-  completed: boolean;
-}
-
-export interface ActiveWorkoutSession {
-  id: string;
-  workout_template_id: string;
-  start_time: number;
-  sets: WorkoutSet[];
-}
-
-export interface WorkoutEntry {
-  id: string;
-  workout_template_id: string;
-  date: string;
-  duration: number; // in minutes
-  sets: WorkoutSet[];
-  createdAt: number;
-}
-
-export interface UserProfile {
-  id: string;
-  age: number;
-  gender: 'male' | 'female' | 'other';
-  height: number; // cm
-  weight: number; // kg
-  activityLevel: ActivityLevel;
-  goalType: GoalType;
-  targetWeight?: number;
-  targetCalories: number;
-  targetProtein: number;
-  targetCarbs: number;
-  targetFat: number;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface WeightEntry {
-  id: string;
-  weight: number;
-  date: string;
-  createdAt: number;
-}
-
-export type FoodCategory =
-  | 'vegetables'
-  | 'fruits'
-  | 'grains'
-  | 'proteins'
-  | 'dairy'
-  | 'fats'
-  | 'beverages'
-  | 'snacks'
-  | 'prepared'
-  | 'supplements'
-  | 'condiments'
-  | 'other';
-
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-
-export type ExerciseCategory =
-  | 'cardio'
-  | 'strength'
-  | 'flexibility'
-  | 'sports'
-  | 'daily';
-
-export type MuscleGroup =
-  | 'chest'
-  | 'back'
-  | 'shoulders'
-  | 'biceps'
-  | 'triceps'
-  | 'legs'
-  | 'glutes'
-  | 'core'
-  | 'full-body';
-
-export type ActivityLevel =
-  | 'sedentary'
-  | 'lightly-active'
-  | 'moderately-active'
-  | 'very-active'
-  | 'extremely-active';
-
-export type GoalType =
-  | 'lose-weight'
-  | 'maintain-weight'
-  | 'gain-weight'
-  | 'build-muscle'
-  | 'improve-fitness';
-
-const DATABASE_VERSION = 2;
-
-const SCHEMA_SQL =
-  'CREATE TABLE IF NOT EXISTS activities (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    activity TEXT NOT NULL,\n' +
-  '    calories REAL NOT NULL,\n' +
-  '    type TEXT NOT NULL,\n' +
-  '    timestamp INTEGER NOT NULL\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS daily_nutrition (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    date TEXT NOT NULL UNIQUE,\n' +
-  '    protein REAL NOT NULL,\n' +
-  '    carbs REAL NOT NULL,\n' +
-  '    fat REAL NOT NULL\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS food_items (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    name TEXT NOT NULL,\n' +
-  '    brand TEXT,\n' +
-  '    barcode TEXT,\n' +
-  '    category TEXT NOT NULL,\n' +
-  '    calories REAL NOT NULL,\n' +
-  '    protein REAL NOT NULL,\n' +
-  '    carbs REAL NOT NULL,\n' +
-  '    fat REAL NOT NULL,\n' +
-  '    fiber REAL NOT NULL,\n' +
-  '    sugar REAL NOT NULL,\n' +
-  '    sodium REAL NOT NULL,\n' +
-  '    cholesterol REAL NOT NULL,\n' +
-  '    saturated_fat REAL NOT NULL,\n' +
-  '    trans_fat REAL NOT NULL,\n' +
-  '    vitamin_a REAL NOT NULL DEFAULT 0,\n' +
-  '    vitamin_c REAL NOT NULL DEFAULT 0,\n' +
-  '    vitamin_d REAL NOT NULL DEFAULT 0,\n' +
-  '    calcium REAL NOT NULL DEFAULT 0,\n' +
-  '    iron REAL NOT NULL DEFAULT 0,\n' +
-  '    potassium REAL NOT NULL DEFAULT 0,\n' +
-  '    serving_size REAL NOT NULL,\n' +
-  '    serving_unit TEXT NOT NULL,\n' +
-  '    is_verified INTEGER NOT NULL,\n' +
-  '    created_at INTEGER NOT NULL,\n' +
-  '    updated_at INTEGER NOT NULL\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS food_entries (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    food_id TEXT NOT NULL,\n' +
-  '    user_id TEXT,\n' +
-  '    date TEXT NOT NULL,\n' +
-  '    meal_type TEXT NOT NULL,\n' +
-  '    quantity REAL NOT NULL,\n' +
-  '    unit TEXT NOT NULL,\n' +
-  '    total_calories REAL NOT NULL,\n' +
-  '    total_protein REAL NOT NULL,\n' +
-  '    total_carbs REAL NOT NULL,\n' +
-  '    total_fat REAL NOT NULL,\n' +
-  '    total_fiber REAL NOT NULL,\n' +
-  '    total_sugar REAL NOT NULL,\n' +
-  '    total_sodium REAL NOT NULL,\n' +
-  '    created_at INTEGER NOT NULL,\n' +
-  '    FOREIGN KEY (food_id) REFERENCES food_items(id)\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS recipes (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    name TEXT NOT NULL,\n' +
-  '    description TEXT,\n' +
-  '    instructions TEXT,\n' +
-  '    servings INTEGER NOT NULL,\n' +
-  '    prep_time INTEGER,\n' +
-  '    cook_time INTEGER,\n' +
-  '    calories_per_serving REAL NOT NULL,\n' +
-  '    protein_per_serving REAL NOT NULL,\n' +
-  '    carbs_per_serving REAL NOT NULL,\n' +
-  '    fat_per_serving REAL NOT NULL,\n' +
-  '    created_at INTEGER NOT NULL,\n' +
-  '    updated_at INTEGER NOT NULL\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS recipe_ingredients (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    recipe_id TEXT NOT NULL,\n' +
-  '    food_id TEXT NOT NULL,\n' +
-  '    quantity REAL NOT NULL,\n' +
-  '    unit TEXT NOT NULL,\n' +
-  '    FOREIGN KEY (recipe_id) REFERENCES recipes(id),\n' +
-  '    FOREIGN KEY (food_id) REFERENCES food_items(id)\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS workout_templates (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    name TEXT NOT NULL\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS exercise_templates (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    name TEXT NOT NULL,\n' +
-  '    default_sets INTEGER NOT NULL,\n' +
-  '    default_reps TEXT NOT NULL\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS workout_template_exercises (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    workout_template_id TEXT NOT NULL,\n' +
-  '    exercise_template_id TEXT NOT NULL,\n' +
-  '    sets INTEGER NOT NULL,\n' +
-  '    reps TEXT NOT NULL,\n' +
-  '    "order" INTEGER NOT NULL,\n' +
-  '    FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),\n' +
-  '    FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS active_workout_session (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    workout_template_id TEXT NOT NULL,\n' +
-  '    start_time INTEGER NOT NULL,\n' +
-  '    sets TEXT NOT NULL, -- Stored as JSON string\n' +
-  '    FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS workout_entries (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    workout_template_id TEXT NOT NULL,\n' +
-  '    date TEXT NOT NULL,\n' +
-  '    duration INTEGER NOT NULL,\n' +
-  '    sets TEXT NOT NULL, -- Stored as JSON string\n' +
-  '    created_at INTEGER NOT NULL,\n' +
-  '    FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS user_profile (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    age INTEGER NOT NULL,\n' +
-  '    gender TEXT NOT NULL,\n' +
-  '    height REAL NOT NULL,\n' +
-  '    weight REAL NOT NULL,\n' +
-  '    activity_level TEXT NOT NULL,\n' +
-  '    goal_type TEXT NOT NULL,\n' +
-  '    target_weight REAL,\n' +
-  '    target_calories REAL NOT NULL,\n' +
-  '    target_protein REAL NOT NULL,\n' +
-  '    target_carbs REAL NOT NULL,\n' +
-  '    target_fat REAL NOT NULL,\n' +
-  '    created_at INTEGER NOT NULL,\n' +
-  '    updated_at INTEGER NOT NULL\n' +
-  ');\n\n' +
-  'CREATE TABLE IF NOT EXISTS weight_entries (\n' +
-  '    id TEXT PRIMARY KEY NOT NULL,\n' +
-  '    weight REAL NOT NULL,\n' +
-  '    date TEXT NOT NULL,\n' +
-  '    created_at INTEGER NOT NULL\n' +
-  ');';
-
-const createSchemaVersionTable = (db: SQLite.SQLiteDatabase) => {
-  db.runSync(
-    'CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)'
-  );
-};
-
-const getDatabaseVersion = (db: SQLite.SQLiteDatabase): number => {
-  const result = db.getFirstSync<{ version: number }>(
-    'SELECT version FROM schema_version LIMIT 1'
-  );
-  return result ? result.version : 0;
-};
-
-const updateDatabaseVersion = (db: SQLite.SQLiteDatabase, version: number) => {
-  db.runSync(
-    'INSERT OR REPLACE INTO schema_version (version) VALUES (?)',
-    [version]
-  );
-};
-
-const readSchema = (): string => {
-  return SCHEMA_SQL;
-};
 
 export const initDatabase = (): void => {
   console.log('Initializing database...');
@@ -409,9 +75,9 @@ export const initDatabase = (): void => {
         console.log('Creating schema version table...');
         createSchemaVersionTable(db);
 
-        console.log('Reading schema...');
-        const schema = readSchema();
-        const schemaStatements = schema.split(';').filter(s => s.trim().length > 0);
+  console.log('Reading schema...');
+  const schema = getDatabaseSchema();
+  const schemaStatements = schema.split(';').filter((s: string) => s.trim().length > 0);
 
         console.log('Executing schema statements...');
         for (const statement of schemaStatements) {
@@ -779,20 +445,6 @@ export const getWeightEntries = (limit: number = 30): WeightEntry[] => {
       createdAt: row.created_at,
     }));
 };
-
-// Nutrition Summary Functions
-export interface NutritionSummary {
-  date: string;
-  totalCalories: number;
-  totalProtein: number;
-  totalCarbs: number;
-  totalFat: number;
-  totalFiber: number;
-  totalSugar: number;
-  totalSodium: number;
-  caloriesBurned: number;
-  netCalories: number;
-}
 
 export const getNutritionSummary = (date: string): NutritionSummary => {
   // Get food entries for the date

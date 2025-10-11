@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { getWeightEntries, getNutritionSummary, NutritionSummary, addWeightEntry } from '../../services/database';
+import { getWeightEntries, getNutritionSummary, addWeightEntry } from '@/services/database';
+import { NutritionSummary } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 

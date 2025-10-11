@@ -9,10 +9,12 @@ import {
   getUserProfile, 
   getNutritionSummary, 
   getFoodEntriesForDate, 
-  getWorkoutEntries, 
+  getWorkoutEntries
+} from '@/services/database';
+import {
   FoodEntry,
   WorkoutEntry
-} from '../../services/database';
+} from '@/types/types'
 import { draculaTheme, spacing, typography } from '../../styles/theme';
 
 interface DashboardState {

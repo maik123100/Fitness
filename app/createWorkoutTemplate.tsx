@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { getExerciseTemplates, addWorkoutTemplate, addWorkoutTemplateExercise, ExerciseTemplate } from '../services/database';
-import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
+import { getExerciseTemplates, addWorkoutTemplate, addWorkoutTemplateExercise } from '@/services/database';
+import { ExerciseTemplate } from '@/types/types'
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';

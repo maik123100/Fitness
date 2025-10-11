@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession, WorkoutTemplate, ActiveWorkoutSession } from '../../services/database';
-import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
+import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession } from '@/services/database';
+import { WorkoutTemplate, ActiveWorkoutSession } from '@/types/types'
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 

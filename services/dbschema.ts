@@ -1,4 +1,5 @@
-
+export function getDatabaseSchema(): string {
+  return `
 CREATE TABLE IF NOT EXISTS activities (
   id TEXT PRIMARY KEY,
   activity TEXT NOT NULL,
@@ -160,3 +161,5 @@ CREATE INDEX IF NOT EXISTS idx_workout_entries_date ON workout_entries(date);
 CREATE INDEX IF NOT EXISTS idx_food_items_name ON food_items(name);
 CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category);
 CREATE INDEX IF NOT EXISTS idx_weight_entries_date ON weight_entries(date);
+`;
+}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
-import { getNutritionSummary, NutritionSummary, getUserProfile } from '../services/database';
-import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
+import { getNutritionSummary, getUserProfile } from '@/services/database';
+import { NutritionSummary } from '@/types/types'
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
-import { setOnboardingCompleted } from '../services/onboardingService';
+import { setOnboardingCompleted } from '@/services/onboardingService';
 import { useRouter } from 'expo-router';
 import { draculaTheme, spacing, typography, borderRadius } from '../styles/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { saveUserProfile, UserProfile, ActivityLevel, GoalType } from '../services/database';
+import { saveUserProfile } from '@/services/database';
+import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
 
 const activityLevels: Record<ActivityLevel, string> = {
   sedentary: 'Sedentary',

@@ -1,27 +1,26 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Alert, ScrollView } from 'react-native';
-import { addFoodEntry, getFoodEntriesForDate, deleteFoodEntry, FoodItem, FoodEntry, MealType, getFoodItem, getAllFoodItems, addFoodItem, FoodCategory } from '../../services/database';
-import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
-import { useSnackbar } from '../../app/components/SnackbarProvider'; // Import useSnackbar
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
+import { CameraView, Camera } from 'expo-camera';
+import { useSnackbar } from '@/app/components/SnackbarProvider';
+import {
+  addFoodEntry,
+  getFoodEntriesForDate,
+  deleteFoodEntry,
+  getFoodItem,
+  getAllFoodItems,
+  addFoodItem
+} from '@/services/database'
+import {
+  FoodItem,
+  FoodEntry,
+  MealType,
+  FoodCategory
+} from '@/types/types';
 
-interface NewFoodItem {
-  name: string;
-  brand: string;
-  category: FoodCategory;
-  calories: string;
-  protein: string;
-  carbs: string;
-  fat: string;
-  fiber: string;
-  sugar: string;
-  sodium: string;
-  servingSize: string;
-  servingUnit: string;
-}
-
-interface FoodDiaryState {
+type FoodDiaryState = {
   date: string;
   foodEntries: Record<MealType, FoodEntry[]>;
   searchModal: {
@@ -38,26 +37,60 @@ interface FoodDiaryState {
   };
   addFoodModal: {
     visible: boolean;
-    newFood: NewFoodItem;
+    newFood: FoodItem;
   };
-}
+};
 
-const initialNewFoodState: NewFoodItem = {
+
+const initialNewFoodState: FoodItem = {
+  id: '',
   name: '',
   brand: '',
   category: 'other',
-  calories: '',
-  protein: '',
-  carbs: '',
-  fat: '',
-  fiber: '',
-  sugar: '',
-  sodium: '',
-  servingSize: '100',
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+  fiber: 0,
+  sugar: 0,
+  sodium: 0,
+  cholesterol: 0,
+  saturatedFat: 0,
+  transFat: 0,
+  vitaminA: 0,
+  vitaminC: 0,
+  vitaminD: 0,
+  calcium: 0,
+  iron: 0,
+  potassium: 0,
+  servingSize: 100,
   servingUnit: 'g',
+  isVerified: false,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
 };
 
 export default function FoodDiaryScreen() {
+  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | null>(null);
+  const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
+  const [barcodeScanned, setBarcodeScanned] = useState(false);
+  // Request camera permission on barcode scan
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setCameraPermission(status === 'granted' ? 'granted' : 'denied');
+    if (status === 'granted') {
+      setBarcodeScanned(false);
+      setBarcodeModalVisible(true);
+    }
+  };
+
+  // Handle barcode scanned
+  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
+    setBarcodeScanned(true);
+    setBarcodeModalVisible(false);
+    handleNewFoodChange('barcode', data);
+    showSnackbar('Barcode scanned!', 2000);
+  };
   const { showSnackbar } = useSnackbar(); // Get showSnackbar from context
   const [state, setState] = useState<FoodDiaryState>({
     date: new Date().toISOString().split('T')[0],
@@ -157,29 +190,8 @@ export default function FoodDiaryScreen() {
     }
 
     const foodToAdd: FoodItem = {
+      ...newFood,
       id: Date.now().toString(),
-      name: newFood.name,
-      brand: newFood.brand || undefined,
-      category: newFood.category,
-      calories: parseFloat(newFood.calories),
-      protein: parseFloat(newFood.protein),
-      carbs: parseFloat(newFood.carbs),
-      fat: parseFloat(newFood.fat),
-      fiber: parseFloat(newFood.fiber || '0'),
-      sugar: parseFloat(newFood.sugar || '0'),
-      sodium: parseFloat(newFood.sodium || '0'),
-      cholesterol: 0,
-      saturatedFat: 0,
-      transFat: 0,
-      vitaminA: 0,
-      vitaminC: 0,
-      vitaminD: 0,
-      calcium: 0,
-      iron: 0,
-      potassium: 0,
-      servingSize: parseFloat(newFood.servingSize),
-      servingUnit: newFood.servingUnit,
-      isVerified: false,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -241,7 +253,7 @@ export default function FoodDiaryScreen() {
     }));
   };
 
-  const handleNewFoodChange = (field: keyof NewFoodItem, value: string | FoodCategory) => {
+  const handleNewFoodChange = (field: keyof FoodItem, value: string | FoodCategory | number) => {
     setState(prev => ({
       ...prev,
       addFoodModal: {
@@ -353,23 +365,95 @@ export default function FoodDiaryScreen() {
         <ScrollView style={styles.modalContainer} contentContainerStyle={styles.scrollViewContent}>
           <Text style={styles.mealTitle}>Add New Food Item</Text>
 
-          <TextInput style={styles.searchInput} placeholder="Food Name" placeholderTextColor={draculaTheme.comment} value={addFoodModal.newFood.name} onChangeText={(text) => handleNewFoodChange('name', text)} />
-          <TextInput style={styles.searchInput} placeholder="Brand (Optional)" placeholderTextColor={draculaTheme.comment} value={addFoodModal.newFood.brand} onChangeText={(text) => handleNewFoodChange('brand', text)} />
-          <Text style={styles.label}>Category:</Text>
+          <Text style={styles.label}>Food Name</Text>
+          <TextInput style={styles.searchInput} value={addFoodModal.newFood.name} onChangeText={(text) => handleNewFoodChange('name', text)} />
+          <Text style={styles.label}>Brand (Optional)</Text>
+          <TextInput style={styles.searchInput} value={addFoodModal.newFood.brand} onChangeText={(text) => handleNewFoodChange('brand', text)} />
+          <Text style={styles.label}>Barcode (Optional)</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
+            <TextInput
+              style={[styles.searchInput, { flex: 1 }]}
+              value={addFoodModal.newFood.barcode || ''}
+              onChangeText={(text) => handleNewFoodChange('barcode', text)}
+              placeholder="Scan or enter barcode"
+            />
+            <TouchableOpacity
+              style={{ marginLeft: spacing.sm, backgroundColor: draculaTheme.purple, padding: spacing.sm, borderRadius: borderRadius.md }}
+              onPress={requestCameraPermission}
+            >
+              <Ionicons name="barcode-outline" size={24} color={draculaTheme.text.inverse} />
+            </TouchableOpacity>
+          </View>
+      {/* Barcode Scanner Modal (expo-camera) */}
+      <Modal visible={barcodeModalVisible} animationType="slide" onRequestClose={() => setBarcodeModalVisible(false)}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: draculaTheme.background }}>
+          <Text style={{ color: draculaTheme.foreground, fontSize: typography.sizes.lg, marginBottom: spacing.md }}>Scan Barcode</Text>
+          {cameraPermission === null && (
+            <Text style={{ color: draculaTheme.comment }}>Requesting camera permission...</Text>
+          )}
+          {cameraPermission === 'denied' && (
+            <Text style={{ color: draculaTheme.red }}>No access to camera</Text>
+          )}
+          {cameraPermission === 'granted' && (
+            <CameraView
+              onBarcodeScanned={barcodeScanned ? undefined : handleBarcodeScanned}
+              barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'pdf417'] }}
+              style={{ width: '90%', height: '70%' }}
+            />
+          )}
+          <TouchableOpacity style={[styles.addButton, { marginTop: spacing.md }]} onPress={() => setBarcodeModalVisible(false)}>
+            <Text style={styles.addButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+          <Text style={styles.label}>Category</Text>
           <Picker selectedValue={addFoodModal.newFood.category} style={styles.picker} onValueChange={(itemValue) => handleNewFoodChange('category', itemValue as FoodCategory)}>
             {foodCategories.map((category) => (
               <Picker.Item key={category} label={category} value={category} />
             ))}
           </Picker>
-          <TextInput style={styles.searchInput} placeholder="Calories (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.calories} onChangeText={(text) => handleNewFoodChange('calories', text)} />
-          <TextInput style={styles.searchInput} placeholder="Protein (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.protein} onChangeText={(text) => handleNewFoodChange('protein', text)} />
-          <TextInput style={styles.searchInput} placeholder="Carbs (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.carbs} onChangeText={(text) => handleNewFoodChange('carbs', text)} />
-          <TextInput style={styles.searchInput} placeholder="Fat (per 100g)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.fat} onChangeText={(text) => handleNewFoodChange('fat', text)} />
-          <TextInput style={styles.searchInput} placeholder="Fiber (per 100g, Optional)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.fiber} onChangeText={(text) => handleNewFoodChange('fiber', text)} />
-          <TextInput style={styles.searchInput} placeholder="Sugar (per 100g, Optional)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.sugar} onChangeText={(text) => handleNewFoodChange('sugar', text)} />
-          <TextInput style={styles.searchInput} placeholder="Sodium (per 100g, Optional)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.sodium} onChangeText={(text) => handleNewFoodChange('sodium', text)} />
-          <TextInput style={styles.searchInput} placeholder="Serving Size (e.g., 100)" placeholderTextColor={draculaTheme.comment} keyboardType="numeric" value={addFoodModal.newFood.servingSize} onChangeText={(text) => handleNewFoodChange('servingSize', text)} />
-          <TextInput style={styles.searchInput} placeholder="Serving Unit (e.g., g, ml, piece)" placeholderTextColor={draculaTheme.comment} value={addFoodModal.newFood.servingUnit} onChangeText={(text) => handleNewFoodChange('servingUnit', text)} />
+          <Text style={styles.label}>Serving Size</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.servingSize)} onChangeText={(text) => handleNewFoodChange('servingSize', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Serving Unit</Text>
+          <TextInput style={styles.searchInput} value={addFoodModal.newFood.servingUnit} onChangeText={(text) => handleNewFoodChange('servingUnit', text)} />
+
+          <Text style={[styles.label, { marginTop: spacing.lg }]}>Macronutrients (per 100g)</Text>
+          <Text style={styles.label}>Calories</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.calories)} onChangeText={(text) => handleNewFoodChange('calories', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Protein (g)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.protein)} onChangeText={(text) => handleNewFoodChange('protein', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Carbs (g)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.carbs)} onChangeText={(text) => handleNewFoodChange('carbs', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Fat (g)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.fat)} onChangeText={(text) => handleNewFoodChange('fat', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Fiber (g)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.fiber)} onChangeText={(text) => handleNewFoodChange('fiber', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Sugar (g)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.sugar)} onChangeText={(text) => handleNewFoodChange('sugar', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Sodium (mg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.sodium)} onChangeText={(text) => handleNewFoodChange('sodium', parseFloat(text) || 0)} />
+
+          <Text style={[styles.label, { marginTop: spacing.lg }]}>Other Nutrients (per 100g)</Text>
+          <Text style={styles.label}>Cholesterol (mg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.cholesterol)} onChangeText={(text) => handleNewFoodChange('cholesterol', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Saturated Fat (g)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.saturatedFat)} onChangeText={(text) => handleNewFoodChange('saturatedFat', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Trans Fat (g)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.transFat)} onChangeText={(text) => handleNewFoodChange('transFat', parseFloat(text) || 0)} />
+
+          <Text style={[styles.label, { marginTop: spacing.lg }]}>Micronutrients (per 100g)</Text>
+          <Text style={styles.label}>Vitamin A (mcg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.vitaminA)} onChangeText={(text) => handleNewFoodChange('vitaminA', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Vitamin C (mg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.vitaminC)} onChangeText={(text) => handleNewFoodChange('vitaminC', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Vitamin D (mcg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.vitaminD)} onChangeText={(text) => handleNewFoodChange('vitaminD', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Calcium (mg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.calcium)} onChangeText={(text) => handleNewFoodChange('calcium', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Iron (mg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.iron)} onChangeText={(text) => handleNewFoodChange('iron', parseFloat(text) || 0)} />
+          <Text style={styles.label}>Potassium (mg)</Text>
+          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.potassium)} onChangeText={(text) => handleNewFoodChange('potassium', parseFloat(text) || 0)} />
 
           <TouchableOpacity style={styles.addButton} onPress={handleAddNewFood}>
             <Text style={styles.addButtonText}>Save Food</Text>

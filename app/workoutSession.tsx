@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import { getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutTemplateExercises, getExerciseTemplate, ActiveWorkoutSession, WorkoutTemplateExercise, WorkoutSet } from '../services/database';
-import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
+import { getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutTemplateExercises, getExerciseTemplate } from '@/services/database';
+import { ActiveWorkoutSession, WorkoutTemplateExercise, WorkoutSet } from '@/types/types'
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
