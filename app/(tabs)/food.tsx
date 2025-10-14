@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Alert, ScrollView } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
@@ -11,7 +12,8 @@ import {
   deleteFoodEntry,
   getFoodItem,
   getAllFoodItems,
-  addFoodItem
+  addFoodItem,
+  deleteFoodItem
 } from '@/services/database'
 import {
   FoodItem,
@@ -34,10 +36,6 @@ type FoodDiaryState = {
     visible: boolean;
     selectedFoodItem: FoodItem | null;
     quantity: string;
-  };
-  addFoodModal: {
-    visible: boolean;
-    newFood: FoodItem;
   };
 };
 
@@ -71,26 +69,7 @@ const initialNewFoodState: FoodItem = {
 };
 
 export default function FoodDiaryScreen() {
-  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | null>(null);
-  const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
-  const [barcodeScanned, setBarcodeScanned] = useState(false);
-  // Request camera permission on barcode scan
-  const requestCameraPermission = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setCameraPermission(status === 'granted' ? 'granted' : 'denied');
-    if (status === 'granted') {
-      setBarcodeScanned(false);
-      setBarcodeModalVisible(true);
-    }
-  };
-
-  // Handle barcode scanned
-  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
-    setBarcodeScanned(true);
-    setBarcodeModalVisible(false);
-    handleNewFoodChange('barcode', data);
-    showSnackbar('Barcode scanned!', 2000);
-  };
+  const router = useRouter();
   const { showSnackbar } = useSnackbar(); // Get showSnackbar from context
   const [state, setState] = useState<FoodDiaryState>({
     date: new Date().toISOString().split('T')[0],
@@ -107,13 +86,10 @@ export default function FoodDiaryScreen() {
       selectedFoodItem: null,
       quantity: '100',
     },
-    addFoodModal: {
-      visible: false,
-      newFood: { ...initialNewFoodState },
-    },
+    // ...existing code...
   });
 
-  const { date, foodEntries, searchModal, quantityModal, addFoodModal } = state;
+  const { date, foodEntries, searchModal, quantityModal } = state;
 
   const foodCategories: FoodCategory[] = [
     'vegetables',
@@ -182,29 +158,7 @@ export default function FoodDiaryScreen() {
     }));
   };
 
-  const handleAddNewFood = () => {
-    const { newFood } = addFoodModal;
-    if (!newFood.name || !newFood.calories || !newFood.protein || !newFood.carbs || !newFood.fat || !newFood.servingSize) {
-      showSnackbar('Please fill in all required fields (Name, Calories, Protein, Carbs, Fat, Serving Size).', 3000); // Error snackbar
-      return;
-    }
-
-    const foodToAdd: FoodItem = {
-      ...newFood,
-      id: Date.now().toString(),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-
-    addFoodItem(foodToAdd);
-    const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
-    setState(prev => ({
-      ...prev,
-      addFoodModal: { ...prev.addFoodModal, visible: false, newFood: { ...initialNewFoodState } },
-      searchModal: { ...prev.searchModal, results: allFoods },
-    }));
-    showSnackbar('New food item added successfully!', 3000); // Success snackbar
-  };
+  // ...existing code...
 
   const handleDeleteFood = (id: string) => {
     Alert.alert('Delete Entry', 'Are you sure you want to delete this food entry?', [
@@ -253,15 +207,7 @@ export default function FoodDiaryScreen() {
     }));
   };
 
-  const handleNewFoodChange = (field: keyof FoodItem, value: string | FoodCategory | number) => {
-    setState(prev => ({
-      ...prev,
-      addFoodModal: {
-        ...prev.addFoodModal,
-        newFood: { ...prev.addFoodModal.newFood, [field]: value },
-      },
-    }));
-  };
+  // Removed handleNewFoodChange, now handled in /add-food page
 
   return (
     <View style={styles.container}>
@@ -297,20 +243,53 @@ export default function FoodDiaryScreen() {
             value={searchModal.query}
             onChangeText={handleSearchQueryChange}
           />
-          <TouchableOpacity style={styles.addNewFoodButton} onPress={() => setState(prev => ({ ...prev, addFoodModal: { ...prev.addFoodModal, visible: true } }))}>
+          <TouchableOpacity style={styles.addNewFoodButton} onPress={() => {
+            setState(prev => ({ ...prev, searchModal: { ...prev.searchModal, visible: false } }));
+            router.push('/add-food');
+          }}>
             <Text style={styles.addNewFoodButtonText}>Add New Food</Text>
           </TouchableOpacity>
           <FlatList
             data={searchModal.results}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.searchResultItem} onPress={() => handleAddFood(item)}>
-                <Text style={styles.searchResultName}>{item.name}</Text>
-                <Text style={styles.searchResultDetails}>
-                  {item.calories} kcal | P: {item.protein}g | C: {item.carbs}g | F: {item.fat}g
-                  per {item.servingSize}{item.servingUnit}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.searchResultItemRow}>
+                <TouchableOpacity style={styles.searchResultItem} onPress={() => handleAddFood(item)}>
+                  <Text style={styles.searchResultName}>{item.name}</Text>
+                  <Text style={styles.searchResultDetails}>
+                    {item.calories} kcal | P: {item.protein}g | C: {item.carbs}g | F: {item.fat}g
+                    per {item.servingSize}{item.servingUnit}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.trashIconBtn}
+                  onPress={() => {
+                    Alert.alert(
+                      'Delete Food Item',
+                      `Are you sure you want to delete "${item.name}" from your food list? This cannot be undone.`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: () => {
+                            deleteFoodEntry(item.id); // Remove from entries
+                            deleteFoodItem(item); // Call mock function with FoodItem
+                            const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
+                            setState(prev => ({
+                              ...prev,
+                              searchModal: { ...prev.searchModal, results: allFoods },
+                            }));
+                            showSnackbar('Food item deleted.', 3000);
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="trash" size={24} color={draculaTheme.red} />
+                </TouchableOpacity>
+              </View>
             )}
           />
         </View>
@@ -361,111 +340,6 @@ export default function FoodDiaryScreen() {
         </View>
       </Modal>
 
-      <Modal visible={addFoodModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, addFoodModal: { ...prev.addFoodModal, visible: false } }))}>
-        <ScrollView style={styles.modalContainer} contentContainerStyle={styles.scrollViewContent}>
-          <Text style={styles.mealTitle}>Add New Food Item</Text>
-
-          <Text style={styles.label}>Food Name</Text>
-          <TextInput style={styles.searchInput} value={addFoodModal.newFood.name} onChangeText={(text) => handleNewFoodChange('name', text)} />
-          <Text style={styles.label}>Brand (Optional)</Text>
-          <TextInput style={styles.searchInput} value={addFoodModal.newFood.brand} onChangeText={(text) => handleNewFoodChange('brand', text)} />
-          <Text style={styles.label}>Barcode (Optional)</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
-            <TextInput
-              style={[styles.searchInput, { flex: 1 }]}
-              value={addFoodModal.newFood.barcode || ''}
-              onChangeText={(text) => handleNewFoodChange('barcode', text)}
-              placeholder="Scan or enter barcode"
-            />
-            <TouchableOpacity
-              style={{ marginLeft: spacing.sm, backgroundColor: draculaTheme.purple, padding: spacing.sm, borderRadius: borderRadius.md }}
-              onPress={requestCameraPermission}
-            >
-              <Ionicons name="barcode-outline" size={24} color={draculaTheme.text.inverse} />
-            </TouchableOpacity>
-          </View>
-      {/* Barcode Scanner Modal (expo-camera) */}
-      <Modal visible={barcodeModalVisible} animationType="slide" onRequestClose={() => setBarcodeModalVisible(false)}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: draculaTheme.background }}>
-          <Text style={{ color: draculaTheme.foreground, fontSize: typography.sizes.lg, marginBottom: spacing.md }}>Scan Barcode</Text>
-          {cameraPermission === null && (
-            <Text style={{ color: draculaTheme.comment }}>Requesting camera permission...</Text>
-          )}
-          {cameraPermission === 'denied' && (
-            <Text style={{ color: draculaTheme.red }}>No access to camera</Text>
-          )}
-          {cameraPermission === 'granted' && (
-            <CameraView
-              onBarcodeScanned={barcodeScanned ? undefined : handleBarcodeScanned}
-              barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'pdf417'] }}
-              style={{ width: '90%', height: '70%' }}
-            />
-          )}
-          <TouchableOpacity style={[styles.addButton, { marginTop: spacing.md }]} onPress={() => setBarcodeModalVisible(false)}>
-            <Text style={styles.addButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-          <Text style={styles.label}>Category</Text>
-          <Picker selectedValue={addFoodModal.newFood.category} style={styles.picker} onValueChange={(itemValue) => handleNewFoodChange('category', itemValue as FoodCategory)}>
-            {foodCategories.map((category) => (
-              <Picker.Item key={category} label={category} value={category} />
-            ))}
-          </Picker>
-          <Text style={styles.label}>Serving Size</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.servingSize)} onChangeText={(text) => handleNewFoodChange('servingSize', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Serving Unit</Text>
-          <TextInput style={styles.searchInput} value={addFoodModal.newFood.servingUnit} onChangeText={(text) => handleNewFoodChange('servingUnit', text)} />
-
-          <Text style={[styles.label, { marginTop: spacing.lg }]}>Macronutrients (per 100g)</Text>
-          <Text style={styles.label}>Calories</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.calories)} onChangeText={(text) => handleNewFoodChange('calories', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Protein (g)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.protein)} onChangeText={(text) => handleNewFoodChange('protein', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Carbs (g)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.carbs)} onChangeText={(text) => handleNewFoodChange('carbs', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Fat (g)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.fat)} onChangeText={(text) => handleNewFoodChange('fat', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Fiber (g)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.fiber)} onChangeText={(text) => handleNewFoodChange('fiber', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Sugar (g)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.sugar)} onChangeText={(text) => handleNewFoodChange('sugar', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Sodium (mg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.sodium)} onChangeText={(text) => handleNewFoodChange('sodium', parseFloat(text) || 0)} />
-
-          <Text style={[styles.label, { marginTop: spacing.lg }]}>Other Nutrients (per 100g)</Text>
-          <Text style={styles.label}>Cholesterol (mg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.cholesterol)} onChangeText={(text) => handleNewFoodChange('cholesterol', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Saturated Fat (g)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.saturatedFat)} onChangeText={(text) => handleNewFoodChange('saturatedFat', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Trans Fat (g)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.transFat)} onChangeText={(text) => handleNewFoodChange('transFat', parseFloat(text) || 0)} />
-
-          <Text style={[styles.label, { marginTop: spacing.lg }]}>Micronutrients (per 100g)</Text>
-          <Text style={styles.label}>Vitamin A (mcg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.vitaminA)} onChangeText={(text) => handleNewFoodChange('vitaminA', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Vitamin C (mg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.vitaminC)} onChangeText={(text) => handleNewFoodChange('vitaminC', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Vitamin D (mcg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.vitaminD)} onChangeText={(text) => handleNewFoodChange('vitaminD', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Calcium (mg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.calcium)} onChangeText={(text) => handleNewFoodChange('calcium', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Iron (mg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.iron)} onChangeText={(text) => handleNewFoodChange('iron', parseFloat(text) || 0)} />
-          <Text style={styles.label}>Potassium (mg)</Text>
-          <TextInput style={styles.searchInput} keyboardType="decimal-pad" value={String(addFoodModal.newFood.potassium)} onChangeText={(text) => handleNewFoodChange('potassium', parseFloat(text) || 0)} />
-
-          <TouchableOpacity style={styles.addButton} onPress={handleAddNewFood}>
-            <Text style={styles.addButtonText}>Save Food</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
-            onPress={() => setState(prev => ({ ...prev, addFoodModal: { ...prev.addFoodModal, visible: false } }))}
-          >
-            <Text style={styles.addButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </Modal>
     </View>
   );
 }
@@ -541,11 +415,24 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     marginBottom: spacing.md,
   },
+  searchResultItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
   searchResultItem: {
+    flex: 1,
     backgroundColor: draculaTheme.surface.card,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.sm,
+    marginRight: spacing.sm,
+  },
+  trashIconBtn: {
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: draculaTheme.surface.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchResultName: {
     fontSize: typography.sizes.md,

@@ -1,3 +1,4 @@
+
 import * as SQLite from 'expo-sqlite';
 import { getDatabaseSchema } from './dbschema';
 import {
@@ -27,6 +28,12 @@ import {
   let db: SQLite.SQLiteDatabase;
 
   const DATABASE_VERSION = 2;
+
+  // Mock function to delete a FoodItem (to be implemented by user)
+  export function deleteFoodItem(foodItem: FoodItem): void {
+    // TODO: Implement actual deletion logic in the database
+    console.log('Mock deleteFoodItem called for:', foodItem);
+  }
 
   const createSchemaVersionTable = (db: SQLite.SQLiteDatabase) => {
     db.runSync(

@@ -46,6 +46,7 @@ export default function RootLayout() {
             <Stack.Screen name="macroGraphs" options={{ headerShown: false }} />
             <Stack.Screen name="createWorkoutTemplate" options={{ headerShown: false }} />
             <Stack.Screen name="workoutSession" options={{ headerShown: false }} />
+            <Stack.Screen name="add-food" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="light" />
         </SnackbarProvider>
