@@ -2,6 +2,8 @@ import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { Snackbar } from 'react-native-paper';
 import { View, StyleSheet } from 'react-native';
 
+import { draculaTheme } from '../../styles/theme';
+
 interface SnackbarContextType {
   showSnackbar: (message: string, duration?: number) => void;
 }
@@ -32,6 +34,8 @@ export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
           visible={visible}
           onDismiss={onDismissSnackbar}
           duration={duration}
+          style={{ backgroundColor: draculaTheme.surface.elevated }}
+          theme={{ colors: { inverseSurface: draculaTheme.text.primary, inverseOnSurface: draculaTheme.text.primary, accent: draculaTheme.primary } }}
           action={{
             label: 'Dismiss',
             onPress: () => {

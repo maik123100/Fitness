@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, Button } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FoodItem, FoodCategory } from '@/types/types';
 import { addFoodItem } from '@/services/database';
 import { draculaTheme, spacing, borderRadius, typography, shadows } from '../styles/theme';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+
+import { useSnackbar } from './components/SnackbarProvider';
 
 const defaultFood: FoodItem = {
   id: Date.now().toString(),
@@ -35,9 +39,18 @@ const defaultFood: FoodItem = {
   updatedAt: Date.now(),
 };
 
+const foodItemKeys = Object.keys(defaultFood) as (keyof FoodItem)[];
+
 const AddFood: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { showSnackbar } = useSnackbar();
   const [food, setFood] = useState<FoodItem>({ ...defaultFood });
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanned, setScanned] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+
+
 
   const handleChange = (key: keyof FoodItem, value: string | number | boolean) => {
     setFood((prev) => ({ ...prev, [key]: value }));
@@ -56,228 +69,133 @@ const AddFood: React.FC = () => {
       updatedAt: now,
     };
     try {
-      await addFoodItem(newFood);
+      addFoodItem(newFood);
       router.back();
     } catch (err) {
       Alert.alert('Error', 'Failed to add food item.');
     }
   };
 
+  const handleBarCodeScanned = (result: BarcodeScanningResult) => {
+    setScanned(true);
+    setShowScanner(false);
+    handleChange('barcode', result.data);
+    showSnackbar('Barcode scanned successfully!', 1000);
+  };
+
+  if (showScanner) {
+    if (!permission) {
+      // Camera permissions are still loading
+      return <View />;
+    }
+
+    if (!permission.granted) {
+      // Camera permissions are not granted yet
+      return (
+        <View style={styles.container}>
+          <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
+          <Button onPress={requestPermission} title="grant permission" />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.scannerContainer}>
+        <CameraView
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          style={StyleSheet.absoluteFillObject}
+        />
+        {scanned && <Button title={'Tap to Scan Again'} onPress={() => setScanned(false)} />}
+        <TouchableOpacity style={styles.closeButton} onPress={() => setShowScanner(false)}>
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const renderInput = (key: keyof FoodItem) => {
+    const value = food[key];
+    const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+
+    if (['id', 'createdAt', 'updatedAt'].includes(key)) {
+      return null;
+    }
+
+    if (key === 'category') {
+      return (
+        <View key={key}>
+          <Text style={styles.label}>{label}</Text>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={food.category}
+              onValueChange={(itemValue) => handleChange('category', itemValue as FoodCategory)}
+              style={styles.picker}
+              dropdownIconColor={draculaTheme.text.primary}
+              mode="dialog"
+            >
+              {['vegetables', 'fruits', 'grains', 'proteins', 'dairy', 'fats', 'beverages', 'snacks', 'prepared', 'supplements', 'condiments', 'other'].map((cat) => (
+                <Picker.Item
+                  label={cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  value={cat}
+                  key={cat}
+                  style={{ backgroundColor: draculaTheme.surface.input, color: draculaTheme.text.primary }}
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      );
+    }
+
+    if (typeof value === 'boolean') {
+      return (
+        <View key={key} style={styles.switchRow}>
+          <Text style={styles.label}>{label}</Text>
+          <TouchableOpacity
+            style={[styles.verifyBtn, food.isVerified && styles.verifyBtnActive]}
+            onPress={() => handleChange(key, !value)}
+          >
+            <Text style={styles.verifyText}>{value ? 'Yes' : 'No'}</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View key={key}>
+        <Text style={styles.label}>{label}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={`Enter ${label.toLowerCase()}`}
+          placeholderTextColor={draculaTheme.text.secondary}
+          value={value?.toString() ?? ''}
+          onChangeText={(v) => {
+            const numericKeys: (keyof FoodItem)[] = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'cholesterol', 'saturatedFat', 'transFat', 'vitaminA', 'vitaminC', 'vitaminD', 'calcium', 'iron', 'potassium', 'servingSize'];
+            if (numericKeys.includes(key)) {
+              handleChange(key, parseFloat(v) || 0);
+            } else {
+              handleChange(key, v);
+            }
+          }}
+          keyboardType={typeof value === 'number' ? 'decimal-pad' : 'default'}
+        />
+        {key === 'barcode' && (
+          <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanner(true)}>
+            <Text style={styles.scanButtonText}>Scan Barcode</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Add New Food</Text>
-        <Text style={styles.label}>Food Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter food name"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.name}
-          onChangeText={(v) => handleChange('name', v)}
-        />
-        <Text style={styles.label}>Brand</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter brand (optional)"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.brand}
-          onChangeText={(v) => handleChange('brand', v)}
-        />
-        <Text style={styles.label}>Barcode</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter barcode (optional)"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.barcode}
-          onChangeText={(v) => handleChange('barcode', v)}
-        />
-        <Text style={styles.label}>Food Category</Text>
-        <View style={styles.pickerWrapper}>
-          <Picker
-            selectedValue={food.category}
-            onValueChange={(itemValue) => handleChange('category', itemValue as FoodCategory)}
-            style={styles.picker}
-            dropdownIconColor={draculaTheme.text.primary}
-            mode="dropdown"
-          >
-            {['vegetables','fruits','grains','proteins','dairy','fats','beverages','snacks','prepared','supplements','condiments','other'].map((cat) => (
-              <Picker.Item label={cat.charAt(0).toUpperCase() + cat.slice(1)} value={cat} key={cat} color={draculaTheme.text.primary} />
-            ))}
-          </Picker>
-        </View>
-        <Text style={styles.label}>Calories</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter calories"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.calories.toString()}
-          onChangeText={(v) => handleChange('calories', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Protein (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter protein in grams"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.protein.toString()}
-          onChangeText={(v) => handleChange('protein', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Carbs (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter carbs in grams"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.carbs.toString()}
-          onChangeText={(v) => handleChange('carbs', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Fat (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter fat in grams"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.fat.toString()}
-          onChangeText={(v) => handleChange('fat', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Fiber (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter fiber in grams"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.fiber.toString()}
-          onChangeText={(v) => handleChange('fiber', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Sugar (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter sugar in grams"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.sugar.toString()}
-          onChangeText={(v) => handleChange('sugar', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Sodium (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter sodium in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.sodium.toString()}
-          onChangeText={(v) => handleChange('sodium', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Cholesterol (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter cholesterol in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.cholesterol.toString()}
-          onChangeText={(v) => handleChange('cholesterol', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Saturated Fat (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter saturated fat in grams"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.saturatedFat.toString()}
-          onChangeText={(v) => handleChange('saturatedFat', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Trans Fat (g)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter trans fat in grams"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.transFat.toString()}
-          onChangeText={(v) => handleChange('transFat', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Vitamin A (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter vitamin A in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.vitaminA?.toString() ?? ''}
-          onChangeText={(v) => handleChange('vitaminA', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Vitamin C (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter vitamin C in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.vitaminC?.toString() ?? ''}
-          onChangeText={(v) => handleChange('vitaminC', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Vitamin D (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter vitamin D in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.vitaminD?.toString() ?? ''}
-          onChangeText={(v) => handleChange('vitaminD', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Calcium (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter calcium in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.calcium?.toString() ?? ''}
-          onChangeText={(v) => handleChange('calcium', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Iron (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter iron in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.iron?.toString() ?? ''}
-          onChangeText={(v) => handleChange('iron', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Potassium (mg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter potassium in mg"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.potassium?.toString() ?? ''}
-          onChangeText={(v) => handleChange('potassium', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Serving Size</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter serving size"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.servingSize.toString()}
-          onChangeText={(v) => handleChange('servingSize', parseFloat(v) || 0)}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Serving Unit</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. g, ml, piece"
-          placeholderTextColor={draculaTheme.text.secondary}
-          value={food.servingUnit}
-          onChangeText={(v) => handleChange('servingUnit', v)}
-        />
-        <View style={styles.switchRow}>
-          <Text style={styles.label}>Is Verified?</Text>
-          <TouchableOpacity
-            style={[styles.verifyBtn, food.isVerified && styles.verifyBtnActive]}
-            onPress={() => handleChange('isVerified', !food.isVerified)}
-          >
-            <Text style={styles.verifyText}>{food.isVerified ? 'Yes' : 'No'}</Text>
-          </TouchableOpacity>
-        </View>
+        {foodItemKeys.map(renderInput)}
         <TouchableOpacity style={styles.addBtn} onPress={handleAddFood}>
           <Text style={styles.addBtnText}>Add Food</Text>
         </TouchableOpacity>
@@ -329,14 +247,15 @@ const styles = StyleSheet.create({
   },
   picker: {
     color: draculaTheme.text.primary,
-    fontSize: typography.sizes.md,
-    height: 48,
-    width: '100%',
     backgroundColor: draculaTheme.surface.input,
+    fontSize: typography.sizes.md,
+    height: 58,
+    width: '100%',
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
   verifyBtn: {
@@ -344,7 +263,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    marginLeft: spacing.sm,
     ...shadows.sm,
   },
   verifyBtnActive: {
@@ -365,6 +283,35 @@ const styles = StyleSheet.create({
   addBtnText: {
     color: draculaTheme.text.inverse,
     fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+  },
+  scannerContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 10,
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  scanButton: {
+    backgroundColor: draculaTheme.cyan,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  scanButtonText: {
+    color: draculaTheme.text.inverse,
+    fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
 });

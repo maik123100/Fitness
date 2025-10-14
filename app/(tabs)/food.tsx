@@ -39,35 +39,6 @@ type FoodDiaryState = {
   };
 };
 
-
-const initialNewFoodState: FoodItem = {
-  id: '',
-  name: '',
-  brand: '',
-  category: 'other',
-  calories: 0,
-  protein: 0,
-  carbs: 0,
-  fat: 0,
-  fiber: 0,
-  sugar: 0,
-  sodium: 0,
-  cholesterol: 0,
-  saturatedFat: 0,
-  transFat: 0,
-  vitaminA: 0,
-  vitaminC: 0,
-  vitaminD: 0,
-  calcium: 0,
-  iron: 0,
-  potassium: 0,
-  servingSize: 100,
-  servingUnit: 'g',
-  isVerified: false,
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-};
-
 export default function FoodDiaryScreen() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar(); // Get showSnackbar from context
@@ -163,11 +134,13 @@ export default function FoodDiaryScreen() {
   const handleDeleteFood = (id: string) => {
     Alert.alert('Delete Entry', 'Are you sure you want to delete this food entry?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => {
-        deleteFoodEntry(id);
-        loadFoodEntries();
-        showSnackbar('Food entry deleted.', 3000); // Success snackbar
-      }},
+      {
+        text: 'Delete', style: 'destructive', onPress: () => {
+          deleteFoodEntry(id);
+          loadFoodEntries();
+          showSnackbar('Food entry deleted.', 3000); // Success snackbar
+        }
+      },
     ]);
   };
 
