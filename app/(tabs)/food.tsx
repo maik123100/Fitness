@@ -4,7 +4,7 @@ import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, A
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
-import { CameraView, Camera } from 'expo-camera';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useSnackbar } from '@/app/components/SnackbarProvider';
 import {
   addFoodEntry,
@@ -37,11 +37,16 @@ type FoodDiaryState = {
     selectedFoodItem: FoodItem | null;
     quantity: string;
   };
+  cameraModal: {
+    visible: boolean;
+    scanned: boolean;
+  };
 };
 
 export default function FoodDiaryScreen() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar(); // Get showSnackbar from context
+  const [permission, requestPermission] = useCameraPermissions();
   const [state, setState] = useState<FoodDiaryState>({
     date: new Date().toISOString().split('T')[0],
     foodEntries: { breakfast: [], lunch: [], dinner: [], snack: [] },
@@ -57,10 +62,13 @@ export default function FoodDiaryScreen() {
       selectedFoodItem: null,
       quantity: '100',
     },
-    // ...existing code...
+    cameraModal: {
+      visible: false,
+      scanned: false,
+    },
   });
 
-  const { date, foodEntries, searchModal, quantityModal } = state;
+  const { date, foodEntries, searchModal, quantityModal, cameraModal } = state;
 
   const foodCategories: FoodCategory[] = [
     'vegetables',
@@ -180,7 +188,37 @@ export default function FoodDiaryScreen() {
     }));
   };
 
-  // Removed handleNewFoodChange, now handled in /add-food page
+  const handleBarCodeScanned = (result: BarcodeScanningResult) => {
+    setState(prev => ({
+      ...prev,
+      cameraModal: { ...prev.cameraModal, scanned: true, visible: false },
+      searchModal: { ...prev.searchModal, query: result.data },
+    }));
+    const allFoods = getAllFoodItems();
+    const foundFood = allFoods.find(food => food.barcode === result.data);
+
+    if (foundFood) {
+      handleAddFood(foundFood);
+      showSnackbar('Food item found and ready to add!', 2000);
+    } else {
+      showSnackbar('No food item found with that barcode.', 3000);
+    }
+  };
+
+  const openBarcodeScanner = async () => {
+    const { status } = await requestPermission();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Camera permission is required to scan barcodes.');
+      return;
+    }
+    setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: true, scanned: false } }));
+  };
+
+  const handleQuantityChange = (changeAmount: number) => {
+    const currentQuantity = parseFloat(quantityModal.quantity || '0');
+    const newQuantity = Math.max(0, currentQuantity + changeAmount);
+    setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, quantity: String(newQuantity) } }));
+  };
 
   return (
     <View style={styles.container}>
@@ -209,13 +247,18 @@ export default function FoodDiaryScreen() {
 
       <Modal visible={searchModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, searchModal: { ...prev.searchModal, visible: false } }))}>
         <View style={styles.modalContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search for food..."
-            placeholderTextColor={draculaTheme.comment}
-            value={searchModal.query}
-            onChangeText={handleSearchQueryChange}
-          />
+          <View style={styles.searchBarContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search for food..."
+              placeholderTextColor={draculaTheme.comment}
+              value={searchModal.query}
+              onChangeText={handleSearchQueryChange}
+            />
+            <TouchableOpacity style={styles.barcodeScanButton} onPress={openBarcodeScanner}>
+              <Ionicons name="barcode-outline" size={24} color={draculaTheme.text.inverse} />
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={styles.addNewFoodButton} onPress={() => {
             setState(prev => ({ ...prev, searchModal: { ...prev.searchModal, visible: false } }));
             router.push('/add-food');
@@ -229,10 +272,15 @@ export default function FoodDiaryScreen() {
               <View style={styles.searchResultItemRow}>
                 <TouchableOpacity style={styles.searchResultItem} onPress={() => handleAddFood(item)}>
                   <Text style={styles.searchResultName}>{item.name}</Text>
-                  <Text style={styles.searchResultDetails}>
-                    {item.calories} kcal | P: {item.protein}g | C: {item.carbs}g | F: {item.fat}g
-                    per {item.servingSize}{item.servingUnit}
-                  </Text>
+                  <View style={styles.searchResultNutrientRow}>
+                    <Text style={styles.searchResultNutrientLabel}>Calories:</Text>
+                    <Text style={styles.searchResultNutrientValue}>{item.calories} kcal</Text>
+                  </View>
+                  <View style={styles.searchResultMacrosRow}>
+                    <Text style={styles.searchResultMacroText}>Proteins: {item.protein}g</Text>
+                    <Text style={styles.searchResultMacroText}>Carbs: {item.carbs}g</Text>
+                    <Text style={styles.searchResultMacroText}>Fats: {item.fat}g</Text>
+                  </View>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.trashIconBtn}
@@ -270,7 +318,28 @@ export default function FoodDiaryScreen() {
 
       <Modal visible={quantityModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, visible: false } }))}>
         <View style={styles.modalContainer}>
-          <Text style={styles.mealTitle}>Enter Quantity for {quantityModal.selectedFoodItem?.name}</Text>
+          <Text style={styles.mealTitle}>Add {quantityModal.selectedFoodItem?.name}</Text>
+
+          {quantityModal.selectedFoodItem && quantityModal.quantity && (
+            <View style={styles.calculatedNutrientsContainer}>
+              <View style={styles.calculatedNutrientRow}>
+                <Text style={styles.calculatedNutrientLabel}>Calories:</Text>
+                <Text style={styles.calculatedNutrientValue}>{((quantityModal.selectedFoodItem.calories / quantityModal.selectedFoodItem.servingSize) * parseFloat(quantityModal.quantity || '0')).toFixed(0)} kcal</Text>
+              </View>
+              <View style={styles.calculatedNutrientRow}>
+                <Text style={styles.calculatedNutrientLabel}>Protein:</Text>
+                <Text style={styles.calculatedNutrientValue}>{((quantityModal.selectedFoodItem.protein / quantityModal.selectedFoodItem.servingSize) * parseFloat(quantityModal.quantity || '0')).toFixed(1)}g</Text>
+              </View>
+              <View style={styles.calculatedNutrientRow}>
+                <Text style={styles.calculatedNutrientLabel}>Carbs:</Text>
+                <Text style={styles.calculatedNutrientValue}>{((quantityModal.selectedFoodItem.carbs / quantityModal.selectedFoodItem.servingSize) * parseFloat(quantityModal.quantity || '0')).toFixed(1)}g</Text>
+              </View>
+              <View style={styles.calculatedNutrientRow}>
+                <Text style={styles.calculatedNutrientLabel}>Fat:</Text>
+                <Text style={styles.calculatedNutrientValue}>{((quantityModal.selectedFoodItem.fat / quantityModal.selectedFoodItem.servingSize) * parseFloat(quantityModal.quantity || '0')).toFixed(1)}g</Text>
+              </View>
+            </View>
+          )}
 
           <View style={styles.quickQuantityButtonsContainer}>
             {[50, 100, 150, 200, 250].map((q) => (
@@ -284,14 +353,22 @@ export default function FoodDiaryScreen() {
             ))}
           </View>
 
-          <TextInput
-            style={styles.searchInput}
-            placeholder={`Quantity in ${quantityModal.selectedFoodItem?.servingUnit || 'g'}`}
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={quantityModal.quantity}
-            onChangeText={(text) => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, quantity: text } }))}
-          />
+          <View style={styles.quantityInputContainer}>
+            <TouchableOpacity style={styles.quantityStepperButton} onPress={() => handleQuantityChange(-10)}>
+              <Text style={styles.quantityStepperButtonText}>-</Text>
+            </TouchableOpacity>
+            <TextInput
+              style={styles.quantityInput}
+              placeholder={`Quantity in ${quantityModal.selectedFoodItem?.servingUnit || 'g'}`}
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={quantityModal.quantity}
+              onChangeText={(text) => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, quantity: text } }))}
+            />
+            <TouchableOpacity style={styles.quantityStepperButton} onPress={() => handleQuantityChange(10)}>
+              <Text style={styles.quantityStepperButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -309,6 +386,33 @@ export default function FoodDiaryScreen() {
             onPress={() => setState(prev => ({ ...prev, quantityModal: { ...prev.quantityModal, visible: false } }))}
           >
             <Text style={styles.addButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      <Modal visible={cameraModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}>
+        <View style={styles.scannerContainer}>
+          {!permission?.granted && (
+            <View style={styles.permissionContainer}>
+              <Text style={styles.permissionText}>We need your permission to show the camera</Text>
+              <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+                <Text style={styles.permissionButtonText}>Grant Permission</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {permission?.granted && (
+            <CameraView
+              onBarcodeScanned={cameraModal.scanned ? undefined : handleBarCodeScanned}
+              style={StyleSheet.absoluteFillObject}
+            />
+          )}
+          {cameraModal.scanned && (
+            <TouchableOpacity style={styles.scanAgainButton} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, scanned: false } }))}>
+              <Text style={styles.scanAgainButtonText}>Tap to Scan Again</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.closeButton} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}>
+            <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -386,19 +490,64 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
+    flex: 1,
+  },
+  quantityInput: {
+    backgroundColor: draculaTheme.surface.input,
+    color: draculaTheme.foreground,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    fontSize: typography.sizes.md,
+    flex: 1,
+    textAlign: 'center',
+    height: 50, // Explicitly set height to match other inputs
+  },
+  quantityInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.md,
+    width: '100%',
+  },
+  quantityStepperButton: {
+    backgroundColor: draculaTheme.surface.secondary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
+  },
+  quantityStepperButtonText: {
+    color: draculaTheme.foreground,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    width: '100%',
+  },
+  barcodeScanButton: {
+    backgroundColor: draculaTheme.cyan,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginLeft: spacing.sm,
+    height: 50, // Match TextInput height
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchResultItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
+    backgroundColor: draculaTheme.surface.card,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   searchResultItem: {
     flex: 1,
-    backgroundColor: draculaTheme.surface.card,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    marginRight: spacing.sm,
   },
   trashIconBtn: {
     padding: spacing.sm,
@@ -406,16 +555,43 @@ const styles = StyleSheet.create({
     backgroundColor: draculaTheme.surface.secondary,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: spacing.sm,
   },
   searchResultName: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
     color: draculaTheme.foreground,
   },
-  searchResultDetails: {
+  searchResultServingSize: {
     fontSize: typography.sizes.sm,
     color: draculaTheme.comment,
     marginTop: spacing.xs,
+  },
+  searchResultNutrientRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: spacing.xs,
+  },
+  searchResultNutrientLabel: {
+    fontSize: typography.sizes.sm,
+    color: draculaTheme.comment,
+    fontWeight: typography.weights.semibold,
+  },
+  searchResultNutrientValue: {
+    fontSize: typography.sizes.sm,
+    color: draculaTheme.foreground,
+  },
+  searchResultMacrosRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  searchResultMacroText: {
+    fontSize: typography.sizes.sm,
+    color: draculaTheme.foreground,
   },
   addNewFoodButton: {
     backgroundColor: draculaTheme.purple,
@@ -461,4 +637,81 @@ const styles = StyleSheet.create({
     color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
   },
+  calculatedNutrientsContainer: {
+    // backgroundColor: draculaTheme.surface.secondary, // Removed background
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  calculatedNutrientRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: spacing.sm, // Increased spacing
+    backgroundColor: draculaTheme.surface.secondary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  calculatedNutrientLabel: {
+    fontSize: typography.sizes.md,
+    color: draculaTheme.comment,
+    fontWeight: typography.weights.semibold,
+  },
+  calculatedNutrientValue: {
+    fontSize: typography.sizes.md,
+    color: draculaTheme.foreground,
+  },
+  scannerContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    backgroundColor: 'black',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  permissionText: {
+    color: draculaTheme.text.inverse,
+    fontSize: typography.sizes.lg,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  permissionButton: {
+    backgroundColor: draculaTheme.purple,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  permissionButtonText: {
+    color: draculaTheme.text.inverse,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 10,
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  scanAgainButton: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 10,
+    borderRadius: 5,
+  },
+  scanAgainButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+
 });

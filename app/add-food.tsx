@@ -4,7 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FoodItem, FoodCategory } from '@/types/types';
-import { addFoodItem } from '@/services/database';
+import { addFoodItem, getAllFoodItems } from '@/services/database';
 import { draculaTheme, spacing, borderRadius, typography, shadows } from '../styles/theme';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 
@@ -79,8 +79,16 @@ const AddFood: React.FC = () => {
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {
     setScanned(true);
     setShowScanner(false);
-    handleChange('barcode', result.data);
-    showSnackbar('Barcode scanned successfully!', 1000);
+
+    const allFoods = getAllFoodItems();
+    const existingFood = allFoods.find(food => food.barcode === result.data);
+
+    if (existingFood) {
+      showSnackbar('A food item with this barcode already exists!', 3000);
+    } else {
+      handleChange('barcode', result.data);
+      showSnackbar('Barcode scanned successfully!', 1000);
+    }
   };
 
   if (showScanner) {
