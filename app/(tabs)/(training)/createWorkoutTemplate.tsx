@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSnackbar } from './components/SnackbarProvider'; // Import useSnackbar
+import { useSnackbar } from '@/app/components/SnackbarProvider'; // Import useSnackbar
 
 export default function CreateWorkoutTemplateScreen() {
   const router = useRouter();

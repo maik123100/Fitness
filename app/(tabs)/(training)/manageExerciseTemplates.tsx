@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { getExerciseTemplates, addExerciseTemplate, deleteExerciseTemplate, updateExerciseTemplate } from '../services/database';
+import { getExerciseTemplates, addExerciseTemplate, deleteExerciseTemplate, updateExerciseTemplate } from '@/services/database';
 import { ExerciseTemplate } from '@/types/types';
-import { draculaTheme, spacing, borderRadius, typography } from '../styles/theme';
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";

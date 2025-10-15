@@ -41,6 +41,7 @@ export const draculaTheme = {
     elevated: '#3c3f50',
     card: '#363949',
     input: '#44475a',
+    overlay: 'rgba(40, 42, 54, 0.5)',
   },
   
   // Nutrition colors (macro-nutrients)

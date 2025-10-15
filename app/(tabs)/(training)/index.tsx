@@ -35,8 +35,7 @@ export default function WorkoutScreen() {
   const handleTemplatePress = (templateId: string) => {
     if (activeSession && activeSession.workout_template_id !== templateId) {
       // Ask user to discard active session
-    } else if (activeSession && activeSession.workout_template_id === templateId) {
-      router.push('/workoutSession');
+    router.push('/workoutSession')
     } else {
       startWorkoutSession(templateId);
       router.push('/workoutSession');

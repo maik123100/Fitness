@@ -42,11 +42,6 @@ export default function RootLayout() {
             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
-            <Stack.Screen name="manageExerciseTemplates" options={{ headerShown: false }} />
-            <Stack.Screen name="macroGraphs" options={{ headerShown: false }} />
-            <Stack.Screen name="createWorkoutTemplate" options={{ headerShown: false }} />
-            <Stack.Screen name="workoutSession" options={{ headerShown: false }} />
-            <Stack.Screen name="add-food" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="light" />
         </SnackbarProvider>

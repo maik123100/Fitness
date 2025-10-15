@@ -5,10 +5,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FoodItem, FoodCategory } from '@/types/types';
 import { addFoodItem, getAllFoodItems } from '@/services/database';
-import { draculaTheme, spacing, borderRadius, typography, shadows } from '../styles/theme';
+import { draculaTheme, spacing, borderRadius, typography, shadows } from '@/styles/theme';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 
-import { useSnackbar } from './components/SnackbarProvider';
+import { useSnackbar } from '@/app/components/SnackbarProvider';
 
 const defaultFood: FoodItem = {
   id: Date.now().toString(),

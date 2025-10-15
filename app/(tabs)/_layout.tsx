@@ -13,35 +13,35 @@ const tabs: TabLayoutProps[] = [
   {
     name: 'index',
     title: 'Dashboard',
-    iconElement:  ({ color, focused }) => (
+    iconElement: ({ color, focused }) => (
       <Ionicons name={focused ? 'home-sharp' : 'home-outline'} color={color} size={24} />
     ),
   },
   {
-    name: 'food',
+    name: '(food)',
     title: 'Food',
-    iconElement:  ({ color, focused }) => (
+    iconElement: ({ color, focused }) => (
       <Ionicons name={focused ? 'fast-food' : 'fast-food-outline'} color={color} size={24} />
     ),
   },
   {
-    name: 'training',
+    name: '(training)',
     title: 'Workouts',
-    iconElement:  ({ color, focused }) => (
+    iconElement: ({ color, focused }) => (
       <Ionicons name={focused ? 'barbell-sharp' : 'barbell-outline'} color={color} size={24} />
     ),
   },
   {
     name: 'graph',
     title: 'Diet Report',
-    iconElement:  ({ color, focused }) => (
+    iconElement: ({ color, focused }) => (
       <Entypo name={focused ? 'area-graph' : 'line-graph'} color={color} size={24} />
     ),
   },
   {
     name: 'profile',
     title: 'Profile',
-    iconElement:  ({ color, focused }) => (
+    iconElement: ({ color, focused }) => (
       <Ionicons name={focused ? 'person-sharp' : 'person-outline'} color={color} size={24} />
     ),
   },
@@ -57,7 +57,7 @@ export default function TabLayout() {
         headerShadowVisible: false,
         headerTintColor: '#fff',
         tabBarStyle: {
-        backgroundColor: '#25292e',
+          backgroundColor: '#25292e',
         },
       }}
     >
