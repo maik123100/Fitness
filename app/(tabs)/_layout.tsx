@@ -2,6 +2,9 @@ import React, { JSX } from 'react';
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Entypo from '@expo/vector-icons/Entypo';
+import { DateProvider } from '@/app/contexts/DateContext';
+import DaySelector from '@/app/components/DaySelector';
+import { View } from 'react-native';
 
 type TabLayoutProps = {
   name: string;
@@ -48,30 +51,37 @@ const tabs: TabLayoutProps[] = [
 ]
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#ffd33d',
-        headerStyle: {
-          backgroundColor: '#25292e',
-        },
-        headerShadowVisible: false,
-        headerTintColor: '#fff',
-        tabBarStyle: {
-          backgroundColor: '#25292e',
-        },
-      }}
-    >
-      {tabs.map(({ name, title, iconElement }) => (
-        <Tabs.Screen
-          key={name}
-          name={name}
-          options={{
-            title,
-            headerTitleAlign: 'center',
-            tabBarIcon: iconElement,
-          }}
-        />
-      ))}
-    </Tabs>
+    <DateProvider>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: '#ffd33d',
+          headerStyle: {
+            backgroundColor: '#25292e',
+          },
+          headerShadowVisible: false,
+          headerTintColor: '#fff',
+          tabBarStyle: {
+            backgroundColor: '#25292e',
+          },
+          header: () => (
+            <View style={{ backgroundColor: '#25292e', paddingTop: 50, paddingHorizontal: 16 }}>
+              <DaySelector />
+            </View>
+          ),
+        }}
+      >
+        {tabs.map(({ name, title, iconElement }) => (
+          <Tabs.Screen
+            key={name}
+            name={name}
+            options={{
+              title,
+              headerTitleAlign: 'center',
+              tabBarIcon: iconElement,
+            }}
+          />
+        ))}
+      </Tabs>
+    </DateProvider>
   );
 }

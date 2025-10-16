@@ -9,6 +9,7 @@ import {
   getFoodItem,
 } from '@/services/database';
 import { FoodItem, FoodEntry, MealType } from '@/types/types';
+import { useDate } from '@/app/contexts/DateContext';
 
 export default function FoodQuantityScreen() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export default function FoodQuantityScreen() {
   const params = useLocalSearchParams<{ foodId: string, mealType: MealType }>();
   const foodId = params.foodId;
   const initialMealType = params.mealType;
+  const { selectedDate } = useDate();
+  const entryDate = selectedDate.toISOString().split('T')[0];
 
   const [foodItem, setFoodItem] = useState<FoodItem | null>(null);
   const [quantity, setQuantity] = useState('100');
@@ -43,30 +46,40 @@ export default function FoodQuantityScreen() {
   };
 
   const addFoodEntryToDatabase = () => {
-    if (foodItem && quantity) {
-      const date = new Date().toISOString().split('T')[0];
-      const newEntry: FoodEntry = {
-        id: Date.now().toString(),
-        foodId: foodItem.id,
-        date,
-        mealType: selectedMealType,
-        quantity: parseFloat(quantity),
-        unit: 'g',
-        totalCalories: (foodItem.calories / foodItem.servingSize) * parseFloat(quantity),
-        totalProtein: (foodItem.protein / foodItem.servingSize) * parseFloat(quantity),
-        totalCarbs: (foodItem.carbs / foodItem.servingSize) * parseFloat(quantity),
-        totalFat: (foodItem.fat / foodItem.servingSize) * parseFloat(quantity),
-        totalFiber: (foodItem.fiber / foodItem.servingSize) * parseFloat(quantity),
-        totalSugar: (foodItem.sugar / foodItem.servingSize) * parseFloat(quantity),
-        totalSodium: (foodItem.sodium / foodItem.servingSize) * parseFloat(quantity),
-        createdAt: Date.now(),
-      };
-      addFoodEntry(newEntry);
-      showSnackbar('Food logged successfully!', 3000);
-      router.push('/(tabs)/(food)');
-    } else {
-      showSnackbar('Please enter a valid quantity.', 3000);
+    if (!foodItem) {
+      showSnackbar('Food item not loaded.', 3000);
+      return;
     }
+    if (!entryDate) {
+      showSnackbar('Date not provided.', 3000);
+      return;
+    }
+
+    const parsedQuantity = parseFloat(quantity);
+    if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
+      showSnackbar('Please enter a valid quantity greater than 0.', 3000);
+      return;
+    }
+
+    const newEntry: FoodEntry = {
+      id: Date.now().toString(),
+      foodId: foodItem.id,
+      date: entryDate,
+      mealType: selectedMealType,
+      quantity: parsedQuantity,
+      unit: 'g',
+      totalCalories: (foodItem.calories / foodItem.servingSize) * parsedQuantity,
+      totalProtein: (foodItem.protein / foodItem.servingSize) * parsedQuantity,
+      totalCarbs: (foodItem.carbs / foodItem.servingSize) * parsedQuantity,
+      totalFat: (foodItem.fat / foodItem.servingSize) * parsedQuantity,
+      totalFiber: (foodItem.fiber / foodItem.servingSize) * parsedQuantity,
+      totalSugar: (foodItem.sugar / foodItem.servingSize) * parsedQuantity,
+      totalSodium: (foodItem.sodium / foodItem.servingSize) * parsedQuantity,
+      createdAt: Date.now(),
+    };
+    addFoodEntry(newEntry);
+    showSnackbar('Food logged successfully!', 3000);
+    router.push('/(tabs)/(food)');
   };
 
   if (!foodItem) {

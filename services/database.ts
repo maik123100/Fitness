@@ -321,7 +321,7 @@ export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplate
   }));
 };
 
-export const startWorkoutSession = (templateId: string): ActiveWorkoutSession => {
+export const startWorkoutSession = (templateId: string, date: string): ActiveWorkoutSession => {
   db.runSync('DELETE FROM active_workout_session');
   const exercises = getWorkoutTemplateExercises(templateId);
   const sets: WorkoutSet[] = exercises.flatMap(exercise => {
@@ -342,12 +342,13 @@ export const startWorkoutSession = (templateId: string): ActiveWorkoutSession =>
     id: Date.now().toString(),
     workout_template_id: templateId,
     start_time: Date.now(),
+    date: date,
     sets,
   };
 
   db.runSync(
-    'INSERT INTO active_workout_session (id, workout_template_id, start_time, sets) VALUES (?, ?, ?, ?)',
-    [newSession.id, newSession.workout_template_id, newSession.start_time, JSON.stringify(newSession.sets)]
+    'INSERT INTO active_workout_session (id, workout_template_id, start_time, date, sets) VALUES (?, ?, ?, ?, ?)',
+    [newSession.id, newSession.workout_template_id, newSession.start_time, newSession.date, JSON.stringify(newSession.sets)]
   );
 
   return newSession;
@@ -361,6 +362,7 @@ export const getActiveWorkoutSession = (): ActiveWorkoutSession | null => {
     id: row.id,
     workout_template_id: row.workout_template_id,
     start_time: row.start_time,
+    date: row.date,
     sets: JSON.parse(row.sets),
   };
 };
@@ -373,7 +375,7 @@ export const finishWorkoutSession = (session: ActiveWorkoutSession): void => {
   const newEntry: WorkoutEntry = {
     id: Date.now().toString(),
     workout_template_id: session.workout_template_id,
-    date: new Date().toISOString().split('T')[0],
+    date: session.date,
     duration: Math.round((Date.now() - session.start_time) / 60000), // duration in minutes
     sets: session.sets.filter(s => s.completed),
     createdAt: Date.now(),
@@ -387,11 +389,12 @@ export const finishWorkoutSession = (session: ActiveWorkoutSession): void => {
   db.runSync('DELETE FROM active_workout_session');
 };
 
-export const getWorkoutEntries = (): WorkoutEntry[] => {
-  return db.getAllSync<any>('SELECT * FROM workout_entries ORDER BY created_at DESC').map(row => ({
-    ...row,
-    sets: JSON.parse(row.sets),
-  }));
+export const getWorkoutEntries = (date: string): WorkoutEntry[] => {
+  return db.getAllSync<any>('SELECT * FROM workout_entries WHERE date = ? ORDER BY created_at DESC', [date])
+    .map(row => ({
+      ...row,
+      sets: JSON.parse(row.sets),
+    }));
 };
 
 // User Profile Functions
@@ -539,8 +542,19 @@ export const getDailyNutrition = (date: string): DailyNutrition | null => {
 
 export const resetDatabase = (): void => {
   console.log('Performing full database reset (clearing data and re-initializing schema)...');
-  initDatabase(); // Re-initialize the database, which will create schema if not exists
-  console.log('Database reset complete.');
+  try {
+    if (db) {
+      db.closeSync();
+      console.log('Database closed.');
+    }
+    SQLite.deleteDatabaseSync('fitness.db');
+    console.log('Database file deleted.');
+    initDatabase(); // Re-initialize the database, which will create schema if not exists
+    console.log('Database reset complete.');
+  } catch (error) {
+    console.error('Error resetting database:', error);
+    throw error;
+  }
 };
 
 export const updateActivity = (activity: Activity): void => {

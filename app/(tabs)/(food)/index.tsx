@@ -16,9 +16,9 @@ import {
   FoodEntry,
   MealType,
 } from '@/types/types';
+import { useDate } from '@/app/contexts/DateContext';
 
 type FoodDiaryState = {
-  date: string;
   foodEntries: Record<MealType, FoodEntry[]>;
   cameraModal: {
     visible: boolean;
@@ -30,8 +30,9 @@ export default function FoodDiaryScreen() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const [permission, requestPermission] = useCameraPermissions();
+  const { selectedDate } = useDate();
+
   const [state, setState] = useState<FoodDiaryState>({
-    date: new Date().toISOString().split('T')[0],
     foodEntries: { breakfast: [], lunch: [], dinner: [], snack: [] },
     cameraModal: {
       visible: false,
@@ -39,14 +40,14 @@ export default function FoodDiaryScreen() {
     },
   });
 
-  const { date, foodEntries, cameraModal } = state;
+  const { foodEntries, cameraModal } = state;
 
   useEffect(() => {
     loadFoodEntries();
-  }, [date]);
+  }, [selectedDate]);
 
   const loadFoodEntries = () => {
-    const entries = getFoodEntriesForDate(date);
+    const entries = getFoodEntriesForDate(selectedDate.toISOString().split('T')[0]);
     const groupedEntries: Record<MealType, FoodEntry[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
     entries.forEach(entry => {
       groupedEntries[entry.mealType].push(entry);
@@ -57,7 +58,7 @@ export default function FoodDiaryScreen() {
   const handleAddFood = (foodItem: FoodItem, mealType?: MealType) => {
     router.push({
       pathname: '/(tabs)/(food)/food-quantity',
-      params: { foodId: foodItem.id, mealType: mealType || 'breakfast' },
+      params: { foodId: foodItem.id, mealType: mealType || 'breakfast', date: selectedDate.toISOString().split('T')[0] },
     });
   };
 
@@ -75,7 +76,7 @@ export default function FoodDiaryScreen() {
   };
 
   const openSearchScreen = (mealType: MealType) => {
-    router.push({ pathname: '/(tabs)/(food)/food-search', params: { mealType } });
+    router.push({ pathname: '/(tabs)/(food)/food-search', params: { mealType, date: selectedDate.toISOString().split('T')[0] } });
   };
 
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {

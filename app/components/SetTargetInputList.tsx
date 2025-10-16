@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch } from 'react-native';
 import { SetTarget } from '@/types/types';
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
@@ -9,63 +9,70 @@ interface SetTargetInputListProps {
   onChange: (setTargets: SetTarget[]) => void;
 }
 
-  const SetTargetInputList: React.FC<SetTargetInputListProps> = ({ setTargets, onChange }) => {
-  const [sameForAll, setSameForAll] = useState(false);
-  const [singleReps, setSingleReps] = useState('10');
-  const [singleWeight, setSingleWeight] = useState('0');
-  const [setAmount, setSetAmount] = useState('3');
-  const isInternalUpdate = useRef(false);
+const SetTargetInputList: React.FC<SetTargetInputListProps> = ({ setTargets, onChange }) => {
+  const initialSameForAll = setTargets.length > 0 && setTargets.every(set => set.reps === setTargets[0].reps && set.weight === setTargets[0].weight);
+  const initialSingleReps = initialSameForAll ? setTargets[0].reps.toString() : '10';
+  const initialSingleWeight = initialSameForAll ? setTargets[0].weight.toString() : '0';
+  const initialSetAmount = initialSameForAll ? setTargets.length.toString() : '3';
 
-  useEffect(() => {
+  const [sameForAll, setSameForAll] = useState(initialSameForAll);
+  const [singleReps, setSingleReps] = useState(initialSingleReps);
+  const [singleWeight, setSingleWeight] = useState(initialSingleWeight);
+  const [setAmount, setSetAmount] = useState(initialSetAmount);
+
+  const generateSetTargets = (reps: string, weight: string, amount: string): SetTarget[] => {
+    const numSets = parseInt(amount) || 0;
+    const parsedReps = parseFloat(reps) || 0;
+    const parsedWeight = parseFloat(weight) || 0;
+    const newSetTargets: SetTarget[] = [];
+    for (let i = 0; i < numSets; i++) {
+      newSetTargets.push({ reps: parsedReps, weight: parsedWeight });
+    }
+    return newSetTargets;
+  };
+
+  const handleSetAmountChange = (text: string) => {
+    setSetAmount(text);
     if (sameForAll) {
-      const newSetTargets: SetTarget[] = [];
-      const numSets = parseInt(setAmount) || 0;
-      const reps = parseFloat(singleReps) || 0;
-      const weight = parseFloat(singleWeight) || 0;
-      for (let i = 0; i < numSets; i++) {
-        newSetTargets.push({ reps, weight });
-      }
-      onChange(newSetTargets);
-    } else if (setTargets.length === 0) {
-      onChange([{ reps: 10, weight: 0 }]); // Default to one set if switching back and no sets exist
+      onChange(generateSetTargets(singleReps, singleWeight, text));
     }
-  }, [sameForAll, singleReps, singleWeight, setAmount]);
+  };
 
-  useEffect(() => {
-    if (isInternalUpdate.current) {
-      isInternalUpdate.current = false;
-      return;
+  const handleSingleRepsChange = (text: string) => {
+    setSingleReps(text);
+    if (sameForAll) {
+      onChange(generateSetTargets(text, singleWeight, setAmount));
     }
+  };
 
-    if (setTargets.length > 0) {
-      const firstSet = setTargets[0];
-      const allSame = setTargets.every(set => set.reps === firstSet.reps && set.weight === firstSet.weight);
-      if (allSame) {
-        setSameForAll(true);
-        setSingleReps(firstSet.reps.toString());
-        setSingleWeight(firstSet.weight.toString());
-        setSetAmount(setTargets.length.toString());
-      } else {
-        setSameForAll(false);
-      }
+  const handleSingleWeightChange = (text: string) => {
+    setSingleWeight(text);
+    if (sameForAll) {
+      onChange(generateSetTargets(singleReps, text, setAmount));
+    }
+  };
+
+  const handleSameForAllToggle = (value: boolean) => {
+    setSameForAll(value);
+    if (value) {
+      onChange(generateSetTargets(singleReps, singleWeight, setAmount));
     } else {
-      setSameForAll(false);
-      setSingleReps('10');
-      setSingleWeight('0');
-      setSetAmount('3');
+      // When switching back to individual sets, if there are no sets, provide a default
+      if (setTargets.length === 0) {
+        onChange([{ reps: 10, weight: 0 }]);
+      }
     }
-  }, [setTargets]);
+  };
 
   const addSet = () => {
-    isInternalUpdate.current = true;
     onChange([...setTargets, { reps: 10, weight: 0 }]); // Default new set to 10 reps, 0 weight
   };
 
   const removeSet = (index: number) => {
-    isInternalUpdate.current = true;
     const newSetTargets = setTargets.filter((_, i) => i !== index);
     onChange(newSetTargets);
   };
+
   const updateSet = (value: string, index: number, field: 'reps' | 'weight') => {
     const newSetTargets = [...setTargets];
     newSetTargets[index] = {
@@ -82,7 +89,7 @@ interface SetTargetInputListProps {
         <Switch
           trackColor={{ false: draculaTheme.comment, true: draculaTheme.green }}
           thumbColor={sameForAll ? draculaTheme.cyan : draculaTheme.foreground}
-          onValueChange={setSameForAll}
+          onValueChange={handleSameForAllToggle}
           value={sameForAll}
         />
       </View>
@@ -96,7 +103,7 @@ interface SetTargetInputListProps {
             placeholderTextColor={draculaTheme.comment}
             keyboardType="numeric"
             value={setAmount}
-            onChangeText={setSetAmount}
+            onChangeText={handleSetAmountChange}
           />
           <View style={styles.singleInputRow}>
             <View style={styles.inputGroup}>
@@ -107,7 +114,7 @@ interface SetTargetInputListProps {
                 placeholderTextColor={draculaTheme.comment}
                 keyboardType="numeric"
                 value={singleReps}
-                onChangeText={setSingleReps}
+                onChangeText={handleSingleRepsChange}
               />
             </View>
             <View style={styles.inputGroup}>
@@ -118,7 +125,7 @@ interface SetTargetInputListProps {
                 placeholderTextColor={draculaTheme.comment}
                 keyboardType="numeric"
                 value={singleWeight}
-                onChangeText={setSingleWeight}
+                onChangeText={handleSingleWeightChange}
               />
             </View>
           </View>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { getExerciseTemplates, addExerciseTemplate, deleteExerciseTemplate, updateExerciseTemplate } from '@/services/database';
 import { ExerciseTemplate, SetTarget } from '@/types/types';
@@ -21,6 +21,53 @@ interface ManageExerciseTemplatesState {
     default_set_targets: SetTarget[];
   };
 }
+
+interface ListHeaderProps {
+  newTemplateForm: ManageExerciseTemplatesState['newTemplateForm'];
+  handleFormChange: (field: keyof ManageExerciseTemplatesState['newTemplateForm'], value: string | SetTarget[]) => void;
+  handleAddExerciseTemplate: () => void;
+  router: ReturnType<typeof useRouter>;
+  styles: {
+    headerContainer: object;
+    sectionTitle: object;
+    doneButton: object;
+    doneButtonText: object;
+    label: object;
+    input: object;
+    exerciseNameInput: object;
+    addButton: object;
+    addButtonText: object;
+  };
+}
+
+const ListHeader = memo(({
+  newTemplateForm,
+  handleFormChange,
+  handleAddExerciseTemplate,
+  router,
+  styles,
+}: ListHeaderProps) => (
+  <View>
+    <View style={styles.headerContainer}>
+      <Text style={styles.sectionTitle}>Add New Exercise Template</Text>
+      <TouchableOpacity style={styles.doneButton} onPress={() => router.back()}>
+        <Text style={styles.doneButtonText}>Done</Text>
+      </TouchableOpacity>
+    </View>
+    <Text style={styles.label}>Exercise Name</Text>
+    <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
+    <Text style={styles.label}>Default Set Targets</Text>
+    <SetTargetInputList
+      setTargets={newTemplateForm.default_set_targets}
+      onChange={(targets: SetTarget[]) => handleFormChange('default_set_targets', targets)}
+    />
+    <TouchableOpacity style={styles.addButton} onPress={handleAddExerciseTemplate}>
+      <Text style={styles.addButtonText}>Add Exercise Template</Text>
+    </TouchableOpacity>
+
+    <Text style={styles.sectionTitle}>Existing Exercise Templates</Text>
+  </View>
+));
 
 export default function ManageExerciseTemplates() {
   const router = useRouter();
@@ -97,7 +144,7 @@ export default function ManageExerciseTemplates() {
     ]);
   };
 
-  const handleFormChange = (field: keyof ManageExerciseTemplatesState['newTemplateForm'], value: string | SetTarget[]) => {
+  const handleFormChange = useCallback((field: keyof ManageExerciseTemplatesState['newTemplateForm'], value: string | SetTarget[]) => {
     setState(prev => ({
       ...prev,
       newTemplateForm: {
@@ -105,9 +152,9 @@ export default function ManageExerciseTemplates() {
         [field]: value,
       },
     }));
-  };
+  }, []);
 
-  const handleEditModalChange = (field: keyof ManageExerciseTemplatesState['editModal'], value: string | SetTarget[]) => {
+  const handleEditModalChange = useCallback((field: keyof ManageExerciseTemplatesState['editModal'], value: string | SetTarget[]) => {
     setState(prev => ({
       ...prev,
       editModal: {
@@ -115,31 +162,22 @@ export default function ManageExerciseTemplates() {
         [field]: value,
       },
     }));
-  };
+  }, []);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.sectionTitle}>Add New Exercise Template</Text>
-        <TouchableOpacity style={styles.doneButton} onPress={() => router.back()}>
-          <Text style={styles.doneButtonText}>Done</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.label}>Exercise Name</Text>
-      <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
-      <Text style={styles.label}>Default Set Targets</Text>
-      <SetTargetInputList
-        setTargets={newTemplateForm.default_set_targets}
-        onChange={(targets: SetTarget[]) => handleFormChange('default_set_targets', targets)}
-      />
-      <TouchableOpacity style={styles.addButton} onPress={handleAddExerciseTemplate}>
-        <Text style={styles.addButtonText}>Add Exercise Template</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.sectionTitle}>Existing Exercise Templates</Text>
       <FlatList
         data={exerciseTemplates}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <ListHeader
+            newTemplateForm={newTemplateForm}
+            handleFormChange={handleFormChange}
+            handleAddExerciseTemplate={handleAddExerciseTemplate}
+            router={router}
+            styles={styles}
+          />
+        }
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleEditPress(item)} style={styles.exerciseItem}>
             <Text style={styles.exerciseText}>{item.name} ({item.default_set_targets.length} sets)</Text>

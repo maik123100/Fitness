@@ -1,14 +1,14 @@
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, ScrollView } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
 import CalorieOverview from '../components/calorieOverview';
 import MakroOverview from '../components/makroOverview';
 import RecentActivities from '../components/recentActivities';
-import { 
-  getUserProfile, 
-  getNutritionSummary, 
-  getFoodEntriesForDate, 
+import {
+  getUserProfile,
+  getNutritionSummary,
+  getFoodEntriesForDate,
   getWorkoutEntries
 } from '@/services/database';
 import {
@@ -16,9 +16,10 @@ import {
   WorkoutEntry
 } from '@/types/types'
 import { draculaTheme, spacing, typography } from '../../styles/theme';
+import { useDate } from '@/app/contexts/DateContext';
+import MicroOverview from '../components/microOverview';
 
 interface DashboardState {
-  date: string;
   calorieData: {
     eaten: number;
     burned: number;
@@ -32,8 +33,8 @@ interface DashboardState {
 }
 
 export default function DashboardScreen() {
+  const { selectedDate } = useDate();
   const [state, setState] = useState<DashboardState>({
-    date: new Date().toISOString().split('T')[0],
     calorieData: { eaten: 0, burned: 0, remaining: 2000 },
     makroData: {
       current: { protein: 0, carbs: 0, fat: 0 },
@@ -42,19 +43,20 @@ export default function DashboardScreen() {
     recentActivities: [],
   });
 
-  const { date, calorieData, makroData, recentActivities } = state;
+  const { calorieData, makroData, recentActivities } = state;
 
   useFocusEffect(
     useCallback(() => {
       loadDashboardData();
-    }, [date])
+    }, [selectedDate])
   );
 
   const loadDashboardData = () => {
     const userProfile = getUserProfile();
-    const nutritionSummary = getNutritionSummary(date);
-    const foodEntries = getFoodEntriesForDate(date);
-    const workoutEntries = getWorkoutEntries();
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+    const nutritionSummary = getNutritionSummary(formattedDate);
+    const foodEntries = getFoodEntriesForDate(formattedDate);
+    const workoutEntries = getWorkoutEntries(formattedDate);
 
     const targetCalories = userProfile?.targetCalories || 2000;
     const eaten = nutritionSummary.totalCalories;
@@ -92,9 +94,12 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Dashboard</Text>
-      <CalorieOverview {...calorieData} />
-      <MakroOverview currentMakro={makroData.current} targetMakro={makroData.target} />
-      <RecentActivities recentActivities={recentActivities} />
+      <ScrollView>
+        <CalorieOverview {...calorieData} />
+        <MakroOverview currentMakro={makroData.current} targetMakro={makroData.target} />
+        <MicroOverview />
+        <RecentActivities recentActivities={recentActivities} />
+      </ScrollView>
     </View>
   );
 }

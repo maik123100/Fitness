@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { getUserProfile, saveUserProfile } from '@/services/database';
+import { getUserProfile, saveUserProfile, resetDatabase } from '@/services/database';
 import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import { setOnboardingCompleted } from '../../services/onboardingService';
@@ -97,6 +97,26 @@ export default function ProfileScreen() {
   const handleResetOnboarding = async () => {
     await setOnboardingCompleted(false);
     router.replace('/onboarding');
+  };
+
+  const handleResetDatabase = () => {
+    Alert.alert(
+      'Reset Database',
+      'Are you sure you want to reset the entire database? All your data will be lost.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            resetDatabase();
+            setOnboardingCompleted(false); // Also reset onboarding after db reset
+            router.replace('/onboarding');
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   return (
@@ -204,6 +224,10 @@ export default function ProfileScreen() {
 
       <TouchableOpacity style={styles.resetButton} onPress={handleResetOnboarding}>
         <Text style={styles.resetButtonText}>Reset Onboarding</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.resetButton} onPress={handleResetDatabase}>
+        <Text style={styles.resetButtonText}>Reset Database</Text>
       </TouchableOpacity>
     </ScrollView>
   );

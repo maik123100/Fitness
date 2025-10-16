@@ -1,35 +1,40 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession } from '@/services/database';
-import { WorkoutTemplate, ActiveWorkoutSession } from '@/types/types'
+import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession, getWorkoutEntries, getWorkoutTemplate } from '@/services/database';
+import { WorkoutTemplate, ActiveWorkoutSession, WorkoutEntry } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+import { useDate } from '@/app/contexts/DateContext';
 
 interface TrainingState {
   templates: WorkoutTemplate[];
   activeSession: ActiveWorkoutSession | null;
+  workoutEntries: WorkoutEntry[];
 }
 
 export default function WorkoutScreen() {
   const router = useRouter();
+  const { selectedDate } = useDate();
   const [state, setState] = useState<TrainingState>({
     templates: [],
     activeSession: null,
+    workoutEntries: [],
   });
 
-  const { templates, activeSession } = state;
+  const { templates, activeSession, workoutEntries } = state;
 
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [])
+    }, [selectedDate])
   );
 
   const loadData = () => {
     const templatesData = getWorkoutTemplates();
     const activeSessionData = getActiveWorkoutSession();
-    setState({ templates: templatesData, activeSession: activeSessionData });
+    const workoutEntriesData = getWorkoutEntries(selectedDate.toISOString().split('T')[0]);
+    setState({ templates: templatesData, activeSession: activeSessionData, workoutEntries: workoutEntriesData });
   };
 
   const handleTemplatePress = (templateId: string) => {
@@ -37,7 +42,7 @@ export default function WorkoutScreen() {
       // Ask user to discard active session
     router.push('/workoutSession')
     } else {
-      startWorkoutSession(templateId);
+      startWorkoutSession(templateId, selectedDate.toISOString().split('T')[0]);
       router.push('/workoutSession');
     }
   };
@@ -62,6 +67,19 @@ export default function WorkoutScreen() {
               <Text style={styles.templateTitle}>{item.name}</Text>
             </View>
           </TouchableOpacity>
+        )}
+      />
+
+      <Text style={styles.sectionTitle}>Completed Workouts</Text>
+      <FlatList
+        data={workoutEntries}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.completedWorkoutCard}>
+            <Text style={styles.completedWorkoutTitle}>{getWorkoutTemplate(item.workout_template_id)?.name}</Text>
+            <Text style={styles.completedWorkoutDetails}>Duration: {item.duration} mins</Text>
+            <Text style={styles.completedWorkoutDetails}>Sets: {item.sets.length}</Text>
+          </View>
         )}
       />
 
@@ -111,6 +129,23 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
     color: draculaTheme.foreground,
+  },
+  completedWorkoutCard: {
+    backgroundColor: draculaTheme.surface.card,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: draculaTheme.purple,
+  },
+  completedWorkoutTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    color: draculaTheme.foreground,
+  },
+  completedWorkoutDetails: {
+    fontSize: typography.sizes.sm,
+    color: draculaTheme.comment,
   },
   createButton: {
     backgroundColor: draculaTheme.cyan,

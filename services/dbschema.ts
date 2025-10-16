@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS active_workout_session (
   id TEXT PRIMARY KEY,
   workout_template_id TEXT NOT NULL,
   start_time INTEGER NOT NULL,
+  date TEXT NOT NULL,
   sets TEXT NOT NULL, -- JSON string of WorkoutSet[]
   FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id)
 );

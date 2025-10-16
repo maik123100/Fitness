@@ -124,6 +124,7 @@ export interface ActiveWorkoutSession {
 	id: string;
 	workout_template_id: string;
 	start_time: number;
+	date: string;
 	sets: WorkoutSet[];
 }
 

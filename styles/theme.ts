@@ -103,6 +103,7 @@ export const borderRadius = {
 
 // Typography
 export const typography = {
+  fontFamily: 'System', // Default system font
   sizes: {
     xs: 10,
     sm: 12,
