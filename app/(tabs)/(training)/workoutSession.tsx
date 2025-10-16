@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface WorkoutSessionState {
   session: ActiveWorkoutSession | null;
-  exercises: (WorkoutTemplateExercise & { exercise_name: string; default_sets: number; default_reps: string })[];
+  exercises: (WorkoutTemplateExercise & { exercise_name: string })[];
 }
 
 export default function WorkoutSessionScreen() {
@@ -31,8 +31,6 @@ export default function WorkoutSessionScreen() {
         return {
           ...te,
           exercise_name: exerciseTemplate?.name || 'Unknown Exercise',
-          default_sets: exerciseTemplate?.default_sets || 0,
-          default_reps: exerciseTemplate?.default_reps || '0',
         };
       });
       setState({ session: activeSession, exercises: exercisesWithDetails });
@@ -75,12 +73,14 @@ export default function WorkoutSessionScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.exerciseCard}>
-            <Text style={styles.exerciseTitle}>{item.exercise_name} ({item.default_sets}x{item.default_reps})</Text>
+            <Text style={styles.exerciseTitle}>{item.exercise_name} ({item.set_targets.length} sets)</Text>
             {session.sets.filter((set: WorkoutSet) => set.workout_template_exercise_id === item.id).map((set: WorkoutSet, index: number) => (
               <View key={set.id}>
                 {index === 0 && (
                   <View style={styles.setLabelsRow}>
                     <View style={styles.setNumberPlaceholder} />
+                    <Text style={styles.inputLabel}>Target Weight</Text>
+                    <Text style={styles.inputLabel}>Target Reps</Text>
                     <Text style={styles.inputLabel}>Weight</Text>
                     <Text style={styles.inputLabel}>Reps</Text>
                     <View style={styles.checkboxPlaceholder} />
@@ -88,6 +88,8 @@ export default function WorkoutSessionScreen() {
                 )}
                 <View style={styles.setContainer}>
                   <Text style={styles.setText}>Set {index + 1}</Text>
+                  <Text style={styles.targetValue}>{set.targetWeight} kg</Text>
+                  <Text style={styles.targetValue}>{set.targetReps} reps</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="Weight"
@@ -180,6 +182,13 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     marginRight: spacing.md,
     flex: 1,
+  },
+  targetValue: {
+    color: draculaTheme.comment,
+    fontSize: typography.sizes.md,
+    marginRight: spacing.md,
+    flex: 1,
+    textAlign: 'center',
   },
   finishButton: {
     backgroundColor: draculaTheme.cyan,

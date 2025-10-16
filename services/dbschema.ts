@@ -99,8 +99,7 @@ CREATE TABLE IF NOT EXISTS workout_template_exercises (
   id TEXT PRIMARY KEY,
   workout_template_id TEXT NOT NULL,
   exercise_template_id TEXT NOT NULL,
-  sets INTEGER NOT NULL,
-  reps TEXT NOT NULL,
+  set_targets TEXT NOT NULL,
   "order" INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (workout_template_id) REFERENCES workout_templates(id),
   FOREIGN KEY (exercise_template_id) REFERENCES exercise_templates(id)
@@ -109,8 +108,7 @@ CREATE TABLE IF NOT EXISTS workout_template_exercises (
 CREATE TABLE IF NOT EXISTS exercise_templates (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  default_sets INTEGER NOT NULL,
-  default_reps TEXT NOT NULL
+  default_set_targets TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS workout_entries (

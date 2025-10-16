@@ -285,29 +285,40 @@ export const getWorkoutTemplate = (id: string): WorkoutTemplate | null => {
 };
 
 export const getExerciseTemplate = (id: string): ExerciseTemplate | null => {
-  return db.getFirstSync<ExerciseTemplate>('SELECT * FROM exercise_templates WHERE id = ?', [id]);
+  const row = db.getFirstSync<any>('SELECT * FROM exercise_templates WHERE id = ?', [id]);
+  if (!row) return null;
+  return {
+    ...row,
+    default_set_targets: JSON.parse(row.default_set_targets),
+  };
 };
 
 export const addWorkoutTemplateExercise = (exercise: WorkoutTemplateExercise): void => {
   db.runSync(
-    'INSERT INTO workout_template_exercises (id, workout_template_id, exercise_template_id, sets, reps, "order") VALUES (?, ?, ?, ?, ?, ?)',
-    [exercise.id, exercise.workout_template_id, exercise.exercise_template_id, exercise.sets, exercise.reps, exercise.order]
+    'INSERT INTO workout_template_exercises (id, workout_template_id, exercise_template_id, set_targets, "order") VALUES (?, ?, ?, ?, ?)',
+    [exercise.id, exercise.workout_template_id, exercise.exercise_template_id, JSON.stringify(exercise.set_targets), exercise.order]
   );
 };
 
 export const addExerciseTemplate = (template: ExerciseTemplate): void => {
-  db.runSync('INSERT INTO exercise_templates (id, name, default_sets, default_reps) VALUES (?, ?, ?, ?)', [template.id, template.name, template.default_sets, template.default_reps]);
+  db.runSync('INSERT INTO exercise_templates (id, name, default_set_targets) VALUES (?, ?, ?)', [template.id, template.name, JSON.stringify(template.default_set_targets)]);
 };
 
 export const getExerciseTemplates = (): ExerciseTemplate[] => {
-  return db.getAllSync<ExerciseTemplate>('SELECT * FROM exercise_templates');
+  return db.getAllSync<any>('SELECT * FROM exercise_templates').map(row => ({
+    ...row,
+    default_set_targets: JSON.parse(row.default_set_targets),
+  }));
 };
 
 export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplateExercise[] => {
-  return db.getAllSync<WorkoutTemplateExercise>(
+  return db.getAllSync<any>(
     'SELECT * FROM workout_template_exercises WHERE workout_template_id = ? ORDER BY "order" ASC',
     [templateId]
-  );
+  ).map(row => ({
+    ...row,
+    set_targets: JSON.parse(row.set_targets),
+  }));
 };
 
 export const startWorkoutSession = (templateId: string): ActiveWorkoutSession => {
@@ -316,17 +327,15 @@ export const startWorkoutSession = (templateId: string): ActiveWorkoutSession =>
   const sets: WorkoutSet[] = exercises.flatMap(exercise => {
     const exerciseTemplate = getExerciseTemplate(exercise.exercise_template_id);
     if (!exerciseTemplate) return [];
-    const sets: WorkoutSet[] = [];
-    for (let i = 0; i < exerciseTemplate.default_sets; i++) {
-      sets.push({
-        id: `${exercise.id}-${i}`,
-        workout_template_exercise_id: exercise.id,
-        weight: 0,
-        reps: 0,
-        completed: false,
-      });
-    }
-    return sets;
+    return exercise.set_targets.map((target, index) => ({
+      id: `${exercise.id}-${index}`,
+      workout_template_exercise_id: exercise.id,
+      weight: 0,
+      reps: 0,
+      targetReps: target.reps,
+      targetWeight: target.weight,
+      completed: false,
+    }));
   });
 
   const newSession: ActiveWorkoutSession = {
@@ -490,8 +499,8 @@ export const deleteExerciseTemplate = (id: string): void => {
 
 export const updateExerciseTemplate = (template: ExerciseTemplate): void => {
   db.runSync(
-    'UPDATE exercise_templates SET name = ?, default_sets = ?, default_reps = ? WHERE id = ?',
-    [template.name, template.default_sets, template.default_reps, template.id]
+    'UPDATE exercise_templates SET name = ?, default_set_targets = ? WHERE id = ?',
+    [template.name, JSON.stringify(template.default_set_targets), template.id]
   );
 };
 export const addActivity = (activity: Activity): void => {

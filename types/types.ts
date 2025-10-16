@@ -91,20 +91,23 @@ export interface WorkoutTemplate {
 	name: string;
 }
 
-export interface WorkoutTemplateExercise {
-	id: string;
-	workout_template_id: string;
-	exercise_template_id: string;
-	sets: number;
-	reps: string;
-	order: number;
+export interface SetTarget {
+	reps: number;
+	weight: number;
 }
 
 export interface ExerciseTemplate {
 	id: string;
 	name: string;
-	default_sets: number;
-	default_reps: string;
+	default_set_targets: SetTarget[];
+}
+
+export interface WorkoutTemplateExercise {
+	id: string;
+	workout_template_id: string;
+	exercise_template_id: string;
+	set_targets: SetTarget[];
+	order: number;
 }
 
 export interface WorkoutSet {
@@ -112,6 +115,8 @@ export interface WorkoutSet {
 	workout_template_exercise_id: string;
 	weight: number;
 	reps: number;
+	targetReps: number;
+	targetWeight: number;
 	completed: boolean;
 }
 

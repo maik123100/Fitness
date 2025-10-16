@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { getExerciseTemplates, addWorkoutTemplate, addWorkoutTemplateExercise } from '@/services/database';
-import { ExerciseTemplate } from '@/types/types'
+import { ExerciseTemplate, SetTarget } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSnackbar } from '@/app/components/SnackbarProvider'; // Import useSnackbar
+import SetTargetInputList from '@/app/components/SetTargetInputList';
+
+interface OrderedExercise extends ExerciseTemplate {
+  set_targets: SetTarget[];
+}
 
 export default function CreateWorkoutTemplateScreen() {
   const router = useRouter();
@@ -16,7 +21,7 @@ export default function CreateWorkoutTemplateScreen() {
   const [step, setStep] = useState(1);
   const [allExercises, setAllExercises] = useState<ExerciseTemplate[]>([]);
   const [selectedExerciseIds, setSelectedExerciseIds] = useState<Set<string>>(new Set());
-  const [orderedExercises, setOrderedExercises] = useState<ExerciseTemplate[]>([]);
+  const [orderedExercises, setOrderedExercises] = useState<OrderedExercise[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [templateName, setTemplateName] = useState('');
 
@@ -36,7 +41,12 @@ export default function CreateWorkoutTemplateScreen() {
   };
 
   const handleNextStep = () => {
-    const selected = allExercises.filter(ex => selectedExerciseIds.has(ex.id));
+    const selected: OrderedExercise[] = allExercises
+      .filter(ex => selectedExerciseIds.has(ex.id))
+      .map(ex => ({
+        ...ex,
+        set_targets: ex.default_set_targets.map(target => ({ ...target })) // Deep copy default targets
+      }));
     setOrderedExercises(selected);
     setStep(2);
   };
@@ -58,8 +68,7 @@ export default function CreateWorkoutTemplateScreen() {
         id: Date.now().toString() + index,
         workout_template_id: newTemplate.id,
         exercise_template_id: exercise.id,
-        sets: exercise.default_sets,
-        reps: exercise.default_reps,
+        set_targets: exercise.set_targets,
         order: index,
       });
     });
@@ -72,18 +81,28 @@ export default function CreateWorkoutTemplateScreen() {
     ex.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const renderOrderedItem = ({ item, drag, isActive }: RenderItemParams<ExerciseTemplate>) => {
-    return (
-      <TouchableOpacity
-        style={[styles.orderedExerciseItem, { backgroundColor: isActive ? draculaTheme.surface.secondary : draculaTheme.surface.card }]}
-        onLongPress={drag}
-      >
-        <Text style={styles.exerciseText}>{item.name}</Text>
-        <Ionicons name="menu" size={24} color={draculaTheme.comment} />
-      </TouchableOpacity>
-    );
-  };
-
+    const renderOrderedItem = ({ item, drag, isActive }: RenderItemParams<OrderedExercise>) => {
+      const updateExerciseSetTargets = (newSetTargets: SetTarget[]) => {
+        setOrderedExercises(prev =>
+          prev.map(ex => (ex.id === item.id ? { ...ex, set_targets: newSetTargets } : ex))
+        );
+      };
+  
+      return (
+        <View style={[styles.orderedExerciseItem, { backgroundColor: isActive ? draculaTheme.surface.secondary : draculaTheme.surface.card }]}>
+          <View style={styles.orderedExerciseHeader}>
+            <Text style={styles.exerciseText}>{item.name}</Text>
+            <TouchableOpacity onLongPress={drag}>
+              <Ionicons name="menu" size={24} color={draculaTheme.comment} />
+            </TouchableOpacity>
+          </View>
+          <SetTargetInputList
+            setTargets={item.set_targets}
+            onChange={updateExerciseSetTargets}
+          />
+        </View>
+      );
+    };
   if (step === 1) {
     return (
       <View style={[styles.container, { paddingTop: insets.top * 2 }]}>
@@ -207,8 +226,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
+  },
+  orderedExerciseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.sm,
   },
 });
