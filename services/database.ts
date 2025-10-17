@@ -397,6 +397,26 @@ export const getWorkoutEntries = (date: string): WorkoutEntry[] => {
     }));
 };
 
+export const getWorkoutEntry = (id: string): WorkoutEntry | null => {
+  const row = db.getFirstSync<any>('SELECT * FROM workout_entries WHERE id = ?', [id]);
+  if (!row) return null;
+  return {
+    ...row,
+    sets: JSON.parse(row.sets),
+  };
+};
+
+export const updateWorkoutEntry = (entry: WorkoutEntry): void => {
+  db.runSync(
+    'UPDATE workout_entries SET duration = ?, sets = ? WHERE id = ?',
+    [entry.duration, JSON.stringify(entry.sets), entry.id]
+  );
+};
+
+export const deleteWorkoutEntry = (id: string): void => {
+  db.runSync('DELETE FROM workout_entries WHERE id = ?', [id]);
+};
+
 // User Profile Functions
 export const saveUserProfile = (profile: UserProfile): void => {
   const now = Date.now();

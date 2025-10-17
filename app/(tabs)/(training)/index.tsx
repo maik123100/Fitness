@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession, getWorkoutEntries, getWorkoutTemplate } from '@/services/database';
+import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession, getWorkoutEntries, getWorkoutTemplate, deleteWorkoutEntry } from '@/services/database';
 import { WorkoutTemplate, ActiveWorkoutSession, WorkoutEntry } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { useDate } from '@/app/contexts/DateContext';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Animated } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 interface TrainingState {
   templates: WorkoutTemplate[];
@@ -21,6 +24,7 @@ export default function WorkoutScreen() {
     activeSession: null,
     workoutEntries: [],
   });
+  const swipeableRef = useRef<Swipeable>(null);
 
   const { templates, activeSession, workoutEntries } = state;
 
@@ -47,50 +51,81 @@ export default function WorkoutScreen() {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {activeSession && (
-        <TouchableOpacity onPress={() => router.navigate('/(tabs)/(training)/workoutSession')}>
-          <View style={styles.activeSessionCard}>
-            <Text style={styles.activeSessionTitle}>Active Workout</Text>
-          </View>
+  const renderRightActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>, item: WorkoutEntry) => {
+    const trans = dragX.interpolate({
+      inputRange: [-160, 0],
+      outputRange: [0, 160],
+      extrapolate: 'clamp',
+    });
+    return (
+      <View style={styles.rightActionContainer}>
+        <TouchableOpacity onPress={() => router.navigate({ pathname: '/(tabs)/(training)/workoutSession', params: { workoutEntryId: item.id }})} style={[styles.actionButton, styles.editButton]}>
+          <Animated.View style={{ transform: [{ translateX: trans }] }}>
+            <Icon name="pencil" size={24} color={draculaTheme.text.inverse} />
+          </Animated.View>
         </TouchableOpacity>
-      )}
+        <TouchableOpacity onPress={() => {
+          console.log('Attempting to delete workout entry:', item.id);
+          deleteWorkoutEntry(item.id);
+          console.log('Workout entry deleted from DB. Reloading data...');
+          loadData();
+          console.log('Data reloaded.');
+          swipeableRef.current?.close(); // Close the swipeable after deletion
+        }} style={[styles.actionButton, styles.deleteButton]}>
+          <Animated.View style={{ transform: [{ translateX: trans }] }}>
+            <Icon name="delete" size={24} color={draculaTheme.text.inverse} />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
-      <Text style={styles.sectionTitle}>Workout Templates</Text>
-      <FlatList
-        data={templates}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleTemplatePress(item.id)}>
-            <View style={styles.templateCard}>
-              <Text style={styles.templateTitle}>{item.name}</Text>
+  return (
+      <View style={styles.container}>
+        {activeSession && (
+          <TouchableOpacity onPress={() => router.navigate('/(tabs)/(training)/workoutSession')}>
+            <View style={styles.activeSessionCard}>
+              <Text style={styles.activeSessionTitle}>Active Workout</Text>
             </View>
           </TouchableOpacity>
         )}
-      />
 
-      <Text style={styles.sectionTitle}>Completed Workouts</Text>
-      <FlatList
-        data={workoutEntries}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.completedWorkoutCard}>
-            <Text style={styles.completedWorkoutTitle}>{getWorkoutTemplate(item.workout_template_id)?.name}</Text>
-            <Text style={styles.completedWorkoutDetails}>Duration: {item.duration} mins</Text>
-            <Text style={styles.completedWorkoutDetails}>Sets: {item.sets.length}</Text>
-          </View>
-        )}
-      />
+        <Text style={styles.sectionTitle}>Workout Templates</Text>
+        <FlatList
+          data={templates}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => handleTemplatePress(item.id)}>
+              <View style={styles.templateCard}>
+                <Text style={styles.templateTitle}>{item.name}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
 
-      <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/createWorkoutTemplate')}>
-        <Text style={styles.createButtonText}>Create New Workout</Text>
-      </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Completed Workouts</Text>
+        <FlatList
+          data={workoutEntries}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <Swipeable ref={swipeableRef} renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}>
+              <View style={styles.completedWorkoutCard}>
+                <Text style={styles.completedWorkoutTitle}>{getWorkoutTemplate(item.workout_template_id)?.name}</Text>
+                <Text style={styles.completedWorkoutDetails}>Duration: {item.duration} mins</Text>
+                <Text style={styles.completedWorkoutDetails}>Sets: {item.sets.length}</Text>
+              </View>
+            </Swipeable>
+          )}
+        />
 
-      <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/manageExerciseTemplates')}>
-        <Text style={styles.createButtonText}>Manage Exercise Templates</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/createWorkoutTemplate')}>
+          <Text style={styles.createButtonText}>Create New Workout</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/manageExerciseTemplates')}>
+          <Text style={styles.createButtonText}>Manage Exercise Templates</Text>
+        </TouchableOpacity>
+      </View>
   );
 }
 
@@ -158,5 +193,26 @@ const styles = StyleSheet.create({
     color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
+  },
+  rightActionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+
+  },
+  actionButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    paddingVertical: 20,
+    borderRadius: borderRadius.md,
+  },
+  editButton: {
+    backgroundColor: draculaTheme.green,
+    marginRight: spacing.sm
+  },
+  deleteButton: {
+    backgroundColor: draculaTheme.red,
   },
 });
