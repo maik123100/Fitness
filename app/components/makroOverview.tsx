@@ -51,7 +51,7 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
   };
 
   return (
-    <TouchableOpacity onPress={() => router.push('/macroGraphs')} style={styles.container}>
+    <TouchableOpacity onPress={() => router.navigate('/macroGraphs')} style={styles.container}>
       <Text style={styles.title}>Makro Overview</Text>
       <ProgressChart
         data={data}

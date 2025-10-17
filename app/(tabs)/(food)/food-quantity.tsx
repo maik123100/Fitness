@@ -79,7 +79,7 @@ export default function FoodQuantityScreen() {
     };
     addFoodEntry(newEntry);
     showSnackbar('Food logged successfully!', 3000);
-    router.push('/(tabs)/(food)');
+    router.navigate('/(tabs)/(food)');
   };
 
   if (!foodItem) {

@@ -79,6 +79,16 @@ export default function TabLayout() {
               headerTitleAlign: 'center',
               tabBarIcon: iconElement,
             }}
+            listeners={
+              name.startsWith('(')
+                ? ({ navigation }) => ({
+                    tabPress: (e) => {
+                      e.preventDefault();
+                      navigation.jumpTo(name, { screen: 'index' });
+                    },
+                  })
+                : undefined
+            }
           />
         ))}
       </Tabs>

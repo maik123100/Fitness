@@ -56,7 +56,7 @@ export default function FoodDiaryScreen() {
   };
 
   const handleAddFood = (foodItem: FoodItem, mealType?: MealType) => {
-    router.push({
+    router.navigate({
       pathname: '/(tabs)/(food)/food-quantity',
       params: { foodId: foodItem.id, mealType: mealType || 'breakfast', date: selectedDate.toISOString().split('T')[0] },
     });
@@ -76,7 +76,7 @@ export default function FoodDiaryScreen() {
   };
 
   const openSearchScreen = (mealType: MealType) => {
-    router.push({ pathname: '/(tabs)/(food)/food-search', params: { mealType, date: selectedDate.toISOString().split('T')[0] } });
+    router.navigate({ pathname: '/(tabs)/(food)/food-search', params: { mealType, date: selectedDate.toISOString().split('T')[0] } });
   };
 
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {

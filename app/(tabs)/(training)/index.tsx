@@ -40,17 +40,17 @@ export default function WorkoutScreen() {
   const handleTemplatePress = (templateId: string) => {
     if (activeSession && activeSession.workout_template_id !== templateId) {
       // Ask user to discard active session
-    router.push('/workoutSession')
+    router.navigate('/(tabs)/(training)/workoutSession')
     } else {
       startWorkoutSession(templateId, selectedDate.toISOString().split('T')[0]);
-      router.push('/workoutSession');
+      router.navigate('/(tabs)/(training)/workoutSession');
     }
   };
 
   return (
     <View style={styles.container}>
       {activeSession && (
-        <TouchableOpacity onPress={() => router.push('/workoutSession')}>
+        <TouchableOpacity onPress={() => router.navigate('/(tabs)/(training)/workoutSession')}>
           <View style={styles.activeSessionCard}>
             <Text style={styles.activeSessionTitle}>Active Workout</Text>
           </View>
@@ -83,11 +83,11 @@ export default function WorkoutScreen() {
         )}
       />
 
-      <TouchableOpacity style={styles.createButton} onPress={() => router.push('/createWorkoutTemplate')}>
+      <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/createWorkoutTemplate')}>
         <Text style={styles.createButtonText}>Create New Workout</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.createButton} onPress={() => router.push('/manageExerciseTemplates')}>
+      <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/manageExerciseTemplates')}>
         <Text style={styles.createButtonText}>Manage Exercise Templates</Text>
       </TouchableOpacity>
     </View>

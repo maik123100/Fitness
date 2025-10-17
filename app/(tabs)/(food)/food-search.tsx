@@ -51,7 +51,7 @@ export default function FoodSearchScreen() {
   };
 
   const handleAddFood = (foodItem: FoodItem) => {
-    router.push({
+    router.navigate({
       pathname: '/(tabs)/(food)/food-quantity',
       params: { foodId: foodItem.id, mealType: mealType },
     });
@@ -94,7 +94,7 @@ export default function FoodSearchScreen() {
         </TouchableOpacity>
       </View>
       <TouchableOpacity style={styles.addNewFoodButton} onPress={() => {
-        router.push('/(tabs)/(food)/add-food');
+        router.navigate('/(tabs)/(food)/add-food');
       }}>
         <Text style={styles.addNewFoodButtonText}>Add New Food</Text>
       </TouchableOpacity>
