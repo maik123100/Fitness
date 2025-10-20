@@ -168,8 +168,8 @@ export interface WorkoutEntry {
 
 export interface UserProfile {
 	id: string;
-	age: number;
-	gender: 'male' | 'female' | 'other';
+	birthdate: string;
+	gender: 'male' | 'female';
 	height: number;
 	weight: number;
 	activityLevel: ActivityLevel;

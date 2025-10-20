@@ -6,6 +6,7 @@ import { draculaTheme, spacing, typography, borderRadius } from '../styles/theme
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { saveUserProfile } from '@/services/database';
 import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
+import DatePickerModal from '@/app/components/DatePickerModal';
 
 const activityLevels: Record<ActivityLevel, string> = {
   sedentary: 'Sedentary',
@@ -27,6 +28,7 @@ const initialProfile: Partial<UserProfile> = {
   gender: 'male',
   activityLevel: 'sedentary',
   goalType: 'maintain-weight',
+  birthdate: '',
 };
 
 export default function OnboardingScreen() {
@@ -34,6 +36,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<Partial<UserProfile>>(initialProfile);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   const handleUpdateProfile = (field: keyof UserProfile, value: any) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -48,14 +51,17 @@ export default function OnboardingScreen() {
   };
 
   const handleFinish = async () => {
-    if (!profile.age || !profile.height || !profile.weight) {
+    if (!profile.birthdate || !profile.height || !profile.weight) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
 
+    const birthdate = new Date(profile.birthdate);
+    const ageDate = new Date(Date.now() - birthdate.getTime());
+    const ageYears = Math.abs(ageDate.getUTCFullYear() - 1970);
+
     const weightKg = profile.weight;
     const heightCm = profile.height;
-    const ageYears = profile.age;
 
     let bmr = 0;
     if (profile.gender === 'male') {
@@ -83,7 +89,7 @@ export default function OnboardingScreen() {
 
     const newProfile: UserProfile = {
       id: Date.now().toString(),
-      age: ageYears,
+      birthdate: profile.birthdate,
       gender: profile.gender!,
       height: heightCm,
       weight: weightKg,
@@ -119,13 +125,21 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.stepContainer}>
             <Text style={styles.title}>Your Details</Text>
-            <TextInput style={styles.input} placeholder="Age" keyboardType="numeric" value={profile.age?.toString()} onChangeText={(text) => handleUpdateProfile('age', parseInt(text))} />
+            <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={styles.input}>
+              <Text style={styles.datePickerText}>{profile.birthdate ? profile.birthdate : 'Select your birthdate'}</Text>
+            </TouchableOpacity>
+            <DatePickerModal
+              isVisible={isDatePickerVisible}
+              onClose={() => setDatePickerVisibility(false)}
+              onSelectDate={(date) => handleUpdateProfile('birthdate', date.toISOString().split('T')[0])}
+              currentDate={profile.birthdate ? new Date(profile.birthdate) : new Date()}
+            />
             <View style={styles.segmentedControl}>
-              {['male', 'female', 'other'].map((g) => (
+              {['male', 'female'].map((g) => (
                 <TouchableOpacity
                   key={g}
                   style={[styles.segment, profile.gender === g && styles.segmentActive]}
-                  onPress={() => handleUpdateProfile('gender', g as 'male' | 'female' | 'other')}
+                  onPress={() => handleUpdateProfile('gender', g as 'male' | 'female')}
                 >
                   <Text style={[styles.segmentText, profile.gender === g && styles.segmentTextActive]}>{g}</Text>
                 </TouchableOpacity>
@@ -241,6 +255,11 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     width: '100%',
     marginBottom: spacing.md,
+    justifyContent: 'center',
+  },
+  datePickerText: {
+    fontSize: typography.sizes.md,
+    color: draculaTheme.foreground,
   },
   button: {
     backgroundColor: draculaTheme.cyan,
@@ -275,7 +294,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    flexBasis: '30%',
+    flexBasis: '48%',
     margin: '1%',
   },
   segmentActive: {

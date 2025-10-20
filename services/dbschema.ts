@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS active_workout_session (
 
 CREATE TABLE IF NOT EXISTS user_profile (
   id TEXT PRIMARY KEY,
-  age INTEGER NOT NULL,
+  birthdate TEXT NOT NULL,
   gender TEXT NOT NULL,
   height REAL NOT NULL,
   weight REAL NOT NULL,

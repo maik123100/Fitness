@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { getUserProfile, saveUserProfile, resetDatabase } from '@/services/database';
@@ -6,16 +5,18 @@ import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import { setOnboardingCompleted } from '../../services/onboardingService';
 import { useRouter } from 'expo-router';
+import DatePickerModal from '@/app/components/DatePickerModal';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
+  const [birthdate, setBirthdate] = useState('');
+  const [gender, setGender] = useState<'male' | 'female'>('male');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('sedentary');
   const [goalType, setGoalType] = useState<GoalType>('maintain-weight');
   const [targetWeight, setTargetWeight] = useState('');
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function ProfileScreen() {
     const userProfile = getUserProfile();
     if (userProfile) {
       setProfile(userProfile);
-      setAge(userProfile.age.toString());
+      setBirthdate(userProfile.birthdate);
       setGender(userProfile.gender);
       setHeight(userProfile.height.toString());
       setWeight(userProfile.weight.toString());
@@ -37,15 +38,18 @@ export default function ProfileScreen() {
   };
 
   const handleSaveProfile = () => {
-    if (!age || !height || !weight) {
+    if (!birthdate || !height || !weight) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
 
+    const birthDate = new Date(birthdate);
+    const ageDate = new Date(Date.now() - birthDate.getTime());
+    const ageYears = Math.abs(ageDate.getUTCFullYear() - 1970);
+
     // Basic BMR and TDEE calculation
     const weightKg = parseFloat(weight);
     const heightCm = parseFloat(height);
-    const ageYears = parseInt(age);
 
     let bmr = 0;
     if (gender === 'male') {
@@ -73,7 +77,7 @@ export default function ProfileScreen() {
 
     const newProfile: UserProfile = {
       id: profile?.id || Date.now().toString(),
-      age: parseInt(age),
+      birthdate: birthdate,
       gender,
       height: parseFloat(height),
       weight: parseFloat(weight),
@@ -124,25 +128,26 @@ export default function ProfileScreen() {
       <Text style={styles.title}>Your Profile</Text>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Age</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your age"
-          placeholderTextColor={draculaTheme.comment}
-          keyboardType="numeric"
-          value={age}
-          onChangeText={setAge}
+        <Text style={styles.label}>Birthdate</Text>
+        <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={styles.input}>
+          <Text style={styles.datePickerText}>{birthdate ? birthdate : 'Select your birthdate'}</Text>
+        </TouchableOpacity>
+        <DatePickerModal
+          isVisible={isDatePickerVisible}
+          onClose={() => setDatePickerVisibility(false)}
+          onSelectDate={(date) => setBirthdate(date.toISOString().split('T')[0])}
+          currentDate={birthdate ? new Date(birthdate) : new Date()}
         />
       </View>
 
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Gender</Text>
         <View style={styles.segmentedControl}>
-          {['male', 'female', 'other'].map((g) => (
+          {['male', 'female'].map((g) => (
             <TouchableOpacity
               key={g}
               style={[styles.segment, gender === g && styles.segmentActive]}
-              onPress={() => setGender(g as 'male' | 'female' | 'other')}
+              onPress={() => setGender(g as 'male' | 'female')}
             >
               <Text style={[styles.segmentText, gender === g && styles.segmentTextActive]}>{g}</Text>
             </TouchableOpacity>
@@ -280,6 +285,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
+    justifyContent: 'center',
+    height: 50,
+  },
+  datePickerText: {
+    fontSize: typography.sizes.md,
+    color: draculaTheme.foreground,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -295,7 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    flexBasis: '30%',
+    flexBasis: '48%',
     margin: '1%',
   },
   segmentActive: {

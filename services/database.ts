@@ -539,11 +539,11 @@ export const saveUserProfile = (profile: UserProfile): void => {
   const now = Date.now();
   db.runSync(
     `INSERT OR REPLACE INTO user_profile (
-      id, age, gender, height, weight, activity_level, goal_type, target_weight,
+      id, birthdate, gender, height, weight, activity_level, goal_type, target_weight,
       target_calories, target_protein, target_carbs, target_fat, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      profile.id, profile.age, profile.gender, profile.height, profile.weight,
+      profile.id, profile.birthdate, profile.gender, profile.height, profile.weight,
       profile.activityLevel, profile.goalType, profile.targetWeight ?? null,
       profile.targetCalories, profile.targetProtein, profile.targetCarbs, profile.targetFat,
       profile.createdAt || now, now
@@ -566,7 +566,7 @@ export const getUserProfile = (): UserProfile | null => {
 
   return {
     id: row.id,
-    age: row.age,
+    birthdate: row.birthdate,
     gender: row.gender,
     height: row.height,
     weight: row.weight,
