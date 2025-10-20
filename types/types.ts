@@ -14,33 +14,64 @@ export interface DailyNutrition {
 	fat: number;
 }
 
+export interface Macronutrients {
+  carbs: number;
+  fat: number;
+  protein: number;
+  fiber: number;
+}
+
+export interface Vitamins {
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminB6?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  thiamin?: number;
+  vitaminB12?: number;
+  riboflavin?: number;
+  folate?: number;
+  niacin?: number;
+  choline?: number;
+  pantothenicAcid?: number;
+  biotin?: number;
+  carotenoids?: number;
+}
+
+export interface Minerals {
+  calcium?: number;
+  chloride?: number;
+  chromium?: number;
+  copper?: number;
+  fluoride?: number;
+  iodine?: number;
+  iron?: number;
+  magnesium?: number;
+  manganese?: number;
+  molybdenum?: number;
+  phosphorus?: number;
+  potassium?: number;
+  selenium?: number;
+  sodium?: number;
+  zinc?: number;
+}
+
 export interface FoodItem {
-	id: string;
-	name: string;
-	brand?: string;
-	barcode?: string;
-	category: FoodCategory;
-	calories: number;
-	protein: number;
-	carbs: number;
-	fat: number;
-	fiber: number;
-	sugar: number;
-	sodium: number;
-	cholesterol: number;
-	saturatedFat: number;
-	transFat: number;
-	vitaminA?: number;
-	vitaminC?: number;
-	vitaminD?: number;
-	calcium?: number;
-	iron?: number;
-	potassium?: number;
-	servingSize: number;
-	servingUnit: string;
-	isVerified: boolean;
-	createdAt: number;
-	updatedAt: number;
+    id: string;
+    name: string;
+    brand?: string;
+    barcode?: string;
+    category: FoodCategory;
+    calories: number;
+    macronutrients: Macronutrients;
+    vitamins: Vitamins;
+    minerals: Minerals;
+    servingSize: number;
+    servingUnit: string;
+    isVerified: boolean;
+    createdAt: number;
+    updatedAt: number;
 }
 
 export interface FoodEntry {
@@ -56,8 +87,6 @@ export interface FoodEntry {
 	totalCarbs: number;
 	totalFat: number;
 	totalFiber: number;
-	totalSugar: number;
-	totalSodium: number;
 	createdAt: number;
 }
 
@@ -216,8 +245,8 @@ export interface NutritionSummary {
 	totalCarbs: number;
 	totalFat: number;
 	totalFiber: number;
-	totalSugar: number;
-	totalSodium: number;
+	totalVitamins: Vitamins;
+	totalMinerals: Minerals;
 	caloriesBurned: number;
 	netCalories: number;
 }

@@ -1,4 +1,3 @@
-
 import * as SQLite from 'expo-sqlite';
 import { getDatabaseSchema } from './dbschema';
 import {
@@ -22,7 +21,9 @@ import {
   MuscleGroup,
   ActivityLevel,
   GoalType,
-  NutritionSummary
+  NutritionSummary,
+  Vitamins,
+  Minerals
 } from '@/types/types';
 
   let db: SQLite.SQLiteDatabase;
@@ -110,16 +111,59 @@ export const addFoodItem = (food: FoodItem): void => {
   const now = Date.now();
   db.runSync(
     `INSERT INTO food_items (
-      id, name, brand, barcode, category, calories, protein, carbs, fat, fiber, sugar, sodium,
-      cholesterol, saturated_fat, trans_fat, vitamin_a, vitamin_c, vitamin_d, calcium, iron, potassium,
+      id, name, brand, barcode, category, calories, protein, carbs, fat, fiber, 
+      vitamin_a, vitamin_c, vitamin_d, vitamin_b6, vitamin_e, vitamin_k, thiamin, 
+      vitamin_b12, riboflavin, folate, niacin, choline, pantothenic_acid, biotin, 
+      carotenoids, calcium, chloride, chromium, copper, fluoride, iodine, iron, 
+      magnesium, manganese, molybdenum, phosphorus, potassium, selenium, sodium, zinc,
       serving_size, serving_unit, is_verified, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      food.id, food.name, food.brand ?? null, food.barcode ?? null, food.category,
-      food.calories, food.protein, food.carbs, food.fat, food.fiber, food.sugar, food.sodium,
-      food.cholesterol, food.saturatedFat, food.transFat, food.vitaminA ?? 0, food.vitaminC ?? 0, food.vitaminD ?? 0,
-      food.calcium ?? 0, food.iron ?? 0, food.potassium ?? 0, food.servingSize, food.servingUnit,
-      food.isVerified ? 1 : 0, food.createdAt || now, food.updatedAt || now
+      food.id,
+      food.name,
+      food.brand ?? null,
+      food.barcode ?? null,
+      food.category,
+      food.calories,
+      food.macronutrients.protein,
+      food.macronutrients.carbs,
+      food.macronutrients.fat,
+      food.macronutrients.fiber,
+      food.vitamins.vitaminA ?? 0,
+      food.vitamins.vitaminC ?? 0,
+      food.vitamins.vitaminD ?? 0,
+      food.vitamins.vitaminB6 ?? 0,
+      food.vitamins.vitaminE ?? 0,
+      food.vitamins.vitaminK ?? 0,
+      food.vitamins.thiamin ?? 0,
+      food.vitamins.vitaminB12 ?? 0,
+      food.vitamins.riboflavin ?? 0,
+      food.vitamins.folate ?? 0,
+      food.vitamins.niacin ?? 0,
+      food.vitamins.choline ?? 0,
+      food.vitamins.pantothenicAcid ?? 0,
+      food.vitamins.biotin ?? 0,
+      food.vitamins.carotenoids ?? 0,
+      food.minerals.calcium ?? 0,
+      food.minerals.chloride ?? 0,
+      food.minerals.chromium ?? 0,
+      food.minerals.copper ?? 0,
+      food.minerals.fluoride ?? 0,
+      food.minerals.iodine ?? 0,
+      food.minerals.iron ?? 0,
+      food.minerals.magnesium ?? 0,
+      food.minerals.manganese ?? 0,
+      food.minerals.molybdenum ?? 0,
+      food.minerals.phosphorus ?? 0,
+      food.minerals.potassium ?? 0,
+      food.minerals.selenium ?? 0,
+      food.minerals.sodium ?? 0,
+      food.minerals.zinc ?? 0,
+      food.servingSize,
+      food.servingUnit,
+      food.isVerified ? 1 : 0,
+      food.createdAt || now,
+      food.updatedAt || now,
     ]
   );
 };
@@ -132,21 +176,46 @@ export const getAllFoodItems = (): FoodItem[] => {
     barcode: row.barcode,
     category: row.category as FoodCategory,
     calories: row.calories,
-    protein: row.protein,
-    carbs: row.carbs,
-    fat: row.fat,
-    fiber: row.fiber,
-    sugar: row.sugar,
-    sodium: row.sodium,
-    cholesterol: row.cholesterol,
-    saturatedFat: row.saturated_fat,
-    transFat: row.trans_fat,
-    vitaminA: row.vitamin_a,
-    vitaminC: row.vitamin_c,
-    vitaminD: row.vitamin_d,
-    calcium: row.calcium,
-    iron: row.iron,
-    potassium: row.potassium,
+    macronutrients: {
+      protein: row.protein,
+      carbs: row.carbs,
+      fat: row.fat,
+      fiber: row.fiber,
+    },
+    vitamins: {
+      vitaminA: row.vitamin_a,
+      vitaminC: row.vitamin_c,
+      vitaminD: row.vitamin_d,
+      vitaminB6: row.vitamin_b6,
+      vitaminE: row.vitamin_e,
+      vitaminK: row.vitamin_k,
+      thiamin: row.thiamin,
+      vitaminB12: row.vitamin_b12,
+      riboflavin: row.riboflavin,
+      folate: row.folate,
+      niacin: row.niacin,
+      choline: row.choline,
+      pantothenicAcid: row.pantothenic_acid,
+      biotin: row.biotin,
+      carotenoids: row.carotenoids,
+    },
+    minerals: {
+      calcium: row.calcium,
+      chloride: row.chloride,
+      chromium: row.chromium,
+      copper: row.copper,
+      fluoride: row.fluoride,
+      iodine: row.iodine,
+      iron: row.iron,
+      magnesium: row.magnesium,
+      manganese: row.manganese,
+      molybdenum: row.molybdenum,
+      phosphorus: row.phosphorus,
+      potassium: row.potassium,
+      selenium: row.selenium,
+      sodium: row.sodium,
+      zinc: row.zinc,
+    },
     servingSize: row.serving_size,
     servingUnit: row.serving_unit,
     isVerified: row.is_verified === 1,
@@ -175,21 +244,46 @@ export const searchFoodItems = (query: string, category?: FoodCategory, limit: n
     barcode: row.barcode,
     category: row.category as FoodCategory,
     calories: row.calories,
-    protein: row.protein,
-    carbs: row.carbs,
-    fat: row.fat,
-    fiber: row.fiber,
-    sugar: row.sugar,
-    sodium: row.sodium,
-    cholesterol: row.cholesterol,
-    saturatedFat: row.saturated_fat,
-    transFat: row.trans_fat,
-    vitaminA: row.vitamin_a,
-    vitaminC: row.vitamin_c,
-    vitaminD: row.vitamin_d,
-    calcium: row.calcium,
-    iron: row.iron,
-    potassium: row.potassium,
+    macronutrients: {
+      protein: row.protein,
+      carbs: row.carbs,
+      fat: row.fat,
+      fiber: row.fiber,
+    },
+    vitamins: {
+      vitaminA: row.vitamin_a,
+      vitaminC: row.vitamin_c,
+      vitaminD: row.vitamin_d,
+      vitaminB6: row.vitamin_b6,
+      vitaminE: row.vitamin_e,
+      vitaminK: row.vitamin_k,
+      thiamin: row.thiamin,
+      vitaminB12: row.vitamin_b12,
+      riboflavin: row.riboflavin,
+      folate: row.folate,
+      niacin: row.niacin,
+      choline: row.choline,
+      pantothenicAcid: row.pantothenic_acid,
+      biotin: row.biotin,
+      carotenoids: row.carotenoids,
+    },
+    minerals: {
+      calcium: row.calcium,
+      chloride: row.chloride,
+      chromium: row.chromium,
+      copper: row.copper,
+      fluoride: row.fluoride,
+      iodine: row.iodine,
+      iron: row.iron,
+      magnesium: row.magnesium,
+      manganese: row.manganese,
+      molybdenum: row.molybdenum,
+      phosphorus: row.phosphorus,
+      potassium: row.potassium,
+      selenium: row.selenium,
+      sodium: row.sodium,
+      zinc: row.zinc,
+    },
     servingSize: row.serving_size,
     servingUnit: row.serving_unit,
     isVerified: row.is_verified === 1,
@@ -209,21 +303,46 @@ export const getFoodItem = (id: string): FoodItem | null => {
     barcode: row.barcode,
     category: row.category as FoodCategory,
     calories: row.calories,
-    protein: row.protein,
-    carbs: row.carbs,
-    fat: row.fat,
-    fiber: row.fiber,
-    sugar: row.sugar,
-    sodium: row.sodium,
-    cholesterol: row.cholesterol,
-    saturatedFat: row.saturated_fat,
-    transFat: row.trans_fat,
-    vitaminA: row.vitamin_a,
-    vitaminC: row.vitamin_c,
-    vitaminD: row.vitamin_d,
-    calcium: row.calcium,
-    iron: row.iron,
-    potassium: row.potassium,
+    macronutrients: {
+      protein: row.protein,
+      carbs: row.carbs,
+      fat: row.fat,
+      fiber: row.fiber,
+    },
+    vitamins: {
+      vitaminA: row.vitamin_a,
+      vitaminC: row.vitamin_c,
+      vitaminD: row.vitamin_d,
+      vitaminB6: row.vitamin_b6,
+      vitaminE: row.vitamin_e,
+      vitaminK: row.vitamin_k,
+      thiamin: row.thiamin,
+      vitaminB12: row.vitamin_b12,
+      riboflavin: row.riboflavin,
+      folate: row.folate,
+      niacin: row.niacin,
+      choline: row.choline,
+      pantothenicAcid: row.pantothenic_acid,
+      biotin: row.biotin,
+      carotenoids: row.carotenoids,
+    },
+    minerals: {
+      calcium: row.calcium,
+      chloride: row.chloride,
+      chromium: row.chromium,
+      copper: row.copper,
+      fluoride: row.fluoride,
+      iodine: row.iodine,
+      iron: row.iron,
+      magnesium: row.magnesium,
+      manganese: row.manganese,
+      molybdenum: row.molybdenum,
+      phosphorus: row.phosphorus,
+      potassium: row.potassium,
+      selenium: row.selenium,
+      sodium: row.sodium,
+      zinc: row.zinc,
+    },
     servingSize: row.serving_size,
     servingUnit: row.serving_unit,
     isVerified: row.is_verified === 1,
@@ -236,12 +355,12 @@ export const addFoodEntry = (entry: FoodEntry): void => {
   db.runSync(
     `INSERT INTO food_entries (
       id, food_id, user_id, date, meal_type, quantity, unit,
-      total_calories, total_protein, total_carbs, total_fat, total_fiber, total_sugar, total_sodium, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      total_calories, total_protein, total_carbs, total_fat, total_fiber, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id, entry.foodId, entry.userId ?? null, entry.date, entry.mealType, entry.quantity, entry.unit,
       entry.totalCalories, entry.totalProtein, entry.totalCarbs, entry.totalFat,
-      entry.totalFiber, entry.totalSugar, entry.totalSodium, entry.createdAt
+      entry.totalFiber, entry.createdAt
     ]
   );
 };
@@ -261,8 +380,6 @@ export const getFoodEntriesForDate = (date: string): FoodEntry[] => {
       totalCarbs: row.total_carbs,
       totalFat: row.total_fat,
       totalFiber: row.total_fiber,
-      totalSugar: row.total_sugar,
-      totalSodium: row.total_sodium,
       createdAt: row.created_at,
     }));
 };
@@ -484,34 +601,59 @@ export const getWeightEntries = (limit: number = 30): WeightEntry[] => {
 };
 
 export const getNutritionSummary = (date: string): NutritionSummary => {
-  // Get food entries for the date
-  const foodSummary = db.getFirstSync<any>(
-    `SELECT 
-      COALESCE(SUM(total_calories), 0) as total_calories,
-      COALESCE(SUM(total_protein), 0) as total_protein,
-      COALESCE(SUM(total_carbs), 0) as total_carbs,
-      COALESCE(SUM(total_fat), 0) as total_fat,
-      COALESCE(SUM(total_fiber), 0) as total_fiber,
-      COALESCE(SUM(total_sugar), 0) as total_sugar,
-      COALESCE(SUM(total_sodium), 0) as total_sodium
-    FROM food_entries WHERE date = ?`,
-    [date]
-  );
+  const foodEntries = getFoodEntriesForDate(date);
+  const allFoodItems = getAllFoodItems();
+  const foodItemsById = allFoodItems.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {} as { [key: string]: FoodItem });
 
-  // Get workout calories for the date
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let totalCarbs = 0;
+  let totalFat = 0;
+  let totalFiber = 0;
+  const totalVitamins: Vitamins = {};
+  const totalMinerals: Minerals = {};
+
+  for (const entry of foodEntries) {
+    const foodItem = foodItemsById[entry.foodId];
+    if (foodItem) {
+      const ratio = entry.quantity / foodItem.servingSize;
+      totalCalories += foodItem.calories * ratio;
+      totalProtein += foodItem.macronutrients.protein * ratio;
+      totalCarbs += foodItem.macronutrients.carbs * ratio;
+      totalFat += foodItem.macronutrients.fat * ratio;
+      totalFiber += foodItem.macronutrients.fiber * ratio;
+
+      for (const key in foodItem.vitamins) {
+        if (Object.prototype.hasOwnProperty.call(foodItem.vitamins, key)) {
+            const vitaminKey = key as keyof Vitamins;
+            totalVitamins[vitaminKey] = (totalVitamins[vitaminKey] || 0) + (foodItem.vitamins[vitaminKey] || 0) * ratio;
+        }
+      }
+      for (const key in foodItem.minerals) {
+        if (Object.prototype.hasOwnProperty.call(foodItem.minerals, key)) {
+            const mineralKey = key as keyof Minerals;
+            totalMinerals[mineralKey] = (totalMinerals[mineralKey] || 0) + (foodItem.minerals[mineralKey] || 0) * ratio;
+        }
+      }
+    }
+  }
+
   const workoutSummary = { calories_burned: 0 };
 
   return {
     date,
-    totalCalories: foodSummary?.total_calories || 0,
-    totalProtein: foodSummary?.total_protein || 0,
-    totalCarbs: foodSummary?.total_carbs || 0,
-    totalFat: foodSummary?.total_fat || 0,
-    totalFiber: foodSummary?.total_fiber || 0,
-    totalSugar: foodSummary?.total_sugar || 0,
-    totalSodium: foodSummary?.total_sodium || 0,
+    totalCalories,
+    totalProtein,
+    totalCarbs,
+    totalFat,
+    totalFiber,
+    totalVitamins,
+    totalMinerals,
     caloriesBurned: workoutSummary?.calories_burned || 0,
-    netCalories: (foodSummary?.total_calories || 0) - (workoutSummary?.calories_burned || 0),
+    netCalories: totalCalories - (workoutSummary?.calories_burned || 0),
   };
 };
 

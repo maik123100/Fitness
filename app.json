@@ -1,4 +1,5 @@
 {
+  
   "expo": {
     "name": "Fitness",
     "slug": "fitnessapp",
@@ -36,7 +37,7 @@
       ],
       "expo-font",
       "expo-sqlite",
-      "expo-barcode-scanner"
+
     ],
     "experiments": {
       "typedRoutes": true

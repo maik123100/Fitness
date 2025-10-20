@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
 import { getNutritionSummary, getUserProfile } from '@/services/database';
-import { NutritionSummary } from '@/types/types'
+import { NutritionSummary, Vitamins, Minerals } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,9 +10,10 @@ import { Ionicons } from '@expo/vector-icons';
 interface MacroDisplayProps {
   actual: number;
   target: number;
+  unit: string;
 }
 
-const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target }) => {
+const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target, unit }) => {
   const percentage = target > 0 ? Math.min(actual / target, 1) : 0;
   const displayActual = actual.toFixed(0);
   const displayTarget = target.toFixed(0);
@@ -21,16 +22,52 @@ const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target }) => {
     <View style={styles.macroDisplayContainer}>
       <View style={styles.macroTextContainer}>
         <Text style={styles.macroLabel}>Actual:</Text>
-        <Text style={styles.macroValue}>{displayActual}g</Text>
+        <Text style={styles.macroValue}>{displayActual}{unit}</Text>
       </View>
       <View style={styles.macroTextContainer}>
         <Text style={styles.macroLabel}>Target:</Text>
-        <Text style={styles.macroValue}>{displayTarget}g</Text>
+        <Text style={styles.macroValue}>{displayTarget}{unit}</Text>
       </View>
       <ProgressBar progress={percentage} color={draculaTheme.cyan} style={styles.progressBar} />
       <Text style={styles.macroSummary}>{(percentage * 100).toFixed(0)}% of target</Text>
     </View>
   );
+};
+
+const vitaminTargets = {
+  vitaminA: { target: 900, unit: 'µg' },
+  vitaminC: { target: 90, unit: 'mg' },
+  vitaminD: { target: 15, unit: 'µg' },
+  vitaminB6: { target: 1.3, unit: 'mg' },
+  vitaminE: { target: 15, unit: 'mg' },
+  vitaminK: { target: 120, unit: 'µg' },
+  thiamin: { target: 1.2, unit: 'mg' },
+  vitaminB12: { target: 2.4, unit: 'µg' },
+  riboflavin: { target: 1.3, unit: 'mg' },
+  folate: { target: 400, unit: 'µg' },
+  niacin: { target: 16, unit: 'mg' },
+  choline: { target: 0.55, unit: 'g' },
+  pantothenicAcid: { target: 5, unit: 'mg' },
+  biotin: { target: 30, unit: 'µg' },
+  carotenoids: { target: 0, unit: '' },
+};
+
+const mineralTargets = {
+  calcium: { target: 1000, unit: 'mg' },
+  chloride: { target: 2.3, unit: 'g' },
+  chromium: { target: 35, unit: 'µg' },
+  copper: { target: 900, unit: 'µg' },
+  fluoride: { target: 4, unit: 'mg' },
+  iodine: { target: 150, unit: 'µg' },
+  iron: { target: 8, unit: 'mg' },
+  magnesium: { target: 400, unit: 'mg' },
+  manganese: { target: 2.3, unit: 'mg' },
+  molybdenum: { target: 45, unit: 'µg' },
+  phosphorus: { target: 0.7, unit: 'g' },
+  potassium: { target: 3400, unit: 'mg' },
+  selenium: { target: 55, unit: 'µg' },
+  sodium: { target: 1500, unit: 'mg' },
+  zinc: { target: 11, unit: 'mg' },
 };
 
 interface MacroGraphsState {
@@ -39,13 +76,14 @@ interface MacroGraphsState {
     protein: number;
     carbs: number;
     fat: number;
+    fiber: number;
   };
 }
 
 export default function MacroGraphsScreen() {
   const [state, setState] = useState<MacroGraphsState>({
     nutritionSummary: null,
-    targetMacros: { protein: 0, carbs: 0, fat: 0 },
+    targetMacros: { protein: 0, carbs: 0, fat: 0, fiber: 0 },
   });
   const router = useRouter();
 
@@ -67,24 +105,26 @@ export default function MacroGraphsScreen() {
         protein: userProfile?.targetProtein || 0,
         carbs: userProfile?.targetCarbs || 0,
         fat: userProfile?.targetFat || 0,
+        fiber: 30, // General target for fiber
       },
     });
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: spacing.lg * 2 }}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Ionicons name="arrow-back" size={24} color={draculaTheme.foreground} />
       </TouchableOpacity>
       <Text style={styles.header}>Macro Graphs</Text>
 
-      {['protein', 'carbs', 'fat'].map((macro) => (
+      {['protein', 'carbs', 'fat', 'fiber'].map((macro) => (
         <View key={macro} style={styles.chartSection}>
           <Text style={styles.sectionTitle}>{macro.charAt(0).toUpperCase() + macro.slice(1)} Intake</Text>
           {nutritionSummary ? (
             <MacroDisplay
               actual={nutritionSummary[`total${macro.charAt(0).toUpperCase() + macro.slice(1)}` as keyof NutritionSummary] as number}
-              target={targetMacros[macro as 'protein' | 'carbs' | 'fat']}
+              target={targetMacros[macro as 'protein' | 'carbs' | 'fat' | 'fiber']}
+              unit="g"
             />
           ) : (
             <Text style={styles.noDataText}>No data for {macro} intake yet.</Text>
@@ -92,19 +132,27 @@ export default function MacroGraphsScreen() {
         </View>
       ))}
 
-      <Text style={styles.header}>Other Nutrients</Text>
+      <Text style={styles.header}>Vitamins</Text>
+      {nutritionSummary && nutritionSummary.totalVitamins && Object.keys(vitaminTargets).map((vitamin) => (
+        <View key={vitamin} style={styles.chartSection}>
+          <Text style={styles.sectionTitle}>{vitamin.charAt(0).toUpperCase() + vitamin.slice(1)} Intake</Text>
+          <MacroDisplay
+            actual={nutritionSummary.totalVitamins[vitamin as keyof Vitamins] || 0}
+            target={vitaminTargets[vitamin as keyof typeof vitaminTargets].target}
+            unit={vitaminTargets[vitamin as keyof typeof vitaminTargets].unit}
+          />
+        </View>
+      ))}
 
-      {['fiber', 'sugar', 'sodium'].map((nutrient) => (
-        <View key={nutrient} style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>{nutrient.charAt(0).toUpperCase() + nutrient.slice(1)} Intake</Text>
-          {nutritionSummary ? (
-            <MacroDisplay
-              actual={nutritionSummary[`total${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}` as keyof NutritionSummary] as number}
-              target={0} // No explicit target for these nutrients
-            />
-          ) : (
-            <Text style={styles.noDataText}>No data for {nutrient} intake yet.</Text>
-          )}
+      <Text style={styles.header}>Minerals</Text>
+      {nutritionSummary && nutritionSummary.totalMinerals && Object.keys(mineralTargets).map((mineral) => (
+        <View key={mineral} style={styles.chartSection}>
+          <Text style={styles.sectionTitle}>{mineral.charAt(0).toUpperCase() + mineral.slice(1)} Intake</Text>
+          <MacroDisplay
+            actual={nutritionSummary.totalMinerals[mineral as keyof Minerals] || 0}
+            target={mineralTargets[mineral as keyof typeof mineralTargets].target}
+            unit={mineralTargets[mineral as keyof typeof mineralTargets].unit}
+          />
         </View>
       ))}
     </ScrollView>
