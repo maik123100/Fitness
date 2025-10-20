@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { getUserProfile, saveUserProfile, resetDatabase } from '@/services/database';
-import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
+import { UserProfile, ActivityLevel, GoalType, Vitamins, Minerals } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
 import { setOnboardingCompleted } from '../../services/onboardingService';
 import { useRouter } from 'expo-router';
 import DatePickerModal from '@/app/components/DatePickerModal';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -16,7 +17,12 @@ export default function ProfileScreen() {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('sedentary');
   const [goalType, setGoalType] = useState<GoalType>('maintain-weight');
   const [targetWeight, setTargetWeight] = useState('');
+  const [vitaminTargets, setVitaminTargets] = useState<Vitamins>({});
+  const [mineralTargets, setMineralTargets] = useState<Minerals>({});
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [showVitaminTargets, setShowVitaminTargets] = useState(false);
+  const [showMineralTargets, setShowMineralTargets] = useState(false);
+  const [showProfileInfo, setShowProfileInfo] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,6 +40,8 @@ export default function ProfileScreen() {
       setActivityLevel(userProfile.activityLevel);
       setGoalType(userProfile.goalType);
       setTargetWeight(userProfile.targetWeight?.toString() || '');
+      setVitaminTargets(userProfile.vitaminTargets || {});
+      setMineralTargets(userProfile.mineralTargets || {});
     }
   };
 
@@ -89,6 +97,8 @@ export default function ProfileScreen() {
       targetCarbs: (targetCalories * 0.4) / 4,
       targetProtein: (targetCalories * 0.3) / 4,
       targetFat: (targetCalories * 0.3) / 9,
+      vitaminTargets: vitaminTargets,
+      mineralTargets: mineralTargets,
       createdAt: profile?.createdAt || Date.now(),
       updatedAt: Date.now(),
     };
@@ -125,101 +135,458 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContentContainer}>
-      <Text style={styles.title}>Your Profile</Text>
+      <TouchableOpacity style={styles.collapsibleHeader} onPress={() => setShowProfileInfo(!showProfileInfo)}>
+        <Text style={styles.title}>Your Profile</Text>
+        <Ionicons name={showProfileInfo ? "chevron-up" : "chevron-down"} size={24} color={draculaTheme.foreground} />
+      </TouchableOpacity>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Birthdate</Text>
-        <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={styles.input}>
-          <Text style={styles.datePickerText}>{birthdate ? birthdate : 'Select your birthdate'}</Text>
-        </TouchableOpacity>
-        <DatePickerModal
-          isVisible={isDatePickerVisible}
-          onClose={() => setDatePickerVisibility(false)}
-          onSelectDate={(date) => setBirthdate(date.toISOString().split('T')[0])}
-          currentDate={birthdate ? new Date(birthdate) : new Date()}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Gender</Text>
-        <View style={styles.segmentedControl}>
-          {['male', 'female'].map((g) => (
-            <TouchableOpacity
-              key={g}
-              style={[styles.segment, gender === g && styles.segmentActive]}
-              onPress={() => setGender(g as 'male' | 'female')}
-            >
-              <Text style={[styles.segmentText, gender === g && styles.segmentTextActive]}>{g}</Text>
+      {showProfileInfo && (
+        <View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Birthdate</Text>
+            <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={styles.input}>
+              <Text style={styles.datePickerText}>{birthdate ? birthdate : 'Select your birthdate'}</Text>
             </TouchableOpacity>
-          ))}
+            <DatePickerModal
+              isVisible={isDatePickerVisible}
+              onClose={() => setDatePickerVisibility(false)}
+              onSelectDate={(date) => setBirthdate(date.toISOString().split('T')[0])}
+              currentDate={birthdate ? new Date(birthdate) : new Date()}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.segmentedControl}>
+              {['male', 'female'].map((g) => (
+                <TouchableOpacity
+                  key={g}
+                  style={[styles.segment, gender === g && styles.segmentActive]}
+                  onPress={() => setGender(g as 'male' | 'female')}
+                >
+                  <Text style={[styles.segmentText, gender === g && styles.segmentTextActive]}>{g}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Height (cm)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your height"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={height}
+              onChangeText={setHeight}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Weight (kg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your weight"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={weight}
+              onChangeText={setWeight}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Activity Level</Text>
+            <View style={styles.segmentedControl}>
+              {Object.keys(activityLevels).map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  style={[styles.segment, activityLevel === level && styles.segmentActive]}
+                  onPress={() => setActivityLevel(level as ActivityLevel)}
+                >
+                  <Text style={[styles.segmentText, activityLevel === level && styles.segmentTextActive]}>{activityLevels[level as ActivityLevel]}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Goal</Text>
+            <View style={styles.segmentedControl}>
+              {Object.keys(goalTypes).map((goal) => (
+                <TouchableOpacity
+                  key={goal}
+                  style={[styles.segment, goalType === goal && styles.segmentActive]}
+                  onPress={() => setGoalType(goal as GoalType)}
+                >
+                  <Text style={[styles.segmentText, goalType === goal && styles.segmentTextActive]}>{goalTypes[goal as GoalType]}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {(goalType === 'lose-weight' || goalType === 'gain-weight') && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Target Weight (kg)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your target weight"
+                placeholderTextColor={draculaTheme.comment}
+                keyboardType="numeric"
+                value={targetWeight}
+                onChangeText={setTargetWeight}
+              />
+            </View>
+          )}
         </View>
-      </View>
+      )}
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Height (cm)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your height"
-          placeholderTextColor={draculaTheme.comment}
-          keyboardType="numeric"
-          value={height}
-          onChangeText={setHeight}
-        />
-      </View>
+      <TouchableOpacity style={styles.collapsibleHeader} onPress={() => setShowVitaminTargets(!showVitaminTargets)}>
+        <Text style={styles.title}>Vitamin Targets</Text>
+        <Ionicons name={showVitaminTargets ? "chevron-up" : "chevron-down"} size={24} color={draculaTheme.foreground} />
+      </TouchableOpacity>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Weight (kg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your weight"
-          placeholderTextColor={draculaTheme.comment}
-          keyboardType="numeric"
-          value={weight}
-          onChangeText={setWeight}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Activity Level</Text>
-        <View style={styles.segmentedControl}>
-          {Object.keys(activityLevels).map((level) => (
-            <TouchableOpacity
-              key={level}
-              style={[styles.segment, activityLevel === level && styles.segmentActive]}
-              onPress={() => setActivityLevel(level as ActivityLevel)}
-            >
-              <Text style={[styles.segmentText, activityLevel === level && styles.segmentTextActive]}>{activityLevels[level as ActivityLevel]}</Text>
-            </TouchableOpacity>
-          ))}
+      {showVitaminTargets && (
+        <View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vitamin A (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Vitamin A"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.vitaminA?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminA: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vitamin C (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Vitamin C"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.vitaminC?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminC: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vitamin D (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Vitamin D"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.vitaminD?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminD: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vitamin B6 (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Vitamin B6"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.vitaminB6?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminB6: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vitamin E (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Vitamin E"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.vitaminE?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminE: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vitamin K (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Vitamin K"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.vitaminK?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminK: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Thiamin (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Thiamin"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.thiamin?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, thiamin: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vitamin B12 (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Vitamin B12"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.vitaminB12?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminB12: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Riboflavin (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Riboflavin"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.riboflavin?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, riboflavin: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Folate (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Folate"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.folate?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, folate: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Niacin (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Niacin"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.niacin?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, niacin: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Choline (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Choline"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.choline?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, choline: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Pantothenic Acid (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Pantothenic Acid"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.pantothenicAcid?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, pantothenicAcid: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Biotin (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Biotin"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.biotin?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, biotin: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Carotenoids (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Carotenoids"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={vitaminTargets.carotenoids?.toString() || ''}
+              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, carotenoids: parseFloat(text) || undefined })}
+            />
+          </View>
         </View>
-      </View>
+      )}
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Goal</Text>
-        <View style={styles.segmentedControl}>
-          {Object.keys(goalTypes).map((goal) => (
-            <TouchableOpacity
-              key={goal}
-              style={[styles.segment, goalType === goal && styles.segmentActive]}
-              onPress={() => setGoalType(goal as GoalType)}
-            >
-              <Text style={[styles.segmentText, goalType === goal && styles.segmentTextActive]}>{goalTypes[goal as GoalType]}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-      
-      {(goalType === 'lose-weight' || goalType === 'gain-weight') && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Target Weight (kg)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your target weight"
-            placeholderTextColor={draculaTheme.comment}
-            keyboardType="numeric"
-            value={targetWeight}
-            onChangeText={setTargetWeight}
-          />
+      <TouchableOpacity style={styles.collapsibleHeader} onPress={() => setShowMineralTargets(!showMineralTargets)}>
+        <Text style={styles.title}>Mineral Targets</Text>
+        <Ionicons name={showMineralTargets ? "chevron-up" : "chevron-down"} size={24} color={draculaTheme.foreground} />
+      </TouchableOpacity>
+
+      {showMineralTargets && (
+        <View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Calcium (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Calcium"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.calcium?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, calcium: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Chloride (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Chloride"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.chloride?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, chloride: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Chromium (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Chromium"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.chromium?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, chromium: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Copper (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Copper"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.copper?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, copper: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Fluoride (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Fluoride"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.fluoride?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, fluoride: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Iodine (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Iodine"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.iodine?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, iodine: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Iron (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Iron"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.iron?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, iron: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Magnesium (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Magnesium"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.magnesium?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, magnesium: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Manganese (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Manganese"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.manganese?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, manganese: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Molybdenum (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Molybdenum"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.molybdenum?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, molybdenum: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Phosphorus (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Phosphorus"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.phosphorus?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, phosphorus: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Potassium (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Potassium"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.potassium?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, potassium: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Selenium (mcg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Selenium"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.selenium?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, selenium: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Sodium (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Sodium"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.sodium?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, sodium: parseFloat(text) || undefined })}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Zinc (mg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter target Zinc"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={mineralTargets.zinc?.toString() || ''}
+              onChangeText={(text) => setMineralTargets({ ...mineralTargets, zinc: parseFloat(text) || undefined })}
+            />
+          </View>
         </View>
       )}
 
@@ -344,5 +711,15 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.lg,
     color: draculaTheme.text.inverse,
     fontWeight: typography.weights.bold,
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: draculaTheme.surface.card,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
   },
 });

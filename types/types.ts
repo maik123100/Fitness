@@ -1,17 +1,17 @@
 export interface Activity {
-	id: string;
-	activity: string;
-	calories: number;
-	type: 'eaten' | 'burned';
-	timestamp: number;
+  id: string;
+  activity: string;
+  calories: number;
+  type: 'eaten' | 'burned';
+  timestamp: number;
 }
 
 export interface DailyNutrition {
-	id: string;
-	date: string;
-	protein: number;
-	carbs: number;
-	fat: number;
+  id: string;
+  date: string;
+  protein: number;
+  carbs: number;
+  fat: number;
 }
 
 export interface Macronutrients {
@@ -58,112 +58,112 @@ export interface Minerals {
 }
 
 export interface FoodItem {
-    id: string;
-    name: string;
-    brand?: string;
-    barcode?: string;
-    category: FoodCategory;
-    calories: number;
-    macronutrients: Macronutrients;
-    vitamins: Vitamins;
-    minerals: Minerals;
-    servingSize: number;
-    servingUnit: string;
-    isVerified: boolean;
-    createdAt: number;
-    updatedAt: number;
+  id: string;
+  name: string;
+  brand?: string;
+  barcode?: string;
+  category: FoodCategory;
+  calories: number;
+  macronutrients: Macronutrients;
+  vitamins: Vitamins;
+  minerals: Minerals;
+  servingSize: number;
+  servingUnit: string;
+  isVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface FoodEntry {
-	id: string;
-	foodId: string;
-	userId?: string;
-	date: string;
-	mealType: MealType;
-	quantity: number;
-	unit: string;
-	totalCalories: number;
-	totalProtein: number;
-	totalCarbs: number;
-	totalFat: number;
-	totalFiber: number;
-	createdAt: number;
+  id: string;
+  foodId: string;
+  userId?: string;
+  date: string;
+  mealType: MealType;
+  quantity: number;
+  unit: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  totalFiber: number;
+  createdAt: number;
 }
 
 export interface Recipe {
-	id: string;
-	name: string;
-	description?: string;
-	instructions?: string;
-	servings: number;
-	prepTime?: number;
-	cookTime?: number;
-	ingredients: RecipeIngredient[];
-	caloriesPerServing: number;
-	proteinPerServing: number;
-	carbsPerServing: number;
-	fatPerServing: number;
-	createdAt: number;
-	updatedAt: number;
+  id: string;
+  name: string;
+  description?: string;
+  instructions?: string;
+  servings: number;
+  prepTime?: number;
+  cookTime?: number;
+  ingredients: RecipeIngredient[];
+  caloriesPerServing: number;
+  proteinPerServing: number;
+  carbsPerServing: number;
+  fatPerServing: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface RecipeIngredient {
-	id: string;
-	recipeId: string;
-	foodId: string;
-	quantity: number;
-	unit: string;
+  id: string;
+  recipeId: string;
+  foodId: string;
+  quantity: number;
+  unit: string;
 }
 
 export interface WorkoutTemplate {
-	id: string;
-	name: string;
+  id: string;
+  name: string;
 }
 
 export interface SetTarget {
-	reps: number;
-	weight: number;
+  reps: number;
+  weight: number;
 }
 
 export interface ExerciseTemplate {
-	id: string;
-	name: string;
-	default_set_targets: SetTarget[];
+  id: string;
+  name: string;
+  default_set_targets: SetTarget[];
 }
 
 export interface WorkoutTemplateExercise {
-	id: string;
-	workout_template_id: string;
-	exercise_template_id: string;
-	set_targets: SetTarget[];
-	order: number;
+  id: string;
+  workout_template_id: string;
+  exercise_template_id: string;
+  set_targets: SetTarget[];
+  order: number;
 }
 
 export interface WorkoutSet {
-	id: string;
-	workout_template_exercise_id: string;
-	weight: number;
-	reps: number;
-	targetReps: number;
-	targetWeight: number;
-	completed: boolean;
+  id: string;
+  workout_template_exercise_id: string;
+  weight: number;
+  reps: number;
+  targetReps: number;
+  targetWeight: number;
+  completed: boolean;
 }
 
 export interface ActiveWorkoutSession {
-	id: string;
-	workout_template_id: string;
-	start_time: number;
-	date: string;
-	sets: WorkoutSet[];
+  id: string;
+  workout_template_id: string;
+  start_time: number;
+  date: string;
+  sets: WorkoutSet[];
 }
 
 export interface WorkoutEntry {
-	id: string;
-	workout_template_id: string;
-	date: string;
-	duration: number;
-	sets: WorkoutSet[];
-	createdAt: number;
+  id: string;
+  workout_template_id: string;
+  date: string;
+  duration: number;
+  sets: WorkoutSet[];
+  createdAt: number;
 }
 
 export interface UserProfile {
@@ -179,74 +179,76 @@ export interface UserProfile {
 	targetProtein: number;
 	targetCarbs: number;
 	targetFat: number;
+	vitaminTargets?: Vitamins;
+	mineralTargets?: Minerals;
 	createdAt: number;
 	updatedAt: number;
 }
 
 export interface WeightEntry {
-	id: string;
-	weight: number;
-	date: string;
-	createdAt: number;
+  id: string;
+  weight: number;
+  date: string;
+  createdAt: number;
 }
 
 export type FoodCategory =
-	| 'vegetables'
-	| 'fruits'
-	| 'grains'
-	| 'proteins'
-	| 'dairy'
-	| 'fats'
-	| 'beverages'
-	| 'snacks'
-	| 'prepared'
-	| 'supplements'
-	| 'condiments'
-	| 'other';
+  | 'vegetables'
+  | 'fruits'
+  | 'grains'
+  | 'proteins'
+  | 'dairy'
+  | 'fats'
+  | 'beverages'
+  | 'snacks'
+  | 'prepared'
+  | 'supplements'
+  | 'condiments'
+  | 'other';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export type ExerciseCategory =
-	| 'cardio'
-	| 'strength'
-	| 'flexibility'
-	| 'sports'
-	| 'daily';
+  | 'cardio'
+  | 'strength'
+  | 'flexibility'
+  | 'sports'
+  | 'daily';
 
 export type MuscleGroup =
-	| 'chest'
-	| 'back'
-	| 'shoulders'
-	| 'biceps'
-	| 'triceps'
-	| 'legs'
-	| 'glutes'
-	| 'core'
-	| 'full-body';
+  | 'chest'
+  | 'back'
+  | 'shoulders'
+  | 'biceps'
+  | 'triceps'
+  | 'legs'
+  | 'glutes'
+  | 'core'
+  | 'full-body';
 
 export type ActivityLevel =
-	| 'sedentary'
-	| 'lightly-active'
-	| 'moderately-active'
-	| 'very-active'
-	| 'extremely-active';
+  | 'sedentary'
+  | 'lightly-active'
+  | 'moderately-active'
+  | 'very-active'
+  | 'extremely-active';
 
 export type GoalType =
-	| 'lose-weight'
-	| 'maintain-weight'
-	| 'gain-weight'
-	| 'build-muscle'
-	| 'improve-fitness';
+  | 'lose-weight'
+  | 'maintain-weight'
+  | 'gain-weight'
+  | 'build-muscle'
+  | 'improve-fitness';
 
 export interface NutritionSummary {
-	date: string;
-	totalCalories: number;
-	totalProtein: number;
-	totalCarbs: number;
-	totalFat: number;
-	totalFiber: number;
-	totalVitamins: Vitamins;
-	totalMinerals: Minerals;
-	caloriesBurned: number;
-	netCalories: number;
+  date: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  totalFiber: number;
+  totalVitamins: Vitamins;
+  totalMinerals: Minerals;
+  caloriesBurned: number;
+  netCalories: number;
 }
