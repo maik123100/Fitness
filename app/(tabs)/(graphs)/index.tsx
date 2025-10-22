@@ -3,8 +3,9 @@ import { Text, View, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Modal
 import { LineChart } from 'react-native-chart-kit';
 import { getWeightEntries, getNutritionSummary, addWeightEntry } from '@/services/database';
 import { NutritionSummary } from '@/types/types'
-import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 
 interface DietReportState {
   weightData: {
@@ -18,6 +19,7 @@ interface DietReportState {
 }
 
 export default function DietReportScreen() {
+  const router = useRouter();
   const [state, setState] = useState<DietReportState>({
     weightData: { labels: [], datasets: [{ data: [] }] },
     weightModal: { visible: false, newWeight: '' },
@@ -102,6 +104,14 @@ export default function DietReportScreen() {
           <Text style={styles.noDataText}>No weight entries yet.</Text>
         )}
       </View>
+
+      <TouchableOpacity style={styles.navButton} onPress={() => router.push('/(tabs)/(graphs)/calorie-analysis')}>
+        <Text style={styles.navButtonText}>Calorie Analysis</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.navButton} onPress={() => router.push('/(tabs)/(graphs)/workout-progression')}>
+        <Text style={styles.navButtonText}>Workout Progression</Text>
+      </TouchableOpacity>
 
       <Modal visible={weightModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, weightModal: { ...prev.weightModal, visible: false } }))}>
         <View style={styles.modalContainer}>
@@ -216,5 +226,17 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
     marginLeft: spacing.sm,
+  },
+  navButton: {
+    backgroundColor: draculaTheme.purple,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  navButtonText: {
+    color: draculaTheme.text.inverse,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
 });

@@ -35,8 +35,8 @@ const tabs: TabLayoutProps[] = [
     ),
   },
   {
-    name: 'graph',
-    title: 'Diet Report',
+    name: '(graphs)',
+    title: 'Graphs',
     iconElement: ({ color, focused }) => (
       <Entypo name={focused ? 'area-graph' : 'line-graph'} color={color} size={24} />
     ),

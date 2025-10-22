@@ -657,6 +657,85 @@ export const getNutritionSummary = (date: string): NutritionSummary => {
   };
 };
 
+export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): { date: string, totalCalories: number, targetCalories: number }[] => {
+  const userProfile = getUserProfile();
+  const targetCalories = userProfile?.targetCalories || 0;
+
+  const foodEntries = db.getAllSync<any>('SELECT * FROM food_entries WHERE date >= ? AND date <= ?', [startDate, endDate]);
+  const allFoodItems = getAllFoodItems();
+  const foodItemsById = allFoodItems.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {} as { [key: string]: FoodItem });
+
+  const dailyCalories: { [date: string]: number } = {};
+
+  for (const entry of foodEntries) {
+    const foodItem = foodItemsById[entry.foodId];
+    if (foodItem) {
+      const ratio = entry.quantity / foodItem.servingSize;
+      const calories = foodItem.calories * ratio;
+      if (!dailyCalories[entry.date]) {
+        dailyCalories[entry.date] = 0;
+      }
+      dailyCalories[entry.date] += calories;
+    }
+  }
+
+  const result: { date: string, totalCalories: number, targetCalories: number }[] = [];
+  let currentDate = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (currentDate <= end) {
+    const dateString = currentDate.toISOString().split('T')[0];
+    result.push({
+      date: dateString,
+      totalCalories: dailyCalories[dateString] || 0,
+      targetCalories: targetCalories,
+    });
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return result;
+};
+
+export const getExerciseProgression = (exerciseTemplateId: string, period: number): { date: string, sets: { weight: number, reps: number }[] }[] => {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - period + 1);
+
+  const startDateString = startDate.toISOString().split('T')[0];
+  const endDateString = endDate.toISOString().split('T')[0];
+
+  const workoutTemplateExercises = db.getAllSync<any>('SELECT id FROM workout_template_exercises WHERE exercise_template_id = ?', [exerciseTemplateId]);
+  const workoutTemplateExerciseIds = workoutTemplateExercises.map(wte => wte.id);
+
+  if (workoutTemplateExerciseIds.length === 0) {
+    return [];
+  }
+
+  const workoutEntries = db.getAllSync<any>('SELECT * FROM workout_entries WHERE date >= ? AND date <= ?', [startDateString, endDateString]);
+
+  const progression: { [date: string]: { weight: number, reps: number }[] } = {};
+
+  for (const entry of workoutEntries) {
+    const sets = JSON.parse(entry.sets) as WorkoutSet[];
+    const relevantSets = sets.filter(set => workoutTemplateExerciseIds.includes(set.workout_template_exercise_id));
+
+    if (relevantSets.length > 0) {
+      if (!progression[entry.date]) {
+        progression[entry.date] = [];
+      }
+      progression[entry.date].push(...relevantSets.map(s => ({ weight: s.weight, reps: s.reps })));
+    }
+  }
+
+  return Object.keys(progression).map(date => ({
+    date,
+    sets: progression[date],
+  }));
+};
+
 
 export const deleteExerciseTemplate = (id: string): void => {
   db.runSync('DELETE FROM exercise_templates WHERE id = ?', [id]);

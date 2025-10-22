@@ -8,7 +8,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSnackbar } from '@/app/components/SnackbarProvider'; // Import useSnackbar
-import SetTargetInputList from '@/app/components/SetTargetInputList';
 
 interface OrderedExercise extends ExerciseTemplate {
   set_targets: SetTarget[];
@@ -82,12 +81,6 @@ export default function CreateWorkoutTemplateScreen() {
   );
 
     const renderOrderedItem = ({ item, drag, isActive }: RenderItemParams<OrderedExercise>) => {
-      const updateExerciseSetTargets = (newSetTargets: SetTarget[]) => {
-        setOrderedExercises(prev =>
-          prev.map(ex => (ex.id === item.id ? { ...ex, set_targets: newSetTargets } : ex))
-        );
-      };
-  
       return (
         <View style={[styles.orderedExerciseItem, { backgroundColor: isActive ? draculaTheme.surface.secondary : draculaTheme.surface.card }]}>
           <View style={styles.orderedExerciseHeader}>
@@ -96,10 +89,6 @@ export default function CreateWorkoutTemplateScreen() {
               <Ionicons name="menu" size={24} color={draculaTheme.comment} />
             </TouchableOpacity>
           </View>
-          <SetTargetInputList
-            setTargets={item.set_targets}
-            onChange={updateExerciseSetTargets}
-          />
         </View>
       );
     };
@@ -139,7 +128,7 @@ export default function CreateWorkoutTemplateScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top / 2 }]}>
       <Text style={styles.header}>Order Exercises</Text>
       <TextInput
         style={styles.searchInput}
@@ -150,6 +139,7 @@ export default function CreateWorkoutTemplateScreen() {
       />
       {/* @ts-ignore */}
       <DraggableFlatList
+        containerStyle={{ flex: 1 }}
         data={orderedExercises}
         keyExtractor={(item) => item.id}
         renderItem={renderOrderedItem}

@@ -1,6 +1,6 @@
 
 import { View, Text, StyleSheet } from 'react-native';
-import { draculaTheme, spacing, typography, borderRadius } from '../../styles/theme';
+import { draculaTheme, spacing, typography, borderRadius } from '@/styles/theme';
 
 export type CalorieOverviewProps = {
   eaten: number;

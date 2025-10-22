@@ -1,8 +1,8 @@
 
 import { View, Text, StyleSheet } from 'react-native';
-import { getFoodItem, getWorkoutTemplate } from '../../services/database';
+import { getFoodItem, getWorkoutTemplate } from '@/services/database';
 import { FoodEntry, WorkoutEntry } from '@/types/types';
-import { draculaTheme, spacing, typography, borderRadius } from '../../styles/theme';
+import { draculaTheme, spacing, typography, borderRadius } from '@/styles/theme';
 
 
 // Helper to check if an item is a FoodEntry

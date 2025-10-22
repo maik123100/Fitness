@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { getUserProfile, saveUserProfile, resetDatabase } from '@/services/database';
 import { UserProfile, ActivityLevel, GoalType, Vitamins, Minerals } from '@/types/types'
-import { draculaTheme, spacing, borderRadius, typography } from '../../styles/theme';
-import { setOnboardingCompleted } from '../../services/onboardingService';
+import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
+import { setOnboardingCompleted } from '@/services/onboardingService';
 import { useRouter } from 'expo-router';
 import DatePickerModal from '@/app/components/DatePickerModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [showVitaminTargets, setShowVitaminTargets] = useState(false);
   const [showMineralTargets, setShowMineralTargets] = useState(false);
-  const [showProfileInfo, setShowProfileInfo] = useState(true);
+  const [showProfileInfo, setShowProfileInfo] = useState(false);
   const router = useRouter();
 
   useEffect(() => {

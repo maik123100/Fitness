@@ -2,9 +2,9 @@ import { View, StyleSheet, Text, ScrollView } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
-import CalorieOverview from '../components/calorieOverview';
-import MakroOverview from '../components/makroOverview';
-import RecentActivities from '../components/recentActivities';
+import CalorieOverview from '@/app/components/calorieOverview';
+import MakroOverview from '@/app/components/makroOverview';
+import RecentActivities from '@/app/components/recentActivities';
 import {
   getUserProfile,
   getNutritionSummary,
@@ -17,7 +17,6 @@ import {
 } from '@/types/types'
 import { draculaTheme, spacing, typography } from '../../styles/theme';
 import { useDate } from '@/app/contexts/DateContext';
-import MicroOverview from '../components/microOverview';
 
 interface DashboardState {
   calorieData: {
@@ -97,7 +96,6 @@ export default function DashboardScreen() {
       <ScrollView>
         <CalorieOverview {...calorieData} />
         <MakroOverview currentMakro={makroData.current} targetMakro={makroData.target} />
-        <MicroOverview />
         <RecentActivities recentActivities={recentActivities} />
       </ScrollView>
     </View>
