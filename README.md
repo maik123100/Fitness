@@ -1,50 +1,36 @@
-# Welcome to your Expo app 👋
+# Fitness App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile application to track your fitness journey, including workouts, nutrition, and progress.
 
-## Get started
+## Features
 
-1. Install dependencies
+-   **Workout Tracking:** Create and manage workout templates, track your sets, reps, and weights during a workout session.
+-   **Workout Progression:** Visualize your workout progression with interactive charts.
+    -   Select different exercises to see your progress over time.
+    -   Switch between different data views, such as repetitions, weight, and intensity.
+-   **Nutrition Tracking:** Log your meals and track your calorie and macro-nutrient intake.
+-   **Calorie Analysis:** Analyze your calorie intake over a 7-day period with a clear and easy-to-understand graph.
 
-   ```bash
-   npm install
-   ```
+## Getting Started
 
-2. Start the app
+1.  **Install dependencies**
 
-   ```bash
-    npx expo start
-   ```
+    ```bash
+    npm install
+    ```
 
-In the output, you'll find options to open the app in a
+2.  **Start the app**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+    ```bash
+    npm run start
+    ```
+## Realeses
+I use expo to build the apk of the App. These will be under the Realeses section and the commits which match the version of an apk will be marked with a tag. Feel free to build a apk yourself since Realeses will happen at mostly random times.
+## Technologies Used
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+-   [Expo](https://expo.dev/)
+-   [React Native](https://reactnative.dev/)
+-   [React Native Chart Kit](https://github.com/indiesp/react-native-chart-kit)
+-   [TypeScript](https://www.typescriptlang.org/)
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+(This README.md was LLM generated)
