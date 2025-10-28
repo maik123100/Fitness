@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -43,28 +43,30 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.pickerWrapper}>
-        <Picker
-          selectedValue={currentMonth}
-          style={styles.picker}
-          onValueChange={(itemValue) => setCurrentMonth(itemValue)}
-          dropdownIconColor={draculaTheme.foreground}
-        >
-          {monthNames.map((month, index) => (
-            <Picker.Item key={month} label={month} value={index} />
-          ))}
-        </Picker>
+          <Picker
+            selectedValue={currentMonth}
+            style={styles.picker}
+            onValueChange={(itemValue) => setCurrentMonth(itemValue)}
+            dropdownIconColor={draculaTheme.text.primary}
+            itemStyle={styles.pickerItem}
+          >
+            {monthNames.map((month, index) => (
+            <Picker.Item key={month} label={month} value={index} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
+            ))}
+          </Picker>
       </View>
       <View style={styles.pickerWrapper}>
-        <Picker
-          selectedValue={currentYear}
-          style={styles.picker}
-          onValueChange={(itemValue) => setCurrentYear(itemValue)}
-          dropdownIconColor={draculaTheme.foreground}
-        >
-          {years.map((year) => (
-            <Picker.Item key={year} label={year.toString()} value={year} />
-          ))}
-        </Picker>
+          <Picker
+            selectedValue={currentYear}
+            style={styles.picker}
+            onValueChange={(itemValue) => setCurrentYear(itemValue)}
+            dropdownIconColor={draculaTheme.text.primary}
+            itemStyle={styles.pickerItem}
+          >
+            {years.map((year) => (
+            <Picker.Item key={year} label={year.toString()} value={year} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
+            ))}
+          </Picker>
       </View>
     </View>
   );
@@ -177,8 +179,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   picker: {
+    color: draculaTheme.text.primary,
+    backgroundColor: draculaTheme.surface.input,
+    fontSize: typography.sizes.md,
+  },
+  pickerItem: {
     color: draculaTheme.foreground,
     backgroundColor: draculaTheme.surface.input,
+    fontSize: typography.sizes.md,
   },
 });
 

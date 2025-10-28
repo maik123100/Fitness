@@ -126,28 +126,36 @@ const AddFood: React.FC = () => {
     );
   }
 
-  const renderTextInput = (label: string, key: string, group?: 'macronutrients' | 'vitamins' | 'minerals', isNumber: boolean = false) => {
-    const value = group ? (food as any)[group][key] : (food as any)[key];
+  type RenderTextInputProps = {
+    label: string;
+    fieldKey: string;
+    group?: 'macronutrients' | 'vitamins' | 'minerals';
+    isNumber?: boolean;
+  };
+
+  const RenderTextInput: React.FC<RenderTextInputProps> = ({ label, fieldKey, group, isNumber = false }) => {
+    const value = group ? (food as any)[group]?.[fieldKey] : (food as any)[fieldKey];
+
     return (
-      <View key={key}>
+      <View key={fieldKey}>
         <Text style={styles.label}>{label}</Text>
         <TextInput
           style={styles.input}
           placeholder={`Enter ${label.toLowerCase()}`}
           placeholderTextColor={draculaTheme.text.secondary}
           value={value?.toString() ?? ''}
-          onChangeText={(v) => handleChange(key, isNumber ? parseFloat(v) || 0 : v, group)}
+          onChangeText={(v) => handleChange(fieldKey, isNumber ? parseFloat(v) || 0 : v, group)}
           keyboardType={isNumber ? 'decimal-pad' : 'default'}
         />
       </View>
     );
   };
 
-  const renderGeneralInputs = () => (
+  const GeneralInputs: React.FC = () => (
     <>
-      {renderTextInput('Name', 'name')}
-      {renderTextInput('Brand', 'brand')}
-      {renderTextInput('Barcode', 'barcode')}
+      <RenderTextInput label="Name" fieldKey="name" />
+      <RenderTextInput label="Brand" fieldKey="brand" />
+      <RenderTextInput label="Barcode" fieldKey="barcode" />
       <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanner(true)}>
         <Text style={styles.scanButtonText}>Scan Barcode</Text>
       </TouchableOpacity>
@@ -158,6 +166,7 @@ const AddFood: React.FC = () => {
             selectedValue={food.category}
             onValueChange={(itemValue) => handleChange('category', itemValue as FoodCategory)}
             style={styles.picker}
+            itemStyle={styles.pickerItem}
             dropdownIconColor={draculaTheme.text.primary}
             mode="dialog"
           >
@@ -166,77 +175,78 @@ const AddFood: React.FC = () => {
                 label={cat.charAt(0).toUpperCase() + cat.slice(1)}
                 value={cat}
                 key={cat}
-                style={{ backgroundColor: draculaTheme.surface.input, color: draculaTheme.text.primary }}
+                color={draculaTheme.text.primary}
+                style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }}
               />
             ))}
           </Picker>
         </View>
       </View>
-      {renderTextInput('Calories', 'calories', undefined, true)}
-      {renderTextInput('Serving Size', 'servingSize', undefined, true)}
-      {renderTextInput('Serving Unit', 'servingUnit')}
+      <RenderTextInput label="Calories" fieldKey="calories" isNumber />
+      <RenderTextInput label="Serving Size" fieldKey="servingSize" isNumber />
+      <RenderTextInput label="Serving Unit" fieldKey="servingUnit" />
     </>
   );
 
-  const renderMacronutrients = () => (
+  const MacronutrientsSection: React.FC = () => (
     <>
       <Text style={styles.subtitle}>Macronutrients</Text>
-      {renderTextInput('Carbs (g)', 'carbs', 'macronutrients', true)}
-      {renderTextInput('Fat (g)', 'fat', 'macronutrients', true)}
-      {renderTextInput('Protein (g)', 'protein', 'macronutrients', true)}
-      {renderTextInput('Fiber (g)', 'fiber', 'macronutrients', true)}
+      <RenderTextInput label="Carbs (g)" fieldKey="carbs" group="macronutrients" isNumber />
+      <RenderTextInput label="Fat (g)" fieldKey="fat" group="macronutrients" isNumber />
+      <RenderTextInput label="Protein (g)" fieldKey="protein" group="macronutrients" isNumber />
+      <RenderTextInput label="Fiber (g)" fieldKey="fiber" group="macronutrients" isNumber />
     </>
   );
 
-  const renderVitamins = () => (
+  const VitaminsSection: React.FC = () => (
     <>
       <TouchableOpacity onPress={() => setShowVitamins(!showVitamins)}>
         <Text style={styles.subtitle}>Vitamins (optional)</Text>
       </TouchableOpacity>
       {showVitamins && (
         <>
-          {renderTextInput('Vitamin A (µg)', 'vitaminA', 'vitamins', true)}
-          {renderTextInput('Vitamin C (mg)', 'vitaminC', 'vitamins', true)}
-          {renderTextInput('Vitamin D (µg)', 'vitaminD', 'vitamins', true)}
-          {renderTextInput('Vitamin B6 (mg)', 'vitaminB6', 'vitamins', true)}
-          {renderTextInput('Vitamin E (mg)', 'vitaminE', 'vitamins', true)}
-          {renderTextInput('Vitamin K (µg)', 'vitaminK', 'vitamins', true)}
-          {renderTextInput('Thiamin (mg)', 'thiamin', 'vitamins', true)}
-          {renderTextInput('Vitamin B12 (µg)', 'vitaminB12', 'vitamins', true)}
-          {renderTextInput('Riboflavin (mg)', 'riboflavin', 'vitamins', true)}
-          {renderTextInput('Folate (µg)', 'folate', 'vitamins', true)}
-          {renderTextInput('Niacin (mg)', 'niacin', 'vitamins', true)}
-          {renderTextInput('Choline (g)', 'choline', 'vitamins', true)}
-          {renderTextInput('Pantothenic Acid (mg)', 'pantothenicAcid', 'vitamins', true)}
-          {renderTextInput('Biotin (µg)', 'biotin', 'vitamins', true)}
-          {renderTextInput('Carotenoids', 'carotenoids', 'vitamins', true)}
+          <RenderTextInput label="Vitamin A (µg)" fieldKey="vitaminA" group="vitamins" isNumber />
+          <RenderTextInput label="Vitamin C (mg)" fieldKey="vitaminC" group="vitamins" isNumber />
+          <RenderTextInput label="Vitamin D (µg)" fieldKey="vitaminD" group="vitamins" isNumber />
+          <RenderTextInput label="Vitamin B6 (mg)" fieldKey="vitaminB6" group="vitamins" isNumber />
+          <RenderTextInput label="Vitamin E (mg)" fieldKey="vitaminE" group="vitamins" isNumber />
+          <RenderTextInput label="Vitamin K (µg)" fieldKey="vitaminK" group="vitamins" isNumber />
+          <RenderTextInput label="Thiamin (mg)" fieldKey="thiamin" group="vitamins" isNumber />
+          <RenderTextInput label="Vitamin B12 (µg)" fieldKey="vitaminB12" group="vitamins" isNumber />
+          <RenderTextInput label="Riboflavin (mg)" fieldKey="riboflavin" group="vitamins" isNumber />
+          <RenderTextInput label="Folate (µg)" fieldKey="folate" group="vitamins" isNumber />
+          <RenderTextInput label="Niacin (mg)" fieldKey="niacin" group="vitamins" isNumber />
+          <RenderTextInput label="Choline (g)" fieldKey="choline" group="vitamins" isNumber />
+          <RenderTextInput label="Pantothenic Acid (mg)" fieldKey="pantothenicAcid" group="vitamins" isNumber />
+          <RenderTextInput label="Biotin (µg)" fieldKey="biotin" group="vitamins" isNumber />
+          <RenderTextInput label="Carotenoids" fieldKey="carotenoids" group="vitamins" isNumber />
         </>
       )}
     </>
   );
 
-  const renderMinerals = () => (
+  const MineralsSection: React.FC = () => (
     <>
       <TouchableOpacity onPress={() => setShowMinerals(!showMinerals)}>
         <Text style={styles.subtitle}>Minerals (optional)</Text>
       </TouchableOpacity>
       {showMinerals && (
         <>
-          {renderTextInput('Calcium (mg)', 'calcium', 'minerals', true)}
-          {renderTextInput('Chloride (g)', 'chloride', 'minerals', true)}
-          {renderTextInput('Chromium (µg)', 'chromium', 'minerals', true)}
-          {renderTextInput('Copper (µg)', 'copper', 'minerals', true)}
-          {renderTextInput('Fluoride (mg)', 'fluoride', 'minerals', true)}
-          {renderTextInput('Iodine (µg)', 'iodine', 'minerals', true)}
-          {renderTextInput('Iron (mg)', 'iron', 'minerals', true)}
-          {renderTextInput('Magnesium (mg)', 'magnesium', 'minerals', true)}
-          {renderTextInput('Manganese (mg)', 'manganese', 'minerals', true)}
-          {renderTextInput('Molybdenum (µg)', 'molybdenum', 'minerals', true)}
-          {renderTextInput('Phosphorus (g)', 'phosphorus', 'minerals', true)}
-          {renderTextInput('Potassium (mg)', 'potassium', 'minerals', true)}
-          {renderTextInput('Selenium (µg)', 'selenium', 'minerals', true)}
-          {renderTextInput('Sodium (mg)', 'sodium', 'minerals', true)}
-          {renderTextInput('Zinc (mg)', 'zinc', 'minerals', true)}
+          <RenderTextInput label="Calcium (mg)" fieldKey="calcium" group="minerals" isNumber />
+          <RenderTextInput label="Chloride (g)" fieldKey="chloride" group="minerals" isNumber />
+          <RenderTextInput label="Chromium (µg)" fieldKey="chromium" group="minerals" isNumber />
+          <RenderTextInput label="Copper (µg)" fieldKey="copper" group="minerals" isNumber />
+          <RenderTextInput label="Fluoride (mg)" fieldKey="fluoride" group="minerals" isNumber />
+          <RenderTextInput label="Iodine (µg)" fieldKey="iodine" group="minerals" isNumber />
+          <RenderTextInput label="Iron (mg)" fieldKey="iron" group="minerals" isNumber />
+          <RenderTextInput label="Magnesium (mg)" fieldKey="magnesium" group="minerals" isNumber />
+          <RenderTextInput label="Manganese (mg)" fieldKey="manganese" group="minerals" isNumber />
+          <RenderTextInput label="Molybdenum (µg)" fieldKey="molybdenum" group="minerals" isNumber />
+          <RenderTextInput label="Phosphorus (g)" fieldKey="phosphorus" group="minerals" isNumber />
+          <RenderTextInput label="Potassium (mg)" fieldKey="potassium" group="minerals" isNumber />
+          <RenderTextInput label="Selenium (µg)" fieldKey="selenium" group="minerals" isNumber />
+          <RenderTextInput label="Sodium (mg)" fieldKey="sodium" group="minerals" isNumber />
+          <RenderTextInput label="Zinc (mg)" fieldKey="zinc" group="minerals" isNumber />
         </>
       )}
     </>
@@ -249,10 +259,10 @@ const AddFood: React.FC = () => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Add New Food</Text>
-        {renderGeneralInputs()}
-        {renderMacronutrients()}
-        {renderVitamins()}
-        {renderMinerals()}
+        <GeneralInputs />
+        <MacronutrientsSection />
+        <VitaminsSection />
+        <MineralsSection />
         <TouchableOpacity style={styles.addBtn} onPress={handleAddFood}>
           <Text style={styles.addBtnText}>Add Food</Text>
         </TouchableOpacity>
@@ -315,6 +325,11 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     height: 58,
     width: '100%',
+  },
+  pickerItem: {
+    color: draculaTheme.text.primary,
+    backgroundColor: draculaTheme.surface.input,
+    fontSize: typography.sizes.md,
   },
   addBtn: {
     backgroundColor: draculaTheme.primary,

@@ -113,10 +113,11 @@ export default function WorkoutProgressionScreen() {
         selectedValue={selectedExercise}
         style={styles.picker}
         itemStyle={styles.pickerItem}
+        dropdownIconColor={draculaTheme.text.primary}
         onValueChange={(itemValue) => setSelectedExercise(itemValue)}
       >
         {exerciseTemplates.map(template => (
-          <Picker.Item key={template.id} label={template.name} value={template.id} />
+          <Picker.Item key={template.id} label={template.name} value={template.id} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.card }} />
         ))}
       </Picker>
 

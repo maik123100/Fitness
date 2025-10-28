@@ -117,9 +117,10 @@ export default function FoodQuantityScreen() {
           onValueChange={(itemValue) => setSelectedMealType(itemValue as MealType)}
           style={styles.picker}
           dropdownIconColor={draculaTheme.text.primary}
+          itemStyle={styles.pickerItem}
         >
           {['breakfast', 'lunch', 'dinner', 'snack'].map((meal) => (
-            <Picker.Item label={meal.charAt(0).toUpperCase() + meal.slice(1)} value={meal} key={meal} />
+            <Picker.Item label={meal.charAt(0).toUpperCase() + meal.slice(1)} value={meal} key={meal} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
           ))}
         </Picker>
       </View>
@@ -245,6 +246,11 @@ const styles = StyleSheet.create({
     color: draculaTheme.foreground,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
+  },
+  pickerItem: {
+    color: draculaTheme.foreground,
+    backgroundColor: draculaTheme.surface.input,
+    fontSize: typography.sizes.md,
   },
   quickQuantityButtonsContainer: {
     flexDirection: 'row',
