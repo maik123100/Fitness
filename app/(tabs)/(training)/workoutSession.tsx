@@ -7,22 +7,19 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-interface WorkoutSessionState {
-  session: ActiveWorkoutSession | WorkoutEntry | null;
-  exercises: (WorkoutTemplateExercise & { exercise_name: string })[];
-  isEditing: boolean;
-  elapsedTime: number; // Added for timer
-}
-
 export default function WorkoutSessionScreen() {
-  const [state, setState] = useState<WorkoutSessionState>({ session: null, exercises: [], isEditing: false, elapsedTime: 0 });
+  // Separate state for clarity
+  const [session, setSession] = useState<ActiveWorkoutSession | WorkoutEntry | null>(null);
+  const [exercises, setExercises] = useState<(WorkoutTemplateExercise & { exercise_name: string })[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const { workoutEntryId } = params;
 
-  const { session, exercises, isEditing, elapsedTime } = state;
-
+  // Load workout on mount
   useEffect(() => {
     if (workoutEntryId) {
       loadWorkoutEntry(workoutEntryId as string);
@@ -31,27 +28,31 @@ export default function WorkoutSessionScreen() {
     }
   }, [workoutEntryId]);
 
+  // Timer for active workouts
   useEffect(() => {
-    let interval: number | undefined;
-    if (session && !isEditing && 'start_time' in session) {
-      const calculateElapsedTime = () => {
-        setState(prev => ({
-          ...prev,
-          elapsedTime: Math.floor((Date.now() - (session as ActiveWorkoutSession).start_time) / 1000),
-        }));
-      };
-      calculateElapsedTime(); // Initial calculation
-      interval = setInterval(calculateElapsedTime, 1000);
-    } else if (interval) {
-      clearInterval(interval);
+    // Only run timer for active sessions (not when editing finished workouts)
+    if (!session || isEditing) {
+      return;
     }
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
+
+    const activeSession = session as ActiveWorkoutSession;
+    if (!activeSession.start_time) {
+      return;
+    }
+
+    // Update elapsed time every second
+    const updateTimer = () => {
+      const secondsElapsed = Math.floor((Date.now() - activeSession.start_time) / 1000);
+      setElapsedTime(secondsElapsed);
     };
+
+    updateTimer(); // Initial update
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
   }, [session, isEditing]);
 
+  // Helper function to format time as HH:MM:SS
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -59,63 +60,78 @@ export default function WorkoutSessionScreen() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Helper function to load exercise details for a workout
+  const loadExercisesForWorkout = (workoutTemplateId: string) => {
+    const templateExercises = getWorkoutTemplateExercises(workoutTemplateId);
+    return templateExercises.map(te => {
+      const exerciseTemplate = getExerciseTemplate(te.exercise_template_id);
+      return {
+        ...te,
+        exercise_name: exerciseTemplate?.name || 'Unknown Exercise',
+      };
+    });
+  };
+
+  // Load active workout session (for ongoing workouts)
   const loadActiveSession = () => {
     const activeSession = getActiveWorkoutSession();
     if (activeSession) {
-      const templateExercises = getWorkoutTemplateExercises(activeSession.workout_template_id);
-      const exercisesWithDetails = templateExercises.map(te => {
-        const exerciseTemplate = getExerciseTemplate(te.exercise_template_id);
-        return {
-          ...te,
-          exercise_name: exerciseTemplate?.name || 'Unknown Exercise',
-        };
-      });
-      setState({ session: activeSession, exercises: exercisesWithDetails, isEditing: false, elapsedTime: 0 });
+      const exercisesWithDetails = loadExercisesForWorkout(activeSession.workout_template_id);
+      setSession(activeSession);
+      setExercises(exercisesWithDetails);
+      setIsEditing(false);
+      setElapsedTime(0);
     }
   };
 
+  // Load finished workout entry (for editing completed workouts)
   const loadWorkoutEntry = (id: string) => {
     const workoutEntry = getWorkoutEntry(id);
     if (workoutEntry) {
-      const templateExercises = getWorkoutTemplateExercises(workoutEntry.workout_template_id);
-      const exercisesWithDetails = templateExercises.map(te => {
-        const exerciseTemplate = getExerciseTemplate(te.exercise_template_id);
-        return {
-          ...te,
-          exercise_name: exerciseTemplate?.name || 'Unknown Exercise',
-        };
-      });
-      setState(prev => ({ ...prev, session: workoutEntry, exercises: exercisesWithDetails, isEditing: true }));
+      const exercisesWithDetails = loadExercisesForWorkout(workoutEntry.workout_template_id);
+      setSession(workoutEntry);
+      setExercises(exercisesWithDetails);
+      setIsEditing(true);
     }
   };
 
+  // Update a specific set (weight, reps, or completion status)
   const handleSetUpdate = (setId: string, field: keyof WorkoutSet, value: string | number | boolean) => {
-    if (session) {
-      const newSets = session.sets.map((set: WorkoutSet) => {
-        if (set.id === setId) {
-          return { ...set, [field]: value };
-        }
-        return set;
-      });
-      const newSession = { ...session, sets: newSets };
-      setState(prev => ({ ...prev, session: newSession }));
-      if (!isEditing) {
-        updateActiveWorkoutSession(newSession as ActiveWorkoutSession);
+    if (!session) return;
+
+    // Update the set in the session
+    const updatedSets = session.sets.map((set: WorkoutSet) => {
+      if (set.id === setId) {
+        return { ...set, [field]: value };
       }
+      return set;
+    });
+
+    const updatedSession = { ...session, sets: updatedSets };
+    setSession(updatedSession);
+
+    // Save changes for active workouts immediately
+    if (!isEditing) {
+      updateActiveWorkoutSession(updatedSession as ActiveWorkoutSession);
     }
   };
 
+  // Finish or update the workout
   const handleFinishWorkout = () => {
-    if (session) {
-      if (isEditing) {
-        updateWorkoutEntry(session as WorkoutEntry);
-      } else {
-        finishWorkoutSession(session as ActiveWorkoutSession);
-      }
-      router.back();
+    if (!session) return;
+
+    if (isEditing) {
+      // Editing a finished workout - update it
+      updateWorkoutEntry(session as WorkoutEntry);
+    } else {
+      // Finishing an active workout
+      finishWorkoutSession(session as ActiveWorkoutSession);
     }
+
+    router.back();
   };
 
+  // Show error if no session found
   if (!session) {
     return (
       <View style={[styles.container, { paddingTop: insets.top * 2 }]}>
@@ -124,88 +140,120 @@ export default function WorkoutSessionScreen() {
     );
   }
 
+  // Get the workout entry for editing mode
+  const workoutEntry = isEditing ? (session as WorkoutEntry) : null;
+
   return (
     <View style={styles.container}>
+      <View style={styles.contentContainer}>
+        {/* Show duration input when editing finished workout */}
+        {isEditing && workoutEntry && (
+          <View style={styles.durationContainer}>
+            <Text style={styles.durationLabel}>Duration (mins)</Text>
+            <TextInput
+              style={styles.durationInput}
+              placeholder="Duration"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={workoutEntry.duration.toString()}
+              onChangeText={(value) => {
+                const updatedEntry = { ...workoutEntry, duration: parseInt(value) || 0 };
+                setSession(updatedEntry);
+              }}
+            />
 
-                      {isEditing && (
-                        <View style={[styles.durationContainer, { paddingTop: insets.top }]}>
-                            <Text style={styles.inputLabel}>Duration (mins)</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Duration"
-                                placeholderTextColor={draculaTheme.comment}
-                                keyboardType="numeric"
-                                value={isEditing && session && 'duration' in session ? session.duration.toString() : '0'}
-                                onChangeText={(value) => {
-                                  if (isEditing && session && 'duration' in session) {
-                                    setState(prev => ({ ...prev, session: { ...prev.session, duration: parseInt(value) || 0 } as WorkoutEntry}));
-                                  }
-                                }}
-                            />
-                        </View>
-                      )}
-
-      {!isEditing && session && 'start_time' in session && (
-        <View style={styles.embeddedTimerContainer}>
-          <Text style={styles.embeddedTimerText}>Time: {formatTime(elapsedTime)}</Text>
-        </View>
-      )}
-                      <FlatList
-                        data={exercises}
-                        keyExtractor={(item) => item.id}
-                        contentContainerStyle={{ paddingTop: insets.top, paddingHorizontal: spacing.md }}
-                        renderItem={({ item }) => (
-                          <View style={styles.exerciseCard}>
-                            <View>
-                              <Text style={styles.exerciseTitle}>{item.exercise_name}</Text>
-                              {session.sets.filter((set: WorkoutSet) => set.workout_template_exercise_id === item.id).map((set: WorkoutSet, index: number) => (
-                                <View key={set.id}>
-                                  {index === 0 && (
-                  <View style={styles.setLabelsRow}>
-                    <View style={styles.setNumberPlaceholder} />
-                    <Text style={styles.inputLabel}>Target Weight</Text>
-                    <Text style={styles.inputLabel}>Target Reps</Text>
-                    <Text style={styles.inputLabel}>Weight</Text>
-                    <Text style={styles.inputLabel}>Reps</Text>
-                    <View style={styles.checkboxPlaceholder} />
-                  </View>
-                )}
-                <View style={styles.setContainer}>
-                  <Text style={styles.setText}>Set {index + 1}</Text>
-                  <Text style={styles.targetValue}>{set.targetWeight} kg</Text>
-                  <Text style={styles.targetValue}>{set.targetReps} reps</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Weight"
-                    placeholderTextColor={draculaTheme.comment}
-                    keyboardType="numeric"
-                    value={set.weight.toString()}
-                    onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Reps"
-                    placeholderTextColor={draculaTheme.comment}
-                    keyboardType="numeric"
-                    value={set.reps.toString()}
-                    onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
-                  />
-                  <TouchableOpacity onPress={() => handleSetUpdate(set.id, 'completed', !set.completed)}>
-                    <Ionicons
-                      name={set.completed ? 'checkbox-outline' : 'square-outline'}
-                      size={24}
-                      color={set.completed ? draculaTheme.cyan : draculaTheme.comment}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-            </View>
+            <Text style={[styles.durationLabel, { marginTop: spacing.md }]}>Calories Burned</Text>
+            <TextInput
+              style={styles.durationInput}
+              placeholder="Calories"
+              placeholderTextColor={draculaTheme.comment}
+              keyboardType="numeric"
+              value={((workoutEntry as any).calories_burned || 0).toString()}
+              onChangeText={(value) => {
+                const updatedEntry = { ...workoutEntry, calories_burned: parseInt(value) || 0 };
+                setSession(updatedEntry as any);
+              }}
+            />
           </View>
         )}
-      />
+
+        {/* Show live timer for active workout */}
+        {!isEditing && (
+          <View style={[styles.embeddedTimerContainer, { marginTop: insets.top }]}>
+            <Text style={styles.embeddedTimerText}>{formatTime(elapsedTime)}</Text>
+          </View>
+        )}
+
+        {/* List of exercises */}
+        <FlatList
+          data={exercises}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item: exercise }) => {
+            // Get sets for this exercise
+            const exerciseSets = session.sets.filter(
+              (set: WorkoutSet) => set.workout_template_exercise_id === exercise.id
+            );
+
+            return (
+              <View style={styles.exerciseCard}>
+                <Text style={styles.exerciseTitle}>{exercise.exercise_name}</Text>
+
+                {/* Column headers */}
+                <View style={styles.setLabelsRow}>
+                  <View style={styles.setNumberPlaceholder} />
+                  <Text style={styles.inputLabel}>Target Weight</Text>
+                  <Text style={styles.inputLabel}>Target Reps</Text>
+                  <Text style={styles.inputLabel}>Weight</Text>
+                  <Text style={styles.inputLabel}>Reps</Text>
+                  <View style={styles.checkboxPlaceholder} />
+                </View>
+
+                {/* Render each set */}
+                {exerciseSets.map((set: WorkoutSet, index: number) => (
+                  <View key={set.id} style={styles.setContainer}>
+                    <Text style={styles.setText}>Set {index + 1}</Text>
+                    
+                    <Text style={styles.targetValue}>{set.targetWeight} kg</Text>
+                    <Text style={styles.targetValue}>{set.targetReps} reps</Text>
+                    
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Weight"
+                      placeholderTextColor={draculaTheme.comment}
+                      keyboardType="numeric"
+                      value={set.weight.toString()}
+                      onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
+                    />
+                    
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Reps"
+                      placeholderTextColor={draculaTheme.comment}
+                      keyboardType="numeric"
+                      value={set.reps.toString()}
+                      onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
+                    />
+                    
+                    <TouchableOpacity onPress={() => handleSetUpdate(set.id, 'completed', !set.completed)}>
+                      <Ionicons
+                        name={set.completed ? 'checkbox-outline' : 'square-outline'}
+                        size={24}
+                        color={set.completed ? draculaTheme.cyan : draculaTheme.comment}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            );
+          }}
+        />
+      </View>
+
+      {/* Finish/Update button */}
       <TouchableOpacity style={styles.finishButton} onPress={handleFinishWorkout}>
-        <Text style={styles.finishButtonText}>{isEditing ? 'Update Workout' : 'Finish Workout'}</Text>
+        <Text style={styles.finishButtonText}>
+          {isEditing ? 'Update Workout' : 'Finish Workout'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -221,12 +269,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   durationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    marginTop: spacing.s,
     marginBottom: spacing.lg,
     backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.s,
+    paddingBottom: spacing.md,
+  },
+  durationLabel: {
+    color: draculaTheme.comment,
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-end',
+  },
+  durationInput: {
+    backgroundColor: draculaTheme.surface.input,
+    color: draculaTheme.foreground,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    fontSize: typography.sizes.md,
+    textAlign: 'center',
+    alignSelf: 'center',
+    width: '80%',
   },
   errorText: {
     color: draculaTheme.foreground,

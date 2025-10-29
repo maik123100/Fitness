@@ -641,7 +641,11 @@ export const getNutritionSummary = (date: string): NutritionSummary => {
     }
   }
 
-  const workoutSummary = { calories_burned: 0 };
+  // Calculate calories burned from workout entries
+  const workoutEntries = getWorkoutEntries(date);
+  const caloriesBurned = workoutEntries.reduce((total, workout) => {
+    return total + ((workout as any).calories_burned || 0);
+  }, 0);
 
   return {
     date,
@@ -652,8 +656,8 @@ export const getNutritionSummary = (date: string): NutritionSummary => {
     totalFiber,
     totalVitamins,
     totalMinerals,
-    caloriesBurned: workoutSummary?.calories_burned || 0,
-    netCalories: totalCalories - (workoutSummary?.calories_burned || 0),
+    caloriesBurned: caloriesBurned,
+    netCalories: totalCalories - caloriesBurned,
   };
 };
 

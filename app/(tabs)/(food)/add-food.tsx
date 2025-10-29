@@ -254,11 +254,11 @@ const AddFood: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Add New Food</Text>
+        <Text style={styles.subtitle}>Add New Food</Text>
         <GeneralInputs />
         <MacronutrientsSection />
         <VitaminsSection />
@@ -277,8 +277,9 @@ const styles = StyleSheet.create({
     backgroundColor: draculaTheme.background,
   },
   scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   title: {
     fontSize: typography.sizes.title,
@@ -291,8 +292,9 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     color: draculaTheme.text.primary,
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
     marginBottom: spacing.md,
+    textAlign: 'center',
   },
   label: {
     color: draculaTheme.text.secondary,
