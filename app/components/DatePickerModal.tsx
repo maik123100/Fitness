@@ -4,6 +4,7 @@ import { Calendar } from 'react-native-calendars';
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 
 interface CalendarDayObject {
   dateString: string;
@@ -21,19 +22,21 @@ interface DatePickerModalProps {
 }
 
 const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, onSelectDate, currentDate }) => {
-  const [selected, setSelected] = useState(currentDate.toISOString().split('T')[0]);
+  const [selected, setSelected] = useState(formatDateToYYYYMMDD(currentDate));
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
 
   useEffect(() => {
-    setSelected(currentDate.toISOString().split('T')[0]);
+    setSelected(formatDateToYYYYMMDD(currentDate));
     setCurrentMonth(currentDate.getMonth());
     setCurrentYear(currentDate.getFullYear());
   }, [currentDate]);
 
   const handleDayPress = (day: CalendarDayObject) => {
     setSelected(day.dateString);
-    onSelectDate(new Date(Date.UTC(day.year, day.month - 1, day.day)));
+    // Create date in local timezone, not UTC
+    const localDate = new Date(day.year, day.month - 1, day.day);
+    onSelectDate(localDate);
     onClose();
   };
 

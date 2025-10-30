@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { getUserProfile, saveUserProfile } from '@/services/database';
 import { resetDatabase } from '@/services/db';
-import { UserProfile, ActivityLevel, GoalType, Vitamins, Minerals } from '@/types/types'
+import { UserProfile, ActivityLevel, GoalType, VitaminFields, MineralFields } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { setOnboardingCompleted } from '@/services/onboardingService';
 import { useRouter } from 'expo-router';
@@ -18,8 +18,8 @@ export default function ProfileScreen() {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('sedentary');
   const [goalType, setGoalType] = useState<GoalType>('maintain-weight');
   const [targetWeight, setTargetWeight] = useState('');
-  const [vitaminTargets, setVitaminTargets] = useState<Vitamins>({});
-  const [mineralTargets, setMineralTargets] = useState<Minerals>({});
+  const [vitaminTargets, setVitaminTargets] = useState<VitaminFields>({});
+  const [mineralTargets, setMineralTargets] = useState<MineralFields>({});
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [showVitaminTargets, setShowVitaminTargets] = useState(false);
   const [showMineralTargets, setShowMineralTargets] = useState(false);
@@ -41,8 +41,6 @@ export default function ProfileScreen() {
       setActivityLevel(userProfile.activityLevel);
       setGoalType(userProfile.goalType);
       setTargetWeight(userProfile.targetWeight?.toString() || '');
-      setVitaminTargets(userProfile.vitaminTargets || {});
-      setMineralTargets(userProfile.mineralTargets || {});
     }
   };
 
@@ -98,8 +96,6 @@ export default function ProfileScreen() {
       targetCarbs: (targetCalories * 0.4) / 4,
       targetProtein: (targetCalories * 0.3) / 4,
       targetFat: (targetCalories * 0.3) / 9,
-      vitaminTargets: vitaminTargets,
-      mineralTargets: mineralTargets,
       createdAt: profile?.createdAt || Date.now(),
       updatedAt: Date.now(),
     };

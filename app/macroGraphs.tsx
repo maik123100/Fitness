@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
 import { getNutritionSummary, getUserProfile } from '@/services/database';
-import { NutritionSummary, Vitamins, Minerals } from '@/types/types'
+import { NutritionSummary, VitaminFields, MineralFields } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -137,7 +137,7 @@ export default function MacroGraphsScreen() {
         <View key={vitamin} style={styles.chartSection}>
           <Text style={styles.sectionTitle}>{vitamin.charAt(0).toUpperCase() + vitamin.slice(1)} Intake</Text>
           <MacroDisplay
-            actual={nutritionSummary.totalVitamins[vitamin as keyof Vitamins] || 0}
+            actual={nutritionSummary.totalVitamins[vitamin as keyof VitaminFields] || 0}
             target={vitaminTargets[vitamin as keyof typeof vitaminTargets].target}
             unit={vitaminTargets[vitamin as keyof typeof vitaminTargets].unit}
           />
@@ -149,7 +149,7 @@ export default function MacroGraphsScreen() {
         <View key={mineral} style={styles.chartSection}>
           <Text style={styles.sectionTitle}>{mineral.charAt(0).toUpperCase() + mineral.slice(1)} Intake</Text>
           <MacroDisplay
-            actual={nutritionSummary.totalMinerals[mineral as keyof Minerals] || 0}
+            actual={nutritionSummary.totalMinerals[mineral as keyof MineralFields] || 0}
             target={mineralTargets[mineral as keyof typeof mineralTargets].target}
             unit={mineralTargets[mineral as keyof typeof mineralTargets].unit}
           />

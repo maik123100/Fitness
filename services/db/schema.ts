@@ -143,6 +143,7 @@ export const workoutEntries = sqliteTable('workout_entries', {
   workoutTemplateId: text('workout_template_id').notNull().references(() => workoutTemplates.id),
   date: text('date').notNull(),
   duration: integer('duration').notNull(),
+  caloriesBurned: real('calories_burned').notNull().default(0),
   sets: text('sets').notNull(), // JSON string of WorkoutSet[]
   createdAt: integer('created_at').notNull(),
 }, (table) => ({

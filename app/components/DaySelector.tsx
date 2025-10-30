@@ -17,15 +17,27 @@ const DaySelector: React.FC = () => {
   tomorrow.setDate(today.getDate() + 1);
 
   const formatDate = (date: Date) => {
-    date.setHours(0, 0, 0, 0);
-    if (date.getTime() === today.getTime()) {
+    // Don't mutate the original date - create a copy
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    
+    const normalizedToday = new Date(today);
+    normalizedToday.setHours(0, 0, 0, 0);
+    
+    const normalizedYesterday = new Date(yesterday);
+    normalizedYesterday.setHours(0, 0, 0, 0);
+    
+    const normalizedTomorrow = new Date(tomorrow);
+    normalizedTomorrow.setHours(0, 0, 0, 0);
+    
+    if (normalizedDate.getTime() === normalizedToday.getTime()) {
       return 'Today';
-    } else if (date.getTime() === yesterday.getTime()) {
+    } else if (normalizedDate.getTime() === normalizedYesterday.getTime()) {
       return 'Yesterday';
-    } else if (date.getTime() === tomorrow.getTime()) {
+    } else if (normalizedDate.getTime() === normalizedTomorrow.getTime()) {
       return 'Tomorrow';
     } else {
-      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      return normalizedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     }
   };
 

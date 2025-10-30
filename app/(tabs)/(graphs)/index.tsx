@@ -72,12 +72,15 @@ export default function DietReportScreen() {
     backgroundGradientFrom: draculaTheme.surface.card,
     backgroundGradientTo: draculaTheme.surface.card,
     color: (opacity = 1) => `rgba(139, 233, 253, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(248, 248, 242, ${opacity})`,
-    strokeWidth: 2,
+    labelColor: (opacity = 1) => draculaTheme.green,
+    fillShadowGradientOpacity: 0.1,
     propsForDots: {
-      r: '6',
+      r: '4',
       strokeWidth: '2',
-      stroke: draculaTheme.pink,
+    },
+    propsForBackgroundLines: {
+      strokeDasharray: '',
+      stroke: draculaTheme.surface.secondary,
     },
   };
 
@@ -85,19 +88,24 @@ export default function DietReportScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Diet Report</Text>
 
-      <View style={styles.chartSection}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Weight History (Last 30 entries)</Text>
-          <TouchableOpacity onPress={() => setState(prev => ({ ...prev, weightModal: { ...prev.weightModal, visible: true } }))} style={styles.addButton}>
-            <Ionicons name="add" size={24} color={draculaTheme.text.inverse} />
-          </TouchableOpacity>
+      <View style={styles.chartContainer}>
+        <View style={styles.chartHeader}>
+          <Text style={styles.chartTitle}>Weight History (Last 30 entries)</Text>
+          <View style={styles.headerRight}>
+            <Text style={styles.chartUnit}>kg</Text>
+            <TouchableOpacity onPress={() => setState(prev => ({ ...prev, weightModal: { ...prev.weightModal, visible: true } }))} style={styles.addButton}>
+              <Ionicons name="add" size={24} color={draculaTheme.text.inverse} />
+            </TouchableOpacity>
+          </View>
         </View>
         {weightData.labels.length > 0 ? (
           <LineChart
             data={weightData}
-            width={Dimensions.get('window').width - spacing.md * 2}
+            width={Dimensions.get('window').width - spacing.md * 4}
             height={220}
             chartConfig={chartConfig}
+            fromZero
+            withDots
             bezier
           />
         ) : (
@@ -152,17 +160,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
-  chartSection: {
-    backgroundColor: draculaTheme.surface.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+  chartContainer: {
     marginBottom: spacing.lg,
+    backgroundColor: draculaTheme.surface.card,
+    borderRadius: 16,
+    padding: spacing.md,
   },
-  sectionHeader: {
+  chartHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  chartTitle: {
+    color: draculaTheme.foreground,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  chartUnit: {
+    color: draculaTheme.comment,
+    fontSize: 12,
+    marginRight: spacing.sm,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   addButton: {
     backgroundColor: draculaTheme.green,

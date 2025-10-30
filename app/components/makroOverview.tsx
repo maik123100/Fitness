@@ -20,9 +20,9 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
   const data = {
     labels: ['Protein', 'Carbs', 'Fat'],
     data: [
-      targetMakro.protein > 0 ? currentMakro.protein / targetMakro.protein : 0,
-      targetMakro.carbs > 0 ? currentMakro.carbs / targetMakro.carbs : 0,
-      targetMakro.fat > 0 ? currentMakro.fat / targetMakro.fat : 0,
+      targetMakro.protein > 0 ? Math.min(currentMakro.protein / targetMakro.protein, 1) : 0,
+      targetMakro.carbs > 0 ? Math.min(currentMakro.carbs / targetMakro.carbs, 1) : 0,
+      targetMakro.fat > 0 ? Math.min(currentMakro.fat / targetMakro.fat, 1) : 0,
     ],
     colors: [
       draculaTheme.nutrition.protein,

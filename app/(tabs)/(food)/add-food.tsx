@@ -3,7 +3,7 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Keyboa
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FoodItem, FoodCategory, Macronutrients, Vitamins, Minerals } from '@/types/types';
+import { FoodItem, FoodCategory } from '@/types/types';
 import { addFoodItem, getAllFoodItems } from '@/services/database';
 import { draculaTheme, spacing, borderRadius, typography, shadows } from '@/styles/theme';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
@@ -17,14 +17,10 @@ const defaultFood: FoodItem = {
   barcode: '',
   category: 'other',
   calories: 0,
-  macronutrients: {
-    carbs: 0,
-    fat: 0,
-    protein: 0,
-    fiber: 0,
-  },
-  vitamins: {},
-  minerals: {},
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+  fiber: 0,
   servingSize: 100,
   servingUnit: 'g',
   isVerified: false,
@@ -53,64 +49,50 @@ const AddFood: React.FC = () => {
   ];
 
   const macroFields = [
-    { label: 'Protein (g)', key: 'protein', group: 'macronutrients' as const, isNumber: true },
-    { label: 'Carbs (g)', key: 'carbs', group: 'macronutrients' as const, isNumber: true },
-    { label: 'Fat (g)', key: 'fat', group: 'macronutrients' as const, isNumber: true },
-    { label: 'Fiber (g)', key: 'fiber', group: 'macronutrients' as const, isNumber: true },
+    { label: 'Protein (g)', key: 'protein', isNumber: true },
+    { label: 'Carbs (g)', key: 'carbs', isNumber: true },
+    { label: 'Fat (g)', key: 'fat', isNumber: true },
+    { label: 'Fiber (g)', key: 'fiber', isNumber: true },
   ];
 
   const vitaminFields = [
-    { label: 'Vitamin A (µg)', key: 'vitaminA', group: 'vitamins' as const, isNumber: true },
-    { label: 'Vitamin C (mg)', key: 'vitaminC', group: 'vitamins' as const, isNumber: true },
-    { label: 'Vitamin D (µg)', key: 'vitaminD', group: 'vitamins' as const, isNumber: true },
-    { label: 'Vitamin B6 (mg)', key: 'vitaminB6', group: 'vitamins' as const, isNumber: true },
-    { label: 'Vitamin E (mg)', key: 'vitaminE', group: 'vitamins' as const, isNumber: true },
-    { label: 'Vitamin K (µg)', key: 'vitaminK', group: 'vitamins' as const, isNumber: true },
-    { label: 'Thiamin (mg)', key: 'thiamin', group: 'vitamins' as const, isNumber: true },
-    { label: 'Vitamin B12 (µg)', key: 'vitaminB12', group: 'vitamins' as const, isNumber: true },
-    { label: 'Riboflavin (mg)', key: 'riboflavin', group: 'vitamins' as const, isNumber: true },
-    { label: 'Folate (µg)', key: 'folate', group: 'vitamins' as const, isNumber: true },
-    { label: 'Niacin (mg)', key: 'niacin', group: 'vitamins' as const, isNumber: true },
-    { label: 'Choline (mg)', key: 'choline', group: 'vitamins' as const, isNumber: true },
-    { label: 'Pantothenic Acid (mg)', key: 'pantothenicAcid', group: 'vitamins' as const, isNumber: true },
-    { label: 'Biotin (µg)', key: 'biotin', group: 'vitamins' as const, isNumber: true },
-    { label: 'Carotenoids (µg)', key: 'carotenoids', group: 'vitamins' as const, isNumber: true },
+    { label: 'Vitamin A (µg)', key: 'vitaminA', isNumber: true },
+    { label: 'Vitamin C (mg)', key: 'vitaminC', isNumber: true },
+    { label: 'Vitamin D (µg)', key: 'vitaminD', isNumber: true },
+    { label: 'Vitamin B6 (mg)', key: 'vitaminB6', isNumber: true },
+    { label: 'Vitamin E (mg)', key: 'vitaminE', isNumber: true },
+    { label: 'Vitamin K (µg)', key: 'vitaminK', isNumber: true },
+    { label: 'Thiamin (mg)', key: 'thiamin', isNumber: true },
+    { label: 'Vitamin B12 (µg)', key: 'vitaminB12', isNumber: true },
+    { label: 'Riboflavin (mg)', key: 'riboflavin', isNumber: true },
+    { label: 'Folate (µg)', key: 'folate', isNumber: true },
+    { label: 'Niacin (mg)', key: 'niacin', isNumber: true },
+    { label: 'Choline (mg)', key: 'choline', isNumber: true },
+    { label: 'Pantothenic Acid (mg)', key: 'pantothenicAcid', isNumber: true },
+    { label: 'Biotin (µg)', key: 'biotin', isNumber: true },
+    { label: 'Carotenoids (µg)', key: 'carotenoids', isNumber: true },
   ];
 
   const mineralFields = [
-    { label: 'Calcium (mg)', key: 'calcium', group: 'minerals' as const, isNumber: true },
-    { label: 'Chloride (g)', key: 'chloride', group: 'minerals' as const, isNumber: true },
-    { label: 'Chromium (µg)', key: 'chromium', group: 'minerals' as const, isNumber: true },
-    { label: 'Copper (µg)', key: 'copper', group: 'minerals' as const, isNumber: true },
-    { label: 'Fluoride (mg)', key: 'fluoride', group: 'minerals' as const, isNumber: true },
-    { label: 'Iodine (µg)', key: 'iodine', group: 'minerals' as const, isNumber: true },
-    { label: 'Iron (mg)', key: 'iron', group: 'minerals' as const, isNumber: true },
-    { label: 'Magnesium (mg)', key: 'magnesium', group: 'minerals' as const, isNumber: true },
-    { label: 'Manganese (mg)', key: 'manganese', group: 'minerals' as const, isNumber: true },
-    { label: 'Molybdenum (µg)', key: 'molybdenum', group: 'minerals' as const, isNumber: true },
-    { label: 'Phosphorus (g)', key: 'phosphorus', group: 'minerals' as const, isNumber: true },
-    { label: 'Potassium (mg)', key: 'potassium', group: 'minerals' as const, isNumber: true },
-    { label: 'Selenium (µg)', key: 'selenium', group: 'minerals' as const, isNumber: true },
-    { label: 'Sodium (mg)', key: 'sodium', group: 'minerals' as const, isNumber: true },
-    { label: 'Zinc (mg)', key: 'zinc', group: 'minerals' as const, isNumber: true },
+    { label: 'Calcium (mg)', key: 'calcium', isNumber: true },
+    { label: 'Chloride (g)', key: 'chloride', isNumber: true },
+    { label: 'Chromium (µg)', key: 'chromium', isNumber: true },
+    { label: 'Copper (µg)', key: 'copper', isNumber: true },
+    { label: 'Fluoride (mg)', key: 'fluoride', isNumber: true },
+    { label: 'Iodine (µg)', key: 'iodine', isNumber: true },
+    { label: 'Iron (mg)', key: 'iron', isNumber: true },
+    { label: 'Magnesium (mg)', key: 'magnesium', isNumber: true },
+    { label: 'Manganese (mg)', key: 'manganese', isNumber: true },
+    { label: 'Molybdenum (µg)', key: 'molybdenum', isNumber: true },
+    { label: 'Phosphorus (g)', key: 'phosphorus', isNumber: true },
+    { label: 'Potassium (mg)', key: 'potassium', isNumber: true },
+    { label: 'Selenium (µg)', key: 'selenium', isNumber: true },
+    { label: 'Sodium (mg)', key: 'sodium', isNumber: true },
+    { label: 'Zinc (mg)', key: 'zinc', isNumber: true },
   ];
 
-  const handleChange = (
-    key: string,
-    value: string | number | boolean,
-    group?: 'macronutrients' | 'vitamins' | 'minerals'
-  ) => {
-    if (group) {
-      setFood((prev) => ({
-        ...prev,
-        [group]: {
-          ...prev[group],
-          [key]: value,
-        },
-      }));
-    } else {
-      setFood((prev) => ({ ...prev, [key]: value as any }));
-    }
+  const handleChange = (key: string, value: string | number | boolean) => {
+    setFood((prev) => ({ ...prev, [key]: value as any }));
   };
 
   const handleAddFood = async () => {
@@ -178,18 +160,18 @@ const AddFood: React.FC = () => {
     );
   }
 
-  const renderInputField = (field: { label: string; key: string; group?: 'macronutrients' | 'vitamins' | 'minerals'; isNumber: boolean }) => {
-    const value = field.group ? (food as any)[field.group]?.[field.key] : (food as any)[field.key];
+  const renderInputField = (field: { label: string; key: string; isNumber: boolean }) => {
+    const value = (food as any)[field.key];
     
     return (
-      <View key={`${field.group || 'general'}-${field.key}`}>
+      <View key={field.key}>
         <Text style={styles.label}>{field.label}</Text>
         <TextInput
           style={styles.input}
           placeholder={`Enter ${field.label.toLowerCase()}`}
           placeholderTextColor={draculaTheme.text.secondary}
           value={value?.toString() ?? ''}
-          onChangeText={(v) => handleChange(field.key, field.isNumber ? parseFloat(v) || 0 : v, field.group)}
+          onChangeText={(v) => handleChange(field.key, field.isNumber ? parseFloat(v) || 0 : v)}
           keyboardType={field.isNumber ? 'decimal-pad' : 'default'}
         />
       </View>

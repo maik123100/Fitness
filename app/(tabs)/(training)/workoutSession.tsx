@@ -13,6 +13,7 @@ export default function WorkoutSessionScreen() {
   const [exercises, setExercises] = useState<(WorkoutTemplateExercise & { exercise_name: string })[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [caloriesBurned, setCaloriesBurned] = useState('0');
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -92,6 +93,7 @@ export default function WorkoutSessionScreen() {
       setSession(workoutEntry);
       setExercises(exercisesWithDetails);
       setIsEditing(true);
+      setCaloriesBurned(workoutEntry.caloriesBurned?.toString() || '0');
     }
   };
 
@@ -120,12 +122,15 @@ export default function WorkoutSessionScreen() {
   const handleFinishWorkout = () => {
     if (!session) return;
 
+    const calories = parseFloat(caloriesBurned) || 0;
+
     if (isEditing) {
       // Editing a finished workout - update it
-      updateWorkoutEntry(session as WorkoutEntry);
+      const updatedEntry = { ...(session as WorkoutEntry), caloriesBurned: calories };
+      updateWorkoutEntry(updatedEntry);
     } else {
       // Finishing an active workout
-      finishWorkoutSession(session as ActiveWorkoutSession);
+      finishWorkoutSession(session as ActiveWorkoutSession, calories);
     }
 
     router.back();
@@ -168,11 +173,8 @@ export default function WorkoutSessionScreen() {
               placeholder="Calories"
               placeholderTextColor={draculaTheme.comment}
               keyboardType="numeric"
-              value={((workoutEntry as any).calories_burned || 0).toString()}
-              onChangeText={(value) => {
-                const updatedEntry = { ...workoutEntry, calories_burned: parseInt(value) || 0 };
-                setSession(updatedEntry as any);
-              }}
+              value={caloriesBurned}
+              onChangeText={setCaloriesBurned}
             />
           </View>
         )}
@@ -249,6 +251,21 @@ export default function WorkoutSessionScreen() {
         />
       </View>
 
+      {/* Calories burned input for active workouts */}
+      {!isEditing && (
+        <View style={styles.caloriesInputContainer}>
+          <Text style={styles.caloriesLabel}>Calories Burned (from smartwatch)</Text>
+          <TextInput
+            style={styles.caloriesInput}
+            placeholder="Enter calories burned"
+            placeholderTextColor={draculaTheme.comment}
+            keyboardType="numeric"
+            value={caloriesBurned}
+            onChangeText={setCaloriesBurned}
+          />
+        </View>
+      )}
+
       {/* Finish/Update button */}
       <TouchableOpacity style={styles.finishButton} onPress={handleFinishWorkout}>
         <Text style={styles.finishButtonText}>
@@ -270,12 +287,12 @@ const styles = StyleSheet.create({
   },
   durationContainer: {
     flexDirection: 'column',
-    marginTop: spacing.s,
+    marginTop: spacing.sm,
     marginBottom: spacing.lg,
     backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.s,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.md,
   },
   durationLabel: {
@@ -370,6 +387,27 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     marginRight: spacing.md,
     flex: 1,
+    textAlign: 'center',
+  },
+  caloriesInputContainer: {
+    backgroundColor: draculaTheme.surface.card,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  caloriesLabel: {
+    color: draculaTheme.foreground,
+    fontSize: typography.sizes.md,
+    marginBottom: spacing.sm,
+    fontWeight: typography.weights.semibold,
+  },
+  caloriesInput: {
+    backgroundColor: draculaTheme.surface.input,
+    color: draculaTheme.foreground,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    fontSize: typography.sizes.md,
     textAlign: 'center',
   },
   finishButton: {

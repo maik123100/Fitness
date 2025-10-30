@@ -17,6 +17,7 @@ import {
   MealType,
 } from '@/types/types';
 import { useDate } from '@/app/contexts/DateContext';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 
 type FoodDiaryState = {
   foodEntries: Record<MealType, FoodEntry[]>;
@@ -47,7 +48,7 @@ export default function FoodDiaryScreen() {
   }, [selectedDate]);
 
   const loadFoodEntries = () => {
-    const entries = getFoodEntriesForDate(selectedDate.toISOString().split('T')[0]);
+    const entries = getFoodEntriesForDate(formatDateToYYYYMMDD(selectedDate));
     const groupedEntries: Record<MealType, FoodEntry[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
     entries.forEach(entry => {
       groupedEntries[entry.mealType].push(entry);
@@ -58,7 +59,7 @@ export default function FoodDiaryScreen() {
   const handleAddFood = (foodItem: FoodItem, mealType?: MealType) => {
     router.navigate({
       pathname: '/(tabs)/(food)/food-quantity',
-      params: { foodId: foodItem.id, mealType: mealType || 'breakfast', date: selectedDate.toISOString().split('T')[0] },
+      params: { foodId: foodItem.id, mealType: mealType || 'breakfast', date: formatDateToYYYYMMDD(selectedDate) },
     });
   };
 
@@ -76,7 +77,7 @@ export default function FoodDiaryScreen() {
   };
 
   const openSearchScreen = (mealType: MealType) => {
-    router.navigate({ pathname: '/(tabs)/(food)/food-search', params: { mealType, date: selectedDate.toISOString().split('T')[0] } });
+    router.navigate({ pathname: '/(tabs)/(food)/food-search', params: { mealType, date: formatDateToYYYYMMDD(selectedDate) } });
   };
 
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {

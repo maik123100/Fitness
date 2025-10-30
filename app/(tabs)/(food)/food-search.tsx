@@ -110,9 +110,9 @@ export default function FoodSearchScreen() {
                 <Text style={styles.searchResultNutrientValue}>{item.calories} kcal</Text>
               </View>
               <View style={styles.searchResultMacrosRow}>
-                <Text style={styles.searchResultMacroText}>Proteins: {item.macronutrients.protein}g</Text>
-                <Text style={styles.searchResultMacroText}>Carbs: {item.macronutrients.carbs}g</Text>
-                <Text style={styles.searchResultMacroText}>Fats: {item.macronutrients.fat}g</Text>
+                <Text style={styles.searchResultMacroText}>Proteins: {item.protein}g</Text>
+                <Text style={styles.searchResultMacroText}>Carbs: {item.carbs}g</Text>
+                <Text style={styles.searchResultMacroText}>Fats: {item.fat}g</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity

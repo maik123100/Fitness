@@ -6,6 +6,7 @@ import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme'
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { useDate } from '@/app/contexts/DateContext';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Animated } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -37,7 +38,7 @@ export default function WorkoutScreen() {
   const loadData = () => {
     const templatesData = getWorkoutTemplates();
     const activeSessionData = getActiveWorkoutSession();
-    const workoutEntriesData = getWorkoutEntries(selectedDate.toISOString().split('T')[0]);
+    const workoutEntriesData = getWorkoutEntries(formatDateToYYYYMMDD(selectedDate));
     setState({ templates: templatesData, activeSession: activeSessionData, workoutEntries: workoutEntriesData });
   };
 
@@ -46,7 +47,7 @@ export default function WorkoutScreen() {
       // Ask user to discard active session
     router.navigate('/(tabs)/(training)/workoutSession')
     } else {
-      startWorkoutSession(templateId, selectedDate.toISOString().split('T')[0]);
+      startWorkoutSession(templateId, formatDateToYYYYMMDD(selectedDate));
       router.navigate('/(tabs)/(training)/workoutSession');
     }
   };

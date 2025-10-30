@@ -15,7 +15,10 @@ import {
   ActiveWorkoutSession,
   UserProfile,
   WeightEntry,
+  VitaminFields,
+  MineralFields,
 } from '@/types/types';
+import { parseDateFromYYYYMMDD, formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 
 // ============== Food Database Functions ==============
 
@@ -28,40 +31,40 @@ export const addFoodItem = (food: FoodItem): void => {
     barcode: food.barcode ?? null,
     category: food.category,
     calories: food.calories,
-    protein: food.macronutrients.protein,
-    carbs: food.macronutrients.carbs,
-    fat: food.macronutrients.fat,
-    fiber: food.macronutrients.fiber,
-    vitaminA: food.vitamins.vitaminA ?? 0,
-    vitaminC: food.vitamins.vitaminC ?? 0,
-    vitaminD: food.vitamins.vitaminD ?? 0,
-    vitaminB6: food.vitamins.vitaminB6 ?? 0,
-    vitaminE: food.vitamins.vitaminE ?? 0,
-    vitaminK: food.vitamins.vitaminK ?? 0,
-    thiamin: food.vitamins.thiamin ?? 0,
-    vitaminB12: food.vitamins.vitaminB12 ?? 0,
-    riboflavin: food.vitamins.riboflavin ?? 0,
-    folate: food.vitamins.folate ?? 0,
-    niacin: food.vitamins.niacin ?? 0,
-    choline: food.vitamins.choline ?? 0,
-    pantothenicAcid: food.vitamins.pantothenicAcid ?? 0,
-    biotin: food.vitamins.biotin ?? 0,
-    carotenoids: food.vitamins.carotenoids ?? 0,
-    calcium: food.minerals.calcium ?? 0,
-    chloride: food.minerals.chloride ?? 0,
-    chromium: food.minerals.chromium ?? 0,
-    copper: food.minerals.copper ?? 0,
-    fluoride: food.minerals.fluoride ?? 0,
-    iodine: food.minerals.iodine ?? 0,
-    iron: food.minerals.iron ?? 0,
-    magnesium: food.minerals.magnesium ?? 0,
-    manganese: food.minerals.manganese ?? 0,
-    molybdenum: food.minerals.molybdenum ?? 0,
-    phosphorus: food.minerals.phosphorus ?? 0,
-    potassium: food.minerals.potassium ?? 0,
-    selenium: food.minerals.selenium ?? 0,
-    sodium: food.minerals.sodium ?? 0,
-    zinc: food.minerals.zinc ?? 0,
+    protein: food.protein,
+    carbs: food.carbs,
+    fat: food.fat,
+    fiber: food.fiber,
+    vitaminA: food.vitaminA ?? 0,
+    vitaminC: food.vitaminC ?? 0,
+    vitaminD: food.vitaminD ?? 0,
+    vitaminB6: food.vitaminB6 ?? 0,
+    vitaminE: food.vitaminE ?? 0,
+    vitaminK: food.vitaminK ?? 0,
+    thiamin: food.thiamin ?? 0,
+    vitaminB12: food.vitaminB12 ?? 0,
+    riboflavin: food.riboflavin ?? 0,
+    folate: food.folate ?? 0,
+    niacin: food.niacin ?? 0,
+    choline: food.choline ?? 0,
+    pantothenicAcid: food.pantothenicAcid ?? 0,
+    biotin: food.biotin ?? 0,
+    carotenoids: food.carotenoids ?? 0,
+    calcium: food.calcium ?? 0,
+    chloride: food.chloride ?? 0,
+    chromium: food.chromium ?? 0,
+    copper: food.copper ?? 0,
+    fluoride: food.fluoride ?? 0,
+    iodine: food.iodine ?? 0,
+    iron: food.iron ?? 0,
+    magnesium: food.magnesium ?? 0,
+    manganese: food.manganese ?? 0,
+    molybdenum: food.molybdenum ?? 0,
+    phosphorus: food.phosphorus ?? 0,
+    potassium: food.potassium ?? 0,
+    selenium: food.selenium ?? 0,
+    sodium: food.sodium ?? 0,
+    zinc: food.zinc ?? 0,
     servingSize: food.servingSize,
     servingUnit: food.servingUnit,
     isVerified: food.isVerified,
@@ -81,46 +84,40 @@ const mapRowToFoodItem = (row: any): FoodItem => ({
   barcode: row.barcode,
   category: row.category,
   calories: row.calories,
-  macronutrients: {
-    protein: row.protein,
-    carbs: row.carbs,
-    fat: row.fat,
-    fiber: row.fiber,
-  },
-  vitamins: {
-    vitaminA: row.vitaminA,
-    vitaminC: row.vitaminC,
-    vitaminD: row.vitaminD,
-    vitaminB6: row.vitaminB6,
-    vitaminE: row.vitaminE,
-    vitaminK: row.vitaminK,
-    thiamin: row.thiamin,
-    vitaminB12: row.vitaminB12,
-    riboflavin: row.riboflavin,
-    folate: row.folate,
-    niacin: row.niacin,
-    choline: row.choline,
-    pantothenicAcid: row.pantothenicAcid,
-    biotin: row.biotin,
-    carotenoids: row.carotenoids,
-  },
-  minerals: {
-    calcium: row.calcium,
-    chloride: row.chloride,
-    chromium: row.chromium,
-    copper: row.copper,
-    fluoride: row.fluoride,
-    iodine: row.iodine,
-    iron: row.iron,
-    magnesium: row.magnesium,
-    manganese: row.manganese,
-    molybdenum: row.molybdenum,
-    phosphorus: row.phosphorus,
-    potassium: row.potassium,
-    selenium: row.selenium,
-    sodium: row.sodium,
-    zinc: row.zinc,
-  },
+  protein: row.protein,
+  carbs: row.carbs,
+  fat: row.fat,
+  fiber: row.fiber,
+  vitaminA: row.vitaminA,
+  vitaminC: row.vitaminC,
+  vitaminD: row.vitaminD,
+  vitaminB6: row.vitaminB6,
+  vitaminE: row.vitaminE,
+  vitaminK: row.vitaminK,
+  thiamin: row.thiamin,
+  vitaminB12: row.vitaminB12,
+  riboflavin: row.riboflavin,
+  folate: row.folate,
+  niacin: row.niacin,
+  choline: row.choline,
+  pantothenicAcid: row.pantothenicAcid,
+  biotin: row.biotin,
+  carotenoids: row.carotenoids,
+  calcium: row.calcium,
+  chloride: row.chloride,
+  chromium: row.chromium,
+  copper: row.copper,
+  fluoride: row.fluoride,
+  iodine: row.iodine,
+  iron: row.iron,
+  magnesium: row.magnesium,
+  manganese: row.manganese,
+  molybdenum: row.molybdenum,
+  phosphorus: row.phosphorus,
+  potassium: row.potassium,
+  selenium: row.selenium,
+  sodium: row.sodium,
+  zinc: row.zinc,
   servingSize: row.servingSize,
   servingUnit: row.servingUnit,
   isVerified: row.isVerified,
@@ -345,12 +342,13 @@ export const updateActiveWorkoutSession = (session: ActiveWorkoutSession): void 
     .run();
 };
 
-export const finishWorkoutSession = (session: ActiveWorkoutSession): void => {
+export const finishWorkoutSession = (session: ActiveWorkoutSession, caloriesBurned: number = 0): void => {
   const newEntry: WorkoutEntry = {
     id: Date.now().toString(),
     workout_template_id: session.workout_template_id,
     date: session.date,
     duration: Math.round((Date.now() - session.start_time) / 60000),
+    caloriesBurned: caloriesBurned,
     sets: session.sets.filter((s: any) => s.completed),
     createdAt: Date.now(),
   };
@@ -360,6 +358,7 @@ export const finishWorkoutSession = (session: ActiveWorkoutSession): void => {
     workoutTemplateId: newEntry.workout_template_id,
     date: newEntry.date,
     duration: newEntry.duration,
+    caloriesBurned: newEntry.caloriesBurned,
     sets: JSON.stringify(newEntry.sets),
     createdAt: newEntry.createdAt,
   }).run();
@@ -381,6 +380,7 @@ export const getWorkoutEntries = (date: string): WorkoutEntry[] => {
       workout_template_id: row.workoutTemplateId,
       date: row.date,
       duration: row.duration,
+      caloriesBurned: row.caloriesBurned || 0,
       sets: JSON.parse(row.sets),
       createdAt: row.createdAt,
     }));
@@ -394,6 +394,7 @@ export const getWorkoutEntry = (id: string): WorkoutEntry | null => {
     workout_template_id: row.workoutTemplateId,
     date: row.date,
     duration: row.duration,
+    caloriesBurned: row.caloriesBurned || 0,
     sets: JSON.parse(row.sets),
     createdAt: row.createdAt,
   };
@@ -403,6 +404,7 @@ export const updateWorkoutEntry = (entry: WorkoutEntry): void => {
   db.update(schema.workoutEntries)
     .set({
       duration: entry.duration,
+      caloriesBurned: entry.caloriesBurned,
       sets: JSON.stringify(entry.sets),
     })
     .where(eq(schema.workoutEntries.id, entry.id))
@@ -532,21 +534,32 @@ export const getNutritionSummary = (date: string): any => {
     if (foodItem) {
       const ratio = entry.quantity / foodItem.servingSize;
       totalCalories += foodItem.calories * ratio;
-      totalProtein += foodItem.macronutrients.protein * ratio;
-      totalCarbs += foodItem.macronutrients.carbs * ratio;
-      totalFat += foodItem.macronutrients.fat * ratio;
-      totalFiber += foodItem.macronutrients.fiber * ratio;
+      totalProtein += foodItem.protein * ratio;
+      totalCarbs += foodItem.carbs * ratio;
+      totalFat += foodItem.fat * ratio;
+      totalFiber += foodItem.fiber * ratio;
 
-      for (const key in foodItem.vitamins) {
-        if (Object.prototype.hasOwnProperty.call(foodItem.vitamins, key)) {
-          const vitaminKey = key as keyof typeof foodItem.vitamins;
-          totalVitamins[vitaminKey] = (totalVitamins[vitaminKey] || 0) + (foodItem.vitamins[vitaminKey] || 0) * ratio;
+      // Aggregate vitamins
+      const vitaminKeys: (keyof VitaminFields)[] = [
+        'vitaminA', 'vitaminC', 'vitaminD', 'vitaminB6', 'vitaminE', 'vitaminK',
+        'thiamin', 'vitaminB12', 'riboflavin', 'folate', 'niacin', 'choline',
+        'pantothenicAcid', 'biotin', 'carotenoids'
+      ];
+      for (const key of vitaminKeys) {
+        if (foodItem[key] != null) {
+          totalVitamins[key] = (totalVitamins[key] || 0) + (foodItem[key] || 0) * ratio;
         }
       }
-      for (const key in foodItem.minerals) {
-        if (Object.prototype.hasOwnProperty.call(foodItem.minerals, key)) {
-          const mineralKey = key as keyof typeof foodItem.minerals;
-          totalMinerals[mineralKey] = (totalMinerals[mineralKey] || 0) + (foodItem.minerals[mineralKey] || 0) * ratio;
+
+      // Aggregate minerals
+      const mineralKeys: (keyof MineralFields)[] = [
+        'calcium', 'chloride', 'chromium', 'copper', 'fluoride', 'iodine', 'iron',
+        'magnesium', 'manganese', 'molybdenum', 'phosphorus', 'potassium',
+        'selenium', 'sodium', 'zinc'
+      ];
+      for (const key of mineralKeys) {
+        if (foodItem[key] != null) {
+          totalMinerals[key] = (totalMinerals[key] || 0) + (foodItem[key] || 0) * ratio;
         }
       }
     }
@@ -554,7 +567,7 @@ export const getNutritionSummary = (date: string): any => {
 
   const workoutEntries = getWorkoutEntries(date);
   const caloriesBurned = workoutEntries.reduce((total, workout) => {
-    return total + ((workout as any).calories_burned || 0);
+    return total + (workout.caloriesBurned || 0);
   }, 0);
 
   return {
@@ -573,7 +586,7 @@ export const getNutritionSummary = (date: string): any => {
 
 export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): { date: string, totalCalories: number, targetCalories: number }[] => {
   const userProfile = getUserProfile();
-  const targetCalories = userProfile?.targetCalories || 0;
+  const baseTargetCalories = userProfile?.targetCalories || 0;
 
   const foodEntries = db
     .select()
@@ -584,6 +597,15 @@ export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): {
     ))
     .all();
 
+  const workoutEntries = db
+    .select()
+    .from(schema.workoutEntries)
+    .where(and(
+      sql`${schema.workoutEntries.date} >= ${startDate}`,
+      sql`${schema.workoutEntries.date} <= ${endDate}`
+    ))
+    .all();
+
   const allFoodItems = getAllFoodItems();
   const foodItemsById = allFoodItems.reduce((acc, item) => {
     acc[item.id] = item;
@@ -591,6 +613,7 @@ export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): {
   }, {} as { [key: string]: FoodItem });
 
   const dailyCalories: { [date: string]: number } = {};
+  const dailyBurned: { [date: string]: number } = {};
 
   for (const entry of foodEntries) {
     const foodItem = foodItemsById[entry.foodId];
@@ -604,16 +627,27 @@ export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): {
     }
   }
 
+  for (const entry of workoutEntries) {
+    if (!dailyBurned[entry.date]) {
+      dailyBurned[entry.date] = 0;
+    }
+    dailyBurned[entry.date] += entry.caloriesBurned || 0;
+  }
+
   const result: { date: string, totalCalories: number, targetCalories: number }[] = [];
-  let currentDate = new Date(startDate);
-  const end = new Date(endDate);
+  
+  // Parse the dates properly in local timezone to avoid timezone issues
+  let currentDate = parseDateFromYYYYMMDD(startDate);
+  const end = parseDateFromYYYYMMDD(endDate);
 
   while (currentDate <= end) {
-    const dateString = currentDate.toISOString().split('T')[0];
+    const dateString = formatDateToYYYYMMDD(currentDate);
+    
+    const burned = dailyBurned[dateString] || 0;
     result.push({
       date: dateString,
       totalCalories: dailyCalories[dateString] || 0,
-      targetCalories: targetCalories,
+      targetCalories: baseTargetCalories + burned,
     });
     currentDate.setDate(currentDate.getDate() + 1);
   }

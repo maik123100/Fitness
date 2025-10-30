@@ -17,6 +17,7 @@ import {
 } from '@/types/types'
 import { draculaTheme, spacing, typography } from '../../styles/theme';
 import { useDate } from '@/app/contexts/DateContext';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 
 interface DashboardState {
   calorieData: {
@@ -52,7 +53,7 @@ export default function DashboardScreen() {
 
   const loadDashboardData = () => {
     const userProfile = getUserProfile();
-    const formattedDate = selectedDate.toISOString().split('T')[0];
+    const formattedDate = formatDateToYYYYMMDD(selectedDate);
     const nutritionSummary = getNutritionSummary(formattedDate);
     const foodEntries = getFoodEntriesForDate(formattedDate);
     const workoutEntries = getWorkoutEntries(formattedDate);

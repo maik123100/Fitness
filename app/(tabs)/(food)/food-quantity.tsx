@@ -10,6 +10,7 @@ import {
 } from '@/services/database';
 import { FoodItem, FoodEntry, MealType } from '@/types/types';
 import { useDate } from '@/app/contexts/DateContext';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 
 export default function FoodQuantityScreen() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function FoodQuantityScreen() {
   const foodId = params.foodId;
   const initialMealType = params.mealType;
   const { selectedDate } = useDate();
-  const entryDate = selectedDate.toISOString().split('T')[0];
+  const entryDate = formatDateToYYYYMMDD(selectedDate);
 
   const [foodItem, setFoodItem] = useState<FoodItem | null>(null);
   const [quantity, setQuantity] = useState('100');
@@ -69,10 +70,10 @@ export default function FoodQuantityScreen() {
       quantity: parsedQuantity,
       unit: 'g',
       totalCalories: (foodItem.calories / foodItem.servingSize) * parsedQuantity,
-      totalProtein: (foodItem.macronutrients.protein / foodItem.servingSize) * parsedQuantity,
-      totalCarbs: (foodItem.macronutrients.carbs / foodItem.servingSize) * parsedQuantity,
-      totalFat: (foodItem.macronutrients.fat / foodItem.servingSize) * parsedQuantity,
-      totalFiber: (foodItem.macronutrients.fiber / foodItem.servingSize) * parsedQuantity,
+      totalProtein: (foodItem.protein / foodItem.servingSize) * parsedQuantity,
+      totalCarbs: (foodItem.carbs / foodItem.servingSize) * parsedQuantity,
+      totalFat: (foodItem.fat / foodItem.servingSize) * parsedQuantity,
+      totalFiber: (foodItem.fiber / foodItem.servingSize) * parsedQuantity,
       createdAt: Date.now(),
     };
     addFoodEntry(newEntry);
@@ -99,15 +100,15 @@ export default function FoodQuantityScreen() {
         </View>
         <View style={styles.calculatedNutrientRow}>
           <Text style={styles.calculatedNutrientLabel}>Protein:</Text>
-          <Text style={styles.calculatedNutrientValue}>{((foodItem.macronutrients.protein / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
+          <Text style={styles.calculatedNutrientValue}>{((foodItem.protein / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
         </View>
         <View style={styles.calculatedNutrientRow}>
           <Text style={styles.calculatedNutrientLabel}>Carbs:</Text>
-          <Text style={styles.calculatedNutrientValue}>{((foodItem.macronutrients.carbs / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
+          <Text style={styles.calculatedNutrientValue}>{((foodItem.carbs / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
         </View>
         <View style={styles.calculatedNutrientRow}>
           <Text style={styles.calculatedNutrientLabel}>Fat:</Text>
-          <Text style={styles.calculatedNutrientValue}>{((foodItem.macronutrients.fat / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
+          <Text style={styles.calculatedNutrientValue}>{((foodItem.fat / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
         </View>
       </View>
 

@@ -14,14 +14,16 @@ export interface DailyNutrition {
   fat: number;
 }
 
-export interface Macronutrients {
+// Base nutrition field types for composition
+export interface BaseNutritionFields {
+  calories: number;
+  protein: number;
   carbs: number;
   fat: number;
-  protein: number;
   fiber: number;
 }
 
-export interface Vitamins {
+export interface VitaminFields {
   vitaminA?: number;
   vitaminC?: number;
   vitaminD?: number;
@@ -39,7 +41,7 @@ export interface Vitamins {
   carotenoids?: number;
 }
 
-export interface Minerals {
+export interface MineralFields {
   calcium?: number;
   chloride?: number;
   chromium?: number;
@@ -57,16 +59,15 @@ export interface Minerals {
   zinc?: number;
 }
 
-export interface FoodItem {
+// Complete nutrition fields combining all nutrients
+export interface CompleteNutritionFields extends BaseNutritionFields, VitaminFields, MineralFields {}
+
+export interface FoodItem extends CompleteNutritionFields {
   id: string;
   name: string;
   brand?: string;
   barcode?: string;
   category: FoodCategory;
-  calories: number;
-  macronutrients: Macronutrients;
-  vitamins: Vitamins;
-  minerals: Minerals;
   servingSize: number;
   servingUnit: string;
   isVerified: boolean;
@@ -89,6 +90,11 @@ export interface FoodEntry {
   totalFiber: number;
   createdAt: number;
 }
+
+// Type utility to prefix fields with a string
+type PrefixFields<T, P extends string> = {
+  [K in keyof T as `${P}${Capitalize<string & K>}`]: T[K];
+};
 
 export interface Recipe {
   id: string;
@@ -162,6 +168,7 @@ export interface WorkoutEntry {
   workout_template_id: string;
   date: string;
   duration: number;
+  caloriesBurned: number;
   sets: WorkoutSet[];
   createdAt: number;
 }
@@ -179,8 +186,6 @@ export interface UserProfile {
 	targetProtein: number;
 	targetCarbs: number;
 	targetFat: number;
-	vitaminTargets?: Vitamins;
-	mineralTargets?: Minerals;
 	createdAt: number;
 	updatedAt: number;
 }
@@ -247,8 +252,8 @@ export interface NutritionSummary {
   totalCarbs: number;
   totalFat: number;
   totalFiber: number;
-  totalVitamins: Vitamins;
-  totalMinerals: Minerals;
+  totalVitamins: VitaminFields;
+  totalMinerals: MineralFields;
   caloriesBurned: number;
   netCalories: number;
 }
