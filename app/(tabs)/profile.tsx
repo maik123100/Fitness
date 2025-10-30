@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { getUserProfile, saveUserProfile, resetDatabase } from '@/services/database';
+import { getUserProfile, saveUserProfile } from '@/services/database';
+import { resetDatabase } from '@/services/db';
 import { UserProfile, ActivityLevel, GoalType, Vitamins, Minerals } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { setOnboardingCompleted } from '@/services/onboardingService';

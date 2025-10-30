@@ -1,5 +1,6 @@
-import * as SQLite from 'expo-sqlite';
-import { getDatabaseSchema } from './dbschema';
+import { eq, like, and, desc, asc, sql } from 'drizzle-orm';
+import { db } from '@/services/db';
+import * as schema from '@/services/db/schema';
 import {
   Activity,
   DailyNutrition,
@@ -10,441 +11,291 @@ import {
   WorkoutTemplate,
   WorkoutTemplateExercise,
   ExerciseTemplate,
-  WorkoutSet,
-  ActiveWorkoutSession,
   WorkoutEntry,
+  ActiveWorkoutSession,
   UserProfile,
   WeightEntry,
-  FoodCategory,
-  MealType,
-  ExerciseCategory,
-  MuscleGroup,
-  ActivityLevel,
-  GoalType,
-  NutritionSummary,
-  Vitamins,
-  Minerals
 } from '@/types/types';
 
-  let db: SQLite.SQLiteDatabase;
+// ============== Food Database Functions ==============
 
-  const DATABASE_VERSION = 2;
-
-  export function deleteFoodItem(foodItem: FoodItem): void {
-    db.runSync('DELETE FROM food_items WHERE id = ?', [foodItem.id]);
-  }
-
-  const createSchemaVersionTable = (db: SQLite.SQLiteDatabase) => {
-    db.runSync(
-      'CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)'
-    );
-  };
-
-  const getDatabaseVersion = (db: SQLite.SQLiteDatabase): number => {
-    const result = db.getFirstSync<{ version: number }>(
-      'SELECT version FROM schema_version LIMIT 1'
-    );
-    return result ? result.version : 0;
-  };
-
-  const updateDatabaseVersion = (db: SQLite.SQLiteDatabase, version: number) => {
-    db.runSync(
-      'INSERT OR REPLACE INTO schema_version (version) VALUES (?)',
-      [version]
-    );
-  };
-
-
-
-export const initDatabase = (): void => {
-  console.log('Initializing database...');
-  try {
-    db = SQLite.openDatabaseSync('fitness.db');
-
-    db.withTransactionSync(() => {
-      createSchemaVersionTable(db);
-      const currentVersion = getDatabaseVersion(db);
-
-      if (currentVersion < DATABASE_VERSION) {
-        console.log(`Database schema mismatch. Found version ${currentVersion}, expected ${DATABASE_VERSION}. Resetting database.`);
-
-        console.log('Getting all tables...');
-        const tablesResult = db.getAllSync<{ name: string }>(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';`);
-        const tables = tablesResult.map(row => row.name);
-        console.log('Dropping tables...');
-        for (const table of tables) {
-          if (table !== 'schema_version') {
-            db.runSync(`DROP TABLE IF EXISTS ${table};`);
-          }
-        }
-
-        console.log('Creating schema version table...');
-        createSchemaVersionTable(db);
-
-  console.log('Reading schema...');
-  const schema = getDatabaseSchema();
-  const schemaStatements = schema.split(';').filter((s: string) => s.trim().length > 0);
-
-        console.log('Executing schema statements...');
-        for (const statement of schemaStatements) {
-          try {
-            db.runSync(statement);
-          } catch (error) {
-            console.error('Error executing statement:', statement, error);
-            throw error;
-          }
-        }
-
-        console.log('Updating database version...');
-        updateDatabaseVersion(db, DATABASE_VERSION);
-      }
-    });
-    console.log('Database initialized successfully.');
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    throw error;
-  }
-};
-
-// Enhanced Food Database Functions
 export const addFoodItem = (food: FoodItem): void => {
   const now = Date.now();
-  db.runSync(
-    `INSERT INTO food_items (
-      id, name, brand, barcode, category, calories, protein, carbs, fat, fiber, 
-      vitamin_a, vitamin_c, vitamin_d, vitamin_b6, vitamin_e, vitamin_k, thiamin, 
-      vitamin_b12, riboflavin, folate, niacin, choline, pantothenic_acid, biotin, 
-      carotenoids, calcium, chloride, chromium, copper, fluoride, iodine, iron, 
-      magnesium, manganese, molybdenum, phosphorus, potassium, selenium, sodium, zinc,
-      serving_size, serving_unit, is_verified, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      food.id,
-      food.name,
-      food.brand ?? null,
-      food.barcode ?? null,
-      food.category,
-      food.calories,
-      food.macronutrients.protein,
-      food.macronutrients.carbs,
-      food.macronutrients.fat,
-      food.macronutrients.fiber,
-      food.vitamins.vitaminA ?? 0,
-      food.vitamins.vitaminC ?? 0,
-      food.vitamins.vitaminD ?? 0,
-      food.vitamins.vitaminB6 ?? 0,
-      food.vitamins.vitaminE ?? 0,
-      food.vitamins.vitaminK ?? 0,
-      food.vitamins.thiamin ?? 0,
-      food.vitamins.vitaminB12 ?? 0,
-      food.vitamins.riboflavin ?? 0,
-      food.vitamins.folate ?? 0,
-      food.vitamins.niacin ?? 0,
-      food.vitamins.choline ?? 0,
-      food.vitamins.pantothenicAcid ?? 0,
-      food.vitamins.biotin ?? 0,
-      food.vitamins.carotenoids ?? 0,
-      food.minerals.calcium ?? 0,
-      food.minerals.chloride ?? 0,
-      food.minerals.chromium ?? 0,
-      food.minerals.copper ?? 0,
-      food.minerals.fluoride ?? 0,
-      food.minerals.iodine ?? 0,
-      food.minerals.iron ?? 0,
-      food.minerals.magnesium ?? 0,
-      food.minerals.manganese ?? 0,
-      food.minerals.molybdenum ?? 0,
-      food.minerals.phosphorus ?? 0,
-      food.minerals.potassium ?? 0,
-      food.minerals.selenium ?? 0,
-      food.minerals.sodium ?? 0,
-      food.minerals.zinc ?? 0,
-      food.servingSize,
-      food.servingUnit,
-      food.isVerified ? 1 : 0,
-      food.createdAt || now,
-      food.updatedAt || now,
-    ]
-  );
+  db.insert(schema.foodItems).values({
+    id: food.id,
+    name: food.name,
+    brand: food.brand ?? null,
+    barcode: food.barcode ?? null,
+    category: food.category,
+    calories: food.calories,
+    protein: food.macronutrients.protein,
+    carbs: food.macronutrients.carbs,
+    fat: food.macronutrients.fat,
+    fiber: food.macronutrients.fiber,
+    vitaminA: food.vitamins.vitaminA ?? 0,
+    vitaminC: food.vitamins.vitaminC ?? 0,
+    vitaminD: food.vitamins.vitaminD ?? 0,
+    vitaminB6: food.vitamins.vitaminB6 ?? 0,
+    vitaminE: food.vitamins.vitaminE ?? 0,
+    vitaminK: food.vitamins.vitaminK ?? 0,
+    thiamin: food.vitamins.thiamin ?? 0,
+    vitaminB12: food.vitamins.vitaminB12 ?? 0,
+    riboflavin: food.vitamins.riboflavin ?? 0,
+    folate: food.vitamins.folate ?? 0,
+    niacin: food.vitamins.niacin ?? 0,
+    choline: food.vitamins.choline ?? 0,
+    pantothenicAcid: food.vitamins.pantothenicAcid ?? 0,
+    biotin: food.vitamins.biotin ?? 0,
+    carotenoids: food.vitamins.carotenoids ?? 0,
+    calcium: food.minerals.calcium ?? 0,
+    chloride: food.minerals.chloride ?? 0,
+    chromium: food.minerals.chromium ?? 0,
+    copper: food.minerals.copper ?? 0,
+    fluoride: food.minerals.fluoride ?? 0,
+    iodine: food.minerals.iodine ?? 0,
+    iron: food.minerals.iron ?? 0,
+    magnesium: food.minerals.magnesium ?? 0,
+    manganese: food.minerals.manganese ?? 0,
+    molybdenum: food.minerals.molybdenum ?? 0,
+    phosphorus: food.minerals.phosphorus ?? 0,
+    potassium: food.minerals.potassium ?? 0,
+    selenium: food.minerals.selenium ?? 0,
+    sodium: food.minerals.sodium ?? 0,
+    zinc: food.minerals.zinc ?? 0,
+    servingSize: food.servingSize,
+    servingUnit: food.servingUnit,
+    isVerified: food.isVerified,
+    createdAt: food.createdAt || now,
+    updatedAt: food.updatedAt || now,
+  }).run();
 };
+
+export const deleteFoodItem = (foodItem: FoodItem): void => {
+  db.delete(schema.foodItems).where(eq(schema.foodItems.id, foodItem.id)).run();
+};
+
+const mapRowToFoodItem = (row: any): FoodItem => ({
+  id: row.id,
+  name: row.name,
+  brand: row.brand,
+  barcode: row.barcode,
+  category: row.category,
+  calories: row.calories,
+  macronutrients: {
+    protein: row.protein,
+    carbs: row.carbs,
+    fat: row.fat,
+    fiber: row.fiber,
+  },
+  vitamins: {
+    vitaminA: row.vitaminA,
+    vitaminC: row.vitaminC,
+    vitaminD: row.vitaminD,
+    vitaminB6: row.vitaminB6,
+    vitaminE: row.vitaminE,
+    vitaminK: row.vitaminK,
+    thiamin: row.thiamin,
+    vitaminB12: row.vitaminB12,
+    riboflavin: row.riboflavin,
+    folate: row.folate,
+    niacin: row.niacin,
+    choline: row.choline,
+    pantothenicAcid: row.pantothenicAcid,
+    biotin: row.biotin,
+    carotenoids: row.carotenoids,
+  },
+  minerals: {
+    calcium: row.calcium,
+    chloride: row.chloride,
+    chromium: row.chromium,
+    copper: row.copper,
+    fluoride: row.fluoride,
+    iodine: row.iodine,
+    iron: row.iron,
+    magnesium: row.magnesium,
+    manganese: row.manganese,
+    molybdenum: row.molybdenum,
+    phosphorus: row.phosphorus,
+    potassium: row.potassium,
+    selenium: row.selenium,
+    sodium: row.sodium,
+    zinc: row.zinc,
+  },
+  servingSize: row.servingSize,
+  servingUnit: row.servingUnit,
+  isVerified: row.isVerified,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
 
 export const getAllFoodItems = (): FoodItem[] => {
-  return db.getAllSync<any>('SELECT * FROM food_items').map(row => ({
-    id: row.id,
-    name: row.name,
-    brand: row.brand,
-    barcode: row.barcode,
-    category: row.category as FoodCategory,
-    calories: row.calories,
-    macronutrients: {
-      protein: row.protein,
-      carbs: row.carbs,
-      fat: row.fat,
-      fiber: row.fiber,
-    },
-    vitamins: {
-      vitaminA: row.vitamin_a,
-      vitaminC: row.vitamin_c,
-      vitaminD: row.vitamin_d,
-      vitaminB6: row.vitamin_b6,
-      vitaminE: row.vitamin_e,
-      vitaminK: row.vitamin_k,
-      thiamin: row.thiamin,
-      vitaminB12: row.vitamin_b12,
-      riboflavin: row.riboflavin,
-      folate: row.folate,
-      niacin: row.niacin,
-      choline: row.choline,
-      pantothenicAcid: row.pantothenic_acid,
-      biotin: row.biotin,
-      carotenoids: row.carotenoids,
-    },
-    minerals: {
-      calcium: row.calcium,
-      chloride: row.chloride,
-      chromium: row.chromium,
-      copper: row.copper,
-      fluoride: row.fluoride,
-      iodine: row.iodine,
-      iron: row.iron,
-      magnesium: row.magnesium,
-      manganese: row.manganese,
-      molybdenum: row.molybdenum,
-      phosphorus: row.phosphorus,
-      potassium: row.potassium,
-      selenium: row.selenium,
-      sodium: row.sodium,
-      zinc: row.zinc,
-    },
-    servingSize: row.serving_size,
-    servingUnit: row.serving_unit,
-    isVerified: row.is_verified === 1,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
+  const rows = db.select().from(schema.foodItems).all();
+  return rows.map(mapRowToFoodItem);
 };
 
-export const searchFoodItems = (query: string, category?: FoodCategory, limit: number = 20): FoodItem[] => {
-  let sql = `
-    SELECT * FROM food_items 
-    WHERE name LIKE ? 
-    ${category ? 'AND category = ?' : ''}
-    ORDER BY is_verified DESC, name ASC 
-    LIMIT ?
-  `;
+export const searchFoodItems = (query: string, category?: string, limit: number = 20): FoodItem[] => {
+  const conditions = [like(schema.foodItems.name, `%${query}%`)];
+  
+  if (category) {
+    conditions.push(eq(schema.foodItems.category, category));
+  }
 
-  const params: (string | number | null)[] = [`%${query}%`];
-  if (category) params.push(category);
-  params.push(limit);
+  const rows = db
+    .select()
+    .from(schema.foodItems)
+    .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+    .orderBy(desc(schema.foodItems.isVerified), asc(schema.foodItems.name))
+    .limit(limit)
+    .all();
 
-  return db.getAllSync<any>(sql, params).map(row => ({
-    id: row.id,
-    name: row.name,
-    brand: row.brand,
-    barcode: row.barcode,
-    category: row.category as FoodCategory,
-    calories: row.calories,
-    macronutrients: {
-      protein: row.protein,
-      carbs: row.carbs,
-      fat: row.fat,
-      fiber: row.fiber,
-    },
-    vitamins: {
-      vitaminA: row.vitamin_a,
-      vitaminC: row.vitamin_c,
-      vitaminD: row.vitamin_d,
-      vitaminB6: row.vitamin_b6,
-      vitaminE: row.vitamin_e,
-      vitaminK: row.vitamin_k,
-      thiamin: row.thiamin,
-      vitaminB12: row.vitamin_b12,
-      riboflavin: row.riboflavin,
-      folate: row.folate,
-      niacin: row.niacin,
-      choline: row.choline,
-      pantothenicAcid: row.pantothenic_acid,
-      biotin: row.biotin,
-      carotenoids: row.carotenoids,
-    },
-    minerals: {
-      calcium: row.calcium,
-      chloride: row.chloride,
-      chromium: row.chromium,
-      copper: row.copper,
-      fluoride: row.fluoride,
-      iodine: row.iodine,
-      iron: row.iron,
-      magnesium: row.magnesium,
-      manganese: row.manganese,
-      molybdenum: row.molybdenum,
-      phosphorus: row.phosphorus,
-      potassium: row.potassium,
-      selenium: row.selenium,
-      sodium: row.sodium,
-      zinc: row.zinc,
-    },
-    servingSize: row.serving_size,
-    servingUnit: row.serving_unit,
-    isVerified: row.is_verified === 1,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
+  return rows.map(mapRowToFoodItem);
 };
 
 export const getFoodItem = (id: string): FoodItem | null => {
-  const row = db.getFirstSync<any>('SELECT * FROM food_items WHERE id = ?', [id]);
-  if (!row) return null;
-
-  return {
-    id: row.id,
-    name: row.name,
-    brand: row.brand,
-    barcode: row.barcode,
-    category: row.category as FoodCategory,
-    calories: row.calories,
-    macronutrients: {
-      protein: row.protein,
-      carbs: row.carbs,
-      fat: row.fat,
-      fiber: row.fiber,
-    },
-    vitamins: {
-      vitaminA: row.vitamin_a,
-      vitaminC: row.vitamin_c,
-      vitaminD: row.vitamin_d,
-      vitaminB6: row.vitamin_b6,
-      vitaminE: row.vitamin_e,
-      vitaminK: row.vitamin_k,
-      thiamin: row.thiamin,
-      vitaminB12: row.vitamin_b12,
-      riboflavin: row.riboflavin,
-      folate: row.folate,
-      niacin: row.niacin,
-      choline: row.choline,
-      pantothenicAcid: row.pantothenic_acid,
-      biotin: row.biotin,
-      carotenoids: row.carotenoids,
-    },
-    minerals: {
-      calcium: row.calcium,
-      chloride: row.chloride,
-      chromium: row.chromium,
-      copper: row.copper,
-      fluoride: row.fluoride,
-      iodine: row.iodine,
-      iron: row.iron,
-      magnesium: row.magnesium,
-      manganese: row.manganese,
-      molybdenum: row.molybdenum,
-      phosphorus: row.phosphorus,
-      potassium: row.potassium,
-      selenium: row.selenium,
-      sodium: row.sodium,
-      zinc: row.zinc,
-    },
-    servingSize: row.serving_size,
-    servingUnit: row.serving_unit,
-    isVerified: row.is_verified === 1,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
+  const row = db.select().from(schema.foodItems).where(eq(schema.foodItems.id, id)).get();
+  return row ? mapRowToFoodItem(row) : null;
 };
 
+// ============== Food Entry Functions ==============
+
 export const addFoodEntry = (entry: FoodEntry): void => {
-  db.runSync(
-    `INSERT INTO food_entries (
-      id, food_id, user_id, date, meal_type, quantity, unit,
-      total_calories, total_protein, total_carbs, total_fat, total_fiber, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      entry.id, entry.foodId, entry.userId ?? null, entry.date, entry.mealType, entry.quantity, entry.unit,
-      entry.totalCalories, entry.totalProtein, entry.totalCarbs, entry.totalFat,
-      entry.totalFiber, entry.createdAt
-    ]
-  );
+  db.insert(schema.foodEntries).values({
+    id: entry.id,
+    foodId: entry.foodId,
+    date: entry.date,
+    mealType: entry.mealType,
+    quantity: entry.quantity,
+    unit: entry.unit,
+    totalCalories: entry.totalCalories,
+    totalProtein: entry.totalProtein,
+    totalCarbs: entry.totalCarbs,
+    totalFat: entry.totalFat,
+    totalFiber: entry.totalFiber,
+    createdAt: entry.createdAt,
+  }).run();
 };
 
 export const getFoodEntriesForDate = (date: string): FoodEntry[] => {
-  return db.getAllSync<any>('SELECT * FROM food_entries WHERE date = ? ORDER BY created_at DESC', [date])
+  return db
+    .select()
+    .from(schema.foodEntries)
+    .where(eq(schema.foodEntries.date, date))
+    .orderBy(desc(schema.foodEntries.createdAt))
+    .all()
     .map(row => ({
       id: row.id,
-      foodId: row.food_id,
-      userId: row.user_id,
+      foodId: row.foodId,
       date: row.date,
-      mealType: row.meal_type as MealType,
+      mealType: row.mealType as any,
       quantity: row.quantity,
       unit: row.unit,
-      totalCalories: row.total_calories,
-      totalProtein: row.total_protein,
-      totalCarbs: row.total_carbs,
-      totalFat: row.total_fat,
-      totalFiber: row.total_fiber,
-      createdAt: row.created_at,
+      totalCalories: row.totalCalories,
+      totalProtein: row.totalProtein,
+      totalCarbs: row.totalCarbs,
+      totalFat: row.totalFat,
+      totalFiber: row.totalFiber,
+      createdAt: row.createdAt,
     }));
 };
 
 export const deleteFoodEntry = (id: string): void => {
-  db.runSync('DELETE FROM food_entries WHERE id = ?', [id]);
+  db.delete(schema.foodEntries).where(eq(schema.foodEntries.id, id)).run();
 };
 
-// Workout Functions
+// ============== Workout Functions ==============
+
 export const addWorkoutTemplate = (template: WorkoutTemplate): void => {
-  db.runSync('INSERT INTO workout_templates (id, name) VALUES (?, ?)', [template.id, template.name]);
+  db.insert(schema.workoutTemplates).values({
+    id: template.id,
+    name: template.name,
+  }).run();
 };
 
 export const getWorkoutTemplates = (): WorkoutTemplate[] => {
-  return db.getAllSync<WorkoutTemplate>('SELECT * FROM workout_templates');
+  return db.select().from(schema.workoutTemplates).all();
 };
 
 export const getWorkoutTemplate = (id: string): WorkoutTemplate | null => {
-  return db.getFirstSync<WorkoutTemplate>('SELECT * FROM workout_templates WHERE id = ?', [id]);
-};
-
-export const getExerciseTemplate = (id: string): ExerciseTemplate | null => {
-  const row = db.getFirstSync<any>('SELECT * FROM exercise_templates WHERE id = ?', [id]);
-  if (!row) return null;
-  return {
-    ...row,
-    default_set_targets: JSON.parse(row.default_set_targets),
-  };
-};
-
-export const addWorkoutTemplateExercise = (exercise: WorkoutTemplateExercise): void => {
-  db.runSync(
-    'INSERT INTO workout_template_exercises (id, workout_template_id, exercise_template_id, set_targets, "order") VALUES (?, ?, ?, ?, ?)',
-    [exercise.id, exercise.workout_template_id, exercise.exercise_template_id, JSON.stringify(exercise.set_targets), exercise.order]
-  );
+  return db.select().from(schema.workoutTemplates).where(eq(schema.workoutTemplates.id, id)).get() ?? null;
 };
 
 export const addExerciseTemplate = (template: ExerciseTemplate): void => {
-  db.runSync('INSERT INTO exercise_templates (id, name, default_set_targets) VALUES (?, ?, ?)', [template.id, template.name, JSON.stringify(template.default_set_targets)]);
+  db.insert(schema.exerciseTemplates).values({
+    id: template.id,
+    name: template.name,
+    defaultSetTargets: JSON.stringify(template.default_set_targets),
+  }).run();
 };
 
 export const getExerciseTemplates = (): ExerciseTemplate[] => {
-  return db.getAllSync<any>('SELECT * FROM exercise_templates').map(row => ({
-    ...row,
-    default_set_targets: JSON.parse(row.default_set_targets),
+  return db.select().from(schema.exerciseTemplates).all().map(row => ({
+    id: row.id,
+    name: row.name,
+    default_set_targets: JSON.parse(row.defaultSetTargets),
   }));
+};
+
+export const getExerciseTemplate = (id: string): ExerciseTemplate | null => {
+  const row = db.select().from(schema.exerciseTemplates).where(eq(schema.exerciseTemplates.id, id)).get();
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    default_set_targets: JSON.parse(row.defaultSetTargets),
+  };
+};
+
+export const deleteExerciseTemplate = (id: string): void => {
+  db.delete(schema.exerciseTemplates).where(eq(schema.exerciseTemplates.id, id)).run();
+};
+
+export const updateExerciseTemplate = (template: ExerciseTemplate): void => {
+  db.update(schema.exerciseTemplates)
+    .set({
+      name: template.name,
+      defaultSetTargets: JSON.stringify(template.default_set_targets),
+    })
+    .where(eq(schema.exerciseTemplates.id, template.id))
+    .run();
+};
+
+export const addWorkoutTemplateExercise = (exercise: WorkoutTemplateExercise): void => {
+  db.insert(schema.workoutTemplateExercises).values({
+    id: exercise.id,
+    workoutTemplateId: exercise.workout_template_id,
+    exerciseTemplateId: exercise.exercise_template_id,
+    setTargets: JSON.stringify(exercise.set_targets),
+    order: exercise.order,
+  }).run();
 };
 
 export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplateExercise[] => {
-  return db.getAllSync<any>(
-    'SELECT * FROM workout_template_exercises WHERE workout_template_id = ? ORDER BY "order" ASC',
-    [templateId]
-  ).map(row => ({
-    ...row,
-    set_targets: JSON.parse(row.set_targets),
-  }));
+  return db
+    .select()
+    .from(schema.workoutTemplateExercises)
+    .where(eq(schema.workoutTemplateExercises.workoutTemplateId, templateId))
+    .orderBy(asc(schema.workoutTemplateExercises.order))
+    .all()
+    .map(row => ({
+      id: row.id,
+      workout_template_id: row.workoutTemplateId,
+      exercise_template_id: row.exerciseTemplateId,
+      set_targets: JSON.parse(row.setTargets),
+      order: row.order,
+    }));
 };
 
+// ============== Active Workout Session Functions ==============
+
 export const startWorkoutSession = (templateId: string, date: string): ActiveWorkoutSession => {
-  db.runSync('DELETE FROM active_workout_session');
+  // Delete any existing session
+  db.delete(schema.activeWorkoutSession).run();
+  
   const exercises = getWorkoutTemplateExercises(templateId);
-  const sets: WorkoutSet[] = exercises.flatMap(exercise => {
+  const sets: any[] = exercises.flatMap(exercise => {
     const exerciseTemplate = getExerciseTemplate(exercise.exercise_template_id);
     if (!exerciseTemplate) return [];
-    return exercise.set_targets.map((target, index) => ({
+    return exercise.set_targets.map((target: any, index: number) => ({
       id: `${exercise.id}-${index}`,
       workout_template_exercise_id: exercise.id,
       weight: 0,
@@ -463,29 +314,35 @@ export const startWorkoutSession = (templateId: string, date: string): ActiveWor
     sets,
   };
 
-  db.runSync(
-    'INSERT INTO active_workout_session (id, workout_template_id, start_time, date, sets) VALUES (?, ?, ?, ?, ?)',
-    [newSession.id, newSession.workout_template_id, newSession.start_time, newSession.date, JSON.stringify(newSession.sets)]
-  );
+  db.insert(schema.activeWorkoutSession).values({
+    id: newSession.id,
+    workoutTemplateId: newSession.workout_template_id,
+    startTime: newSession.start_time,
+    date: newSession.date,
+    sets: JSON.stringify(newSession.sets),
+  }).run();
 
   return newSession;
 };
 
 export const getActiveWorkoutSession = (): ActiveWorkoutSession | null => {
-  const row = db.getFirstSync<any>('SELECT * FROM active_workout_session LIMIT 1');
+  const row = db.select().from(schema.activeWorkoutSession).limit(1).get();
   if (!row) return null;
 
   return {
     id: row.id,
-    workout_template_id: row.workout_template_id,
-    start_time: row.start_time,
+    workout_template_id: row.workoutTemplateId,
+    start_time: row.startTime,
     date: row.date,
     sets: JSON.parse(row.sets),
   };
 };
 
 export const updateActiveWorkoutSession = (session: ActiveWorkoutSession): void => {
-  db.runSync('UPDATE active_workout_session SET sets = ? WHERE id = ?', [JSON.stringify(session.sets), session.id]);
+  db.update(schema.activeWorkoutSession)
+    .set({ sets: JSON.stringify(session.sets) })
+    .where(eq(schema.activeWorkoutSession.id, session.id))
+    .run();
 };
 
 export const finishWorkoutSession = (session: ActiveWorkoutSession): void => {
@@ -493,62 +350,106 @@ export const finishWorkoutSession = (session: ActiveWorkoutSession): void => {
     id: Date.now().toString(),
     workout_template_id: session.workout_template_id,
     date: session.date,
-    duration: Math.round((Date.now() - session.start_time) / 60000), // duration in minutes
-    sets: session.sets.filter(s => s.completed),
+    duration: Math.round((Date.now() - session.start_time) / 60000),
+    sets: session.sets.filter((s: any) => s.completed),
     createdAt: Date.now(),
   };
 
-  db.runSync(
-    'INSERT INTO workout_entries (id, workout_template_id, date, duration, sets, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [newEntry.id, newEntry.workout_template_id, newEntry.date, newEntry.duration, JSON.stringify(newEntry.sets), newEntry.createdAt]
-  );
+  db.insert(schema.workoutEntries).values({
+    id: newEntry.id,
+    workoutTemplateId: newEntry.workout_template_id,
+    date: newEntry.date,
+    duration: newEntry.duration,
+    sets: JSON.stringify(newEntry.sets),
+    createdAt: newEntry.createdAt,
+  }).run();
 
-  db.runSync('DELETE FROM active_workout_session');
+  db.delete(schema.activeWorkoutSession).run();
 };
 
+// ============== Workout Entry Functions ==============
+
 export const getWorkoutEntries = (date: string): WorkoutEntry[] => {
-  return db.getAllSync<any>('SELECT * FROM workout_entries WHERE date = ? ORDER BY created_at DESC', [date])
+  return db
+    .select()
+    .from(schema.workoutEntries)
+    .where(eq(schema.workoutEntries.date, date))
+    .orderBy(desc(schema.workoutEntries.createdAt))
+    .all()
     .map(row => ({
-      ...row,
+      id: row.id,
+      workout_template_id: row.workoutTemplateId,
+      date: row.date,
+      duration: row.duration,
       sets: JSON.parse(row.sets),
+      createdAt: row.createdAt,
     }));
 };
 
 export const getWorkoutEntry = (id: string): WorkoutEntry | null => {
-  const row = db.getFirstSync<any>('SELECT * FROM workout_entries WHERE id = ?', [id]);
+  const row = db.select().from(schema.workoutEntries).where(eq(schema.workoutEntries.id, id)).get();
   if (!row) return null;
   return {
-    ...row,
+    id: row.id,
+    workout_template_id: row.workoutTemplateId,
+    date: row.date,
+    duration: row.duration,
     sets: JSON.parse(row.sets),
+    createdAt: row.createdAt,
   };
 };
 
 export const updateWorkoutEntry = (entry: WorkoutEntry): void => {
-  db.runSync(
-    'UPDATE workout_entries SET duration = ?, sets = ? WHERE id = ?',
-    [entry.duration, JSON.stringify(entry.sets), entry.id]
-  );
+  db.update(schema.workoutEntries)
+    .set({
+      duration: entry.duration,
+      sets: JSON.stringify(entry.sets),
+    })
+    .where(eq(schema.workoutEntries.id, entry.id))
+    .run();
 };
 
 export const deleteWorkoutEntry = (id: string): void => {
-  db.runSync('DELETE FROM workout_entries WHERE id = ?', [id]);
+  db.delete(schema.workoutEntries).where(eq(schema.workoutEntries.id, id)).run();
 };
 
-// User Profile Functions
+// ============== User Profile Functions ==============
+
 export const saveUserProfile = (profile: UserProfile): void => {
   const now = Date.now();
-  db.runSync(
-    `INSERT OR REPLACE INTO user_profile (
-      id, birthdate, gender, height, weight, activity_level, goal_type, target_weight,
-      target_calories, target_protein, target_carbs, target_fat, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      profile.id, profile.birthdate, profile.gender, profile.height, profile.weight,
-      profile.activityLevel, profile.goalType, profile.targetWeight ?? null,
-      profile.targetCalories, profile.targetProtein, profile.targetCarbs, profile.targetFat,
-      profile.createdAt || now, now
-    ]
-  );
+  
+  db.insert(schema.userProfile).values({
+    id: profile.id,
+    birthdate: profile.birthdate,
+    gender: profile.gender,
+    height: profile.height,
+    weight: profile.weight,
+    activityLevel: profile.activityLevel,
+    goalType: profile.goalType,
+    targetWeight: profile.targetWeight ?? null,
+    targetCalories: profile.targetCalories,
+    targetProtein: profile.targetProtein,
+    targetCarbs: profile.targetCarbs,
+    targetFat: profile.targetFat,
+    createdAt: profile.createdAt || now,
+    updatedAt: now,
+  }).onConflictDoUpdate({
+    target: schema.userProfile.id,
+    set: {
+      birthdate: profile.birthdate,
+      gender: profile.gender,
+      height: profile.height,
+      weight: profile.weight,
+      activityLevel: profile.activityLevel,
+      goalType: profile.goalType,
+      targetWeight: profile.targetWeight ?? null,
+      targetCalories: profile.targetCalories,
+      targetProtein: profile.targetProtein,
+      targetCarbs: profile.targetCarbs,
+      targetFat: profile.targetFat,
+      updatedAt: now,
+    },
+  }).run();
 
   // Add a corresponding weight entry
   const weightEntry: WeightEntry = {
@@ -561,46 +462,56 @@ export const saveUserProfile = (profile: UserProfile): void => {
 };
 
 export const getUserProfile = (): UserProfile | null => {
-  const row = db.getFirstSync<any>('SELECT * FROM user_profile ORDER BY updated_at DESC LIMIT 1');
+  const row = db
+    .select()
+    .from(schema.userProfile)
+    .orderBy(desc(schema.userProfile.updatedAt))
+    .limit(1)
+    .get();
+  
   if (!row) return null;
 
   return {
     id: row.id,
     birthdate: row.birthdate,
-    gender: row.gender,
+    gender: row.gender as any,
     height: row.height,
     weight: row.weight,
-    activityLevel: row.activity_level as ActivityLevel,
-    goalType: row.goal_type as GoalType,
-    targetWeight: row.target_weight,
-    targetCalories: row.target_calories,
-    targetProtein: row.target_protein,
-    targetCarbs: row.target_carbs,
-    targetFat: row.target_fat,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    activityLevel: row.activityLevel as any,
+    goalType: row.goalType as any,
+    targetWeight: row.targetWeight ?? undefined,
+    targetCalories: row.targetCalories,
+    targetProtein: row.targetProtein,
+    targetCarbs: row.targetCarbs,
+    targetFat: row.targetFat,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 };
 
-// Weight Tracking Functions
+// ============== Weight Tracking Functions ==============
+
 export const addWeightEntry = (entry: WeightEntry): void => {
-  db.runSync(
-    'INSERT INTO weight_entries (id, weight, date, created_at) VALUES (?, ?, ?, ?)',
-    [entry.id, entry.weight, entry.date, entry.createdAt]
-  );
+  db.insert(schema.weightEntries).values({
+    id: entry.id,
+    weight: entry.weight,
+    date: entry.date,
+    createdAt: entry.createdAt,
+  }).run();
 };
 
 export const getWeightEntries = (limit: number = 30): WeightEntry[] => {
-  return db.getAllSync<any>('SELECT * FROM weight_entries ORDER BY date DESC LIMIT ?', [limit])
-    .map(row => ({
-      id: row.id,
-      weight: row.weight,
-      date: row.date,
-      createdAt: row.created_at,
-    }));
+  return db
+    .select()
+    .from(schema.weightEntries)
+    .orderBy(desc(schema.weightEntries.date))
+    .limit(limit)
+    .all();
 };
 
-export const getNutritionSummary = (date: string): NutritionSummary => {
+// ============== Nutrition Summary Functions ==============
+
+export const getNutritionSummary = (date: string): any => {
   const foodEntries = getFoodEntriesForDate(date);
   const allFoodItems = getAllFoodItems();
   const foodItemsById = allFoodItems.reduce((acc, item) => {
@@ -613,8 +524,8 @@ export const getNutritionSummary = (date: string): NutritionSummary => {
   let totalCarbs = 0;
   let totalFat = 0;
   let totalFiber = 0;
-  const totalVitamins: Vitamins = {};
-  const totalMinerals: Minerals = {};
+  const totalVitamins: any = {};
+  const totalMinerals: any = {};
 
   for (const entry of foodEntries) {
     const foodItem = foodItemsById[entry.foodId];
@@ -628,20 +539,19 @@ export const getNutritionSummary = (date: string): NutritionSummary => {
 
       for (const key in foodItem.vitamins) {
         if (Object.prototype.hasOwnProperty.call(foodItem.vitamins, key)) {
-            const vitaminKey = key as keyof Vitamins;
-            totalVitamins[vitaminKey] = (totalVitamins[vitaminKey] || 0) + (foodItem.vitamins[vitaminKey] || 0) * ratio;
+          const vitaminKey = key as keyof typeof foodItem.vitamins;
+          totalVitamins[vitaminKey] = (totalVitamins[vitaminKey] || 0) + (foodItem.vitamins[vitaminKey] || 0) * ratio;
         }
       }
       for (const key in foodItem.minerals) {
         if (Object.prototype.hasOwnProperty.call(foodItem.minerals, key)) {
-            const mineralKey = key as keyof Minerals;
-            totalMinerals[mineralKey] = (totalMinerals[mineralKey] || 0) + (foodItem.minerals[mineralKey] || 0) * ratio;
+          const mineralKey = key as keyof typeof foodItem.minerals;
+          totalMinerals[mineralKey] = (totalMinerals[mineralKey] || 0) + (foodItem.minerals[mineralKey] || 0) * ratio;
         }
       }
     }
   }
 
-  // Calculate calories burned from workout entries
   const workoutEntries = getWorkoutEntries(date);
   const caloriesBurned = workoutEntries.reduce((total, workout) => {
     return total + ((workout as any).calories_burned || 0);
@@ -665,7 +575,15 @@ export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): {
   const userProfile = getUserProfile();
   const targetCalories = userProfile?.targetCalories || 0;
 
-  const foodEntries = db.getAllSync<any>('SELECT * FROM food_entries WHERE date >= ? AND date <= ?', [startDate, endDate]);
+  const foodEntries = db
+    .select()
+    .from(schema.foodEntries)
+    .where(and(
+      sql`${schema.foodEntries.date} >= ${startDate}`,
+      sql`${schema.foodEntries.date} <= ${endDate}`
+    ))
+    .all();
+
   const allFoodItems = getAllFoodItems();
   const foodItemsById = allFoodItems.reduce((acc, item) => {
     acc[item.id] = item;
@@ -711,19 +629,31 @@ export const getExerciseProgression = (exerciseTemplateId: string, period: numbe
   const startDateString = startDate.toISOString().split('T')[0];
   const endDateString = endDate.toISOString().split('T')[0];
 
-  const workoutTemplateExercises = db.getAllSync<any>('SELECT id FROM workout_template_exercises WHERE exercise_template_id = ?', [exerciseTemplateId]);
+  const workoutTemplateExercises = db
+    .select()
+    .from(schema.workoutTemplateExercises)
+    .where(eq(schema.workoutTemplateExercises.exerciseTemplateId, exerciseTemplateId))
+    .all();
+  
   const workoutTemplateExerciseIds = workoutTemplateExercises.map(wte => wte.id);
 
   if (workoutTemplateExerciseIds.length === 0) {
     return [];
   }
 
-  const workoutEntries = db.getAllSync<any>('SELECT * FROM workout_entries WHERE date >= ? AND date <= ?', [startDateString, endDateString]);
+  const workoutEntries = db
+    .select()
+    .from(schema.workoutEntries)
+    .where(and(
+      sql`${schema.workoutEntries.date} >= ${startDateString}`,
+      sql`${schema.workoutEntries.date} <= ${endDateString}`
+    ))
+    .all();
 
   const progression: { [date: string]: { weight: number, reps: number }[] } = {};
 
   for (const entry of workoutEntries) {
-    const sets = JSON.parse(entry.sets) as WorkoutSet[];
+    const sets = JSON.parse(entry.sets) as any[];
     const relevantSets = sets.filter(set => workoutTemplateExerciseIds.includes(set.workout_template_exercise_id));
 
     if (relevantSets.length > 0) {
@@ -740,75 +670,65 @@ export const getExerciseProgression = (exerciseTemplateId: string, period: numbe
   }));
 };
 
+// ============== Activity Functions ==============
 
-export const deleteExerciseTemplate = (id: string): void => {
-  db.runSync('DELETE FROM exercise_templates WHERE id = ?', [id]);
-};
-
-export const updateExerciseTemplate = (template: ExerciseTemplate): void => {
-  db.runSync(
-    'UPDATE exercise_templates SET name = ?, default_set_targets = ? WHERE id = ?',
-    [template.name, JSON.stringify(template.default_set_targets), template.id]
-  );
-};
 export const addActivity = (activity: Activity): void => {
-  db.runSync(
-    'INSERT INTO activities (id, activity, calories, type, timestamp) VALUES (?, ?, ?, ?, ?)',
-    [activity.id, activity.activity, activity.calories, activity.type, activity.timestamp]
-  );
+  db.insert(schema.activities).values({
+    id: activity.id,
+    activity: activity.activity,
+    calories: activity.calories,
+    type: activity.type,
+    timestamp: activity.timestamp,
+  }).run();
 };
 
 export const getRecentActivities = (limit: number = 10): Activity[] => {
-  if (!db) {
-    console.error('Database not initialized. Call initDatabase() first.');
-    return [];
-  }
-  console.log('Fetching recent activities from database...');
-  return db.getAllSync<Activity>(
-    'SELECT * FROM activities ORDER BY timestamp DESC LIMIT ?',
-    [limit]
-  );
-};
-
-export const updateDailyNutrition = (nutrition: DailyNutrition): void => {
-  db.runSync(
-    `INSERT OR REPLACE INTO daily_nutrition (id, date, protein, carbs, fat) 
-     VALUES (?, ?, ?, ?, ?)`,
-    [nutrition.id, nutrition.date, nutrition.protein, nutrition.carbs, nutrition.fat]
-  );
-};
-
-export const getDailyNutrition = (date: string): DailyNutrition | null => {
-  return db.getFirstSync<DailyNutrition>(
-    'SELECT * FROM daily_nutrition WHERE date = ?',
-    [date]
-  );
-};
-
-export const resetDatabase = (): void => {
-  console.log('Performing full database reset (clearing data and re-initializing schema)...');
-  try {
-    if (db) {
-      db.closeSync();
-      console.log('Database closed.');
-    }
-    SQLite.deleteDatabaseSync('fitness.db');
-    console.log('Database file deleted.');
-    initDatabase(); // Re-initialize the database, which will create schema if not exists
-    console.log('Database reset complete.');
-  } catch (error) {
-    console.error('Error resetting database:', error);
-    throw error;
-  }
+  return db
+    .select()
+    .from(schema.activities)
+    .orderBy(desc(schema.activities.timestamp))
+    .limit(limit)
+    .all() as Activity[];
 };
 
 export const updateActivity = (activity: Activity): void => {
-  db.runSync(
-    'UPDATE activities SET activity = ?, calories = ? WHERE id = ?',
-    [activity.activity, activity.calories, activity.id]
-  );
+  db.update(schema.activities)
+    .set({
+      activity: activity.activity,
+      calories: activity.calories,
+    })
+    .where(eq(schema.activities.id, activity.id))
+    .run();
 };
 
 export const deleteActivity = (id: string): void => {
-  db.runSync('DELETE FROM activities WHERE id = ?', [id]);
+  db.delete(schema.activities).where(eq(schema.activities.id, id)).run();
+};
+
+// ============== Daily Nutrition Functions ==============
+
+export const updateDailyNutrition = (nutrition: DailyNutrition): void => {
+  db.insert(schema.dailyNutrition).values({
+    id: nutrition.id,
+    date: nutrition.date,
+    protein: nutrition.protein,
+    carbs: nutrition.carbs,
+    fat: nutrition.fat,
+  }).onConflictDoUpdate({
+    target: schema.dailyNutrition.id,
+    set: {
+      date: nutrition.date,
+      protein: nutrition.protein,
+      carbs: nutrition.carbs,
+      fat: nutrition.fat,
+    },
+  }).run();
+};
+
+export const getDailyNutrition = (date: string): DailyNutrition | null => {
+  return db
+    .select()
+    .from(schema.dailyNutrition)
+    .where(eq(schema.dailyNutrition.date, date))
+    .get() ?? null;
 };
