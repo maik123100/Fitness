@@ -46,7 +46,8 @@ const ListHeader = memo(({
   handleAddExerciseTemplate,
   router,
   styles,
-}: ListHeaderProps) => (
+}: ListHeaderProps) => {
+  return (
   <View>
     <View style={styles.headerContainer}>
       <Text style={styles.sectionTitle}>Add New Exercise Template</Text>
@@ -67,7 +68,10 @@ const ListHeader = memo(({
 
     <Text style={styles.sectionTitle}>Existing Exercise Templates</Text>
   </View>
-));
+);
+});
+
+ListHeader.displayName = 'ListHeader';
 
 export default function ManageExerciseTemplates() {
   const router = useRouter();

@@ -3,7 +3,7 @@
   "expo": {
     "name": "Fitness",
     "slug": "fitnessapp",
-    "version": "1.0.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/images/FitnessAppLogo.png",
     "scheme": "myapp",

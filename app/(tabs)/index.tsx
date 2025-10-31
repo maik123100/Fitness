@@ -24,6 +24,7 @@ interface DashboardState {
     eaten: number;
     burned: number;
     remaining: number;
+    target: number;
   };
   makroData: {
     current: { protein: number; carbs: number; fat: number };
@@ -35,7 +36,7 @@ interface DashboardState {
 export default function DashboardScreen() {
   const { selectedDate } = useDate();
   const [state, setState] = useState<DashboardState>({
-    calorieData: { eaten: 0, burned: 0, remaining: 2000 },
+    calorieData: { eaten: 0, burned: 0, remaining: 2000, target: 2000 },
     makroData: {
       current: { protein: 0, carbs: 0, fat: 0 },
       target: { protein: 100, carbs: 200, fat: 50 },
@@ -66,6 +67,7 @@ export default function DashboardScreen() {
       eaten: Math.round(eaten),
       burned: Math.round(burned),
       remaining: Math.round(targetCalories - eaten + burned),
+      target: Math.round(targetCalories),
     };
 
     const newMakroData = {

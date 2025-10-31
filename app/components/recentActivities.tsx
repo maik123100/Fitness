@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { getFoodItem, getWorkoutTemplate } from '@/services/database';
 import { FoodEntry, WorkoutEntry } from '@/types/types';
 import { draculaTheme, spacing, typography, borderRadius } from '@/styles/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 
 // Helper to check if an item is a FoodEntry
@@ -16,16 +17,22 @@ export default function RecentActivities({ recentActivities }: { recentActivitie
       const foodItem = getFoodItem(item.foodId);
       return (
         <View style={styles.activityItem}>
-          <Text style={styles.activityText}>{foodItem?.name || 'Food Entry'}</Text>
-          <Text style={styles.eatenCalories}>{item.totalCalories} kcal</Text>
+          <View style={styles.activityLeft}>
+            <Ionicons name="fast-food" size={20} color={draculaTheme.nutrition.calories} />
+            <Text style={styles.activityText}>{foodItem?.name || 'Food Entry'}</Text>
+          </View>
+          <Text style={styles.eatenCalories}>{Math.round(item.totalCalories)} kcal</Text>
         </View>
       );
     } else {
       const workoutTemplate = getWorkoutTemplate(item.workout_template_id);
       return (
         <View style={styles.activityItem}>
-          <Text style={styles.activityText}>{workoutTemplate?.name || 'Workout'}</Text>
-          <Text style={styles.burnedCalories}>Workout</Text>
+          <View style={styles.activityLeft}>
+            <Ionicons name="barbell" size={20} color={draculaTheme.activity.cardio} />
+            <Text style={styles.activityText}>{workoutTemplate?.name || 'Workout'}</Text>
+          </View>
+          <Text style={styles.burnedCalories}>{item.duration} min</Text>
         </View>
       );
     }
@@ -66,15 +73,22 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   activitiesListContainer: {
-    maxHeight: 400, // Increased height
+    maxHeight: 400,
   },
   activityItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: draculaTheme.surface.card,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
+  },
+  activityLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
   },
   activityText: {
     fontSize: typography.sizes.md,
@@ -87,7 +101,7 @@ const styles = StyleSheet.create({
   },
   burnedCalories: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.activity.cardio, // Or a general 'burned' color
+    color: draculaTheme.activity.cardio,
     fontWeight: typography.weights.semibold,
   },
 });

@@ -9,7 +9,7 @@ import { useDate } from '@/app/contexts/DateContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Animated } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface TrainingState {
   templates: WorkoutTemplate[];
@@ -62,7 +62,7 @@ export default function WorkoutScreen() {
       <View style={styles.rightActionContainer}>
         <TouchableOpacity onPress={() => router.navigate({ pathname: '/(tabs)/(training)/workoutSession', params: { workoutEntryId: item.id }})} style={[styles.actionButton, styles.editButton]}>
           <Animated.View style={{ transform: [{ translateX: trans }] }}>
-            <Icon name="pencil" size={24} color={draculaTheme.text.inverse} />
+            <MaterialCommunityIcons name="pencil" size={24} color={draculaTheme.text.inverse} />
           </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => {
@@ -74,7 +74,7 @@ export default function WorkoutScreen() {
           swipeableRef.current?.close(); // Close the swipeable after deletion
         }} style={[styles.actionButton, styles.deleteButton]}>
           <Animated.View style={{ transform: [{ translateX: trans }] }}>
-            <Icon name="delete" size={24} color={draculaTheme.text.inverse} />
+            <MaterialCommunityIcons name="delete" size={24} color={draculaTheme.text.inverse} />
           </Animated.View>
         </TouchableOpacity>
       </View>
