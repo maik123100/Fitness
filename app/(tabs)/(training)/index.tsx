@@ -1,14 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { useState, useRef , useCallback } from 'react';
+import { Text, View, StyleSheet, TouchableOpacity, FlatList , Animated } from 'react-native';
 import { getWorkoutTemplates, getActiveWorkoutSession, startWorkoutSession, getWorkoutEntries, getWorkoutTemplate, deleteWorkoutEntry } from '@/services/database';
 import { WorkoutTemplate, ActiveWorkoutSession, WorkoutEntry } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
 import { useDate } from '@/app/contexts/DateContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface TrainingState {

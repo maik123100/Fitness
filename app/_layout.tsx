@@ -6,12 +6,12 @@ import { Text, View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SnackbarProvider } from './components/SnackbarProvider';
-import { getOnboardingCompleted } from '../services/onboardingService';
+import { getOnboardingCompleted } from '@/services/onboardingService';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
+import { initializeNotifications } from '@/services/notificationService';
 
 export default function RootLayout() {
   const { success, error } = useDatabase();
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [onboardingLoaded, setOnboardingLoaded] = useState(false);
 
   // Enable Drizzle Studio for database debugging
@@ -19,9 +19,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     const loadOnboarding = async () => {
-      const completed = await getOnboardingCompleted();
-      setOnboardingCompleted(completed);
+      await getOnboardingCompleted();
       setOnboardingLoaded(true);
+      
+      // Initialize notifications after onboarding is loaded
+      await initializeNotifications();
     };
     
     if (success) {

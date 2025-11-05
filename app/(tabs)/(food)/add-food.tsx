@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, Button } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FoodItem, FoodCategory } from '@/types/types';
 import { addFoodItem, getAllFoodItems } from '@/services/database';
 import { draculaTheme, spacing, borderRadius, typography, shadows } from '@/styles/theme';
@@ -30,7 +29,6 @@ const defaultFood: FoodItem = {
 
 const AddFood: React.FC = () => {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { showSnackbar } = useSnackbar();
   const [food, setFood] = useState<FoodItem>({ ...defaultFood });
   const [permission, requestPermission] = useCameraPermissions();
@@ -110,7 +108,7 @@ const AddFood: React.FC = () => {
     try {
       addFoodItem(newFood);
       router.back();
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to add food item.');
     }
   };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { getExerciseTemplates, addWorkoutTemplate, addWorkoutTemplateExercise } from '@/services/database';
 import { ExerciseTemplate, SetTarget } from '@/types/types'
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';

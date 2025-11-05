@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Text, View, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useSnackbar } from '@/app/components/SnackbarProvider';

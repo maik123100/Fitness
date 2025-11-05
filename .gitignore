@@ -35,6 +35,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
-agent_UXimprovements.md
-agent_*.md
+# agent documentation (AI-generated analysis)
+agent/

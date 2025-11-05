@@ -85,7 +85,6 @@ export default function CalorieAnalysisScreen() {
       const over = data.filter(d => d.totalCalories > d.targetCalories).length;
       const under = data.length - over;
       const avgTarget = data.reduce((sum, d) => sum + d.targetCalories, 0) / data.length;
-      const baseTarget = data[0].targetCalories - (data[0].targetCalories - (data.reduce((sum, d) => sum + (d.targetCalories - data[0].totalCalories), 0) / data.length));
       
       // Calculate base target from user profile (should be consistent)
       const minTarget = Math.min(...data.map(d => d.targetCalories));

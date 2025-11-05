@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch } from 'react-native';
 import { SetTarget } from '@/types/types';
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';

@@ -5,12 +5,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useSnackbar } from '@/app/components/SnackbarProvider';
 import {
-  addFoodEntry,
   getAllFoodItems,
   deleteFoodItem,
-  getFoodItem,
 } from '@/services/database';
-import { FoodItem, FoodEntry, MealType } from '@/types/types';
+import { FoodItem, MealType } from '@/types/types';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 
 export default function FoodSearchScreen() {

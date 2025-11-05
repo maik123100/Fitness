@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { Text, View, StyleSheet, TouchableOpacity, Modal, Alert, ScrollView, Animated } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -149,15 +149,6 @@ export default function FoodDiaryScreen() {
     } else {
       showSnackbar('No food item found with that barcode.', 3000);
     }
-  };
-
-  const openBarcodeScanner = async () => {
-    const { status } = await requestPermission();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Camera permission is required to scan barcodes.');
-      return;
-    }
-    setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: true, scanned: false } }));
   };
 
   return (
