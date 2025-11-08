@@ -9,7 +9,7 @@ import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
 import DatePickerModal from '@/app/components/DatePickerModal';
 
 const activityLevels: Record<ActivityLevel, string> = {
-  sedentary: 'Sedentary',
+  'sedentary': 'Sedentary',
   'lightly-active': 'Lightly Active',
   'moderately-active': 'Moderately Active',
   'very-active': 'Very Active',
