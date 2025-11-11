@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
-import { setOnboardingCompleted } from '@/services/onboardingService';
-import { useRouter } from 'expo-router';
-import { draculaTheme, spacing, typography, borderRadius } from '../styles/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { saveUserProfile } from '@/services/database';
-import { UserProfile, ActivityLevel, GoalType } from '@/types/types'
 import DatePickerModal from '@/app/components/DatePickerModal';
+import { saveUserProfile } from '@/services/database';
+import { setOnboardingCompleted } from '@/services/onboardingService';
+import { ActivityLevel, GoalType, UserProfile } from '@/types/types';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { borderRadius, draculaTheme, spacing, typography } from '../styles/theme';
 
 const activityLevels: Record<ActivityLevel, string> = {
   'sedentary': 'Sedentary',

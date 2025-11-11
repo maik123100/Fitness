@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
-import { Text, View, StyleSheet, TouchableOpacity, Modal, Alert, ScrollView, Animated } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useSnackbar } from '@/app/components/SnackbarProvider';
-import { Swipeable } from 'react-native-gesture-handler';
-import {
-  getFoodEntriesForDate,
-  deleteFoodEntry,
-  getFoodItem,
-  getAllFoodItems,
-} from '@/services/database';
-import {
-  FoodItem,
-  FoodEntry,
-  MealType,
-} from '@/types/types';
 import { useDate } from '@/app/contexts/DateContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import {
+  deleteFoodEntry,
+  getAllFoodItems,
+  getFoodEntriesForDate,
+  getFoodItem,
+} from '@/services/database';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import {
+  FoodEntry,
+  FoodItem,
+  MealType,
+} from '@/types/types';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 
 type FoodDiaryState = {
   foodEntries: Record<MealType, FoodEntry[]>;
@@ -117,9 +117,9 @@ export default function FoodDiaryScreen() {
       outputRange: [0, 80],
       extrapolate: 'clamp',
     });
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.deleteAction}
         onPress={() => handleDeleteFood(item.id)}
       >
@@ -161,15 +161,15 @@ export default function FoodDiaryScreen() {
         return (
           <View key={meal} style={styles.mealSection}>
             {/* Meal Header - Collapsible */}
-            <TouchableOpacity 
-              style={styles.mealHeader} 
+            <TouchableOpacity
+              style={styles.mealHeader}
               onPress={() => toggleMealExpanded(meal)}
             >
               <View style={styles.mealHeaderLeft}>
-                <Ionicons 
-                  name={mealIcons[meal] as any} 
-                  size={24} 
-                  color={draculaTheme.cyan} 
+                <Ionicons
+                  name={mealIcons[meal] as any}
+                  size={24}
+                  color={draculaTheme.cyan}
                   style={styles.mealIcon}
                 />
                 <Text style={styles.mealTitle}>
@@ -178,10 +178,10 @@ export default function FoodDiaryScreen() {
               </View>
               <View style={styles.mealHeaderRight}>
                 <Text style={styles.mealCalories}>{Math.round(mealTotals.calories)} kcal</Text>
-                <Ionicons 
-                  name={isExpanded ? 'chevron-up' : 'chevron-down'} 
-                  size={20} 
-                  color={draculaTheme.foreground} 
+                <Ionicons
+                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={draculaTheme.foreground}
                 />
               </View>
             </TouchableOpacity>
@@ -213,8 +213,8 @@ export default function FoodDiaryScreen() {
                   );
                 })}
 
-                <TouchableOpacity 
-                  style={styles.addButton} 
+                <TouchableOpacity
+                  style={styles.addButton}
                   onPress={() => openSearchScreen(meal)}
                 >
                   <Ionicons name="add" size={20} color={draculaTheme.text.inverse} />

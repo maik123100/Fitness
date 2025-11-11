@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Text, View, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useSnackbar } from '@/app/components/SnackbarProvider';
+import { useDate } from '@/app/contexts/DateContext';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import {
   addFoodEntry,
   getFoodItem,
 } from '@/services/database';
-import { FoodItem, FoodEntry, MealType } from '@/types/types';
-import { useDate } from '@/app/contexts/DateContext';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { FoodEntry, FoodItem, MealType } from '@/types/types';
+import { Picker } from '@react-native-picker/picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function FoodQuantityScreen() {
   const router = useRouter();

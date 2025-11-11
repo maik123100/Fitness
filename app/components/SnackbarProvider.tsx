@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Snackbar } from 'react-native-paper';
-import { View, StyleSheet } from 'react-native';
 
 import { draculaTheme } from '@/styles/theme';
 

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
 import { getExerciseProgression, getExerciseTemplates } from '@/services/database';
-import { ExerciseTemplate } from '@/types/types';
 import { draculaTheme, spacing } from '@/styles/theme';
+import { ExerciseTemplate } from '@/types/types';
 import { Picker } from '@react-native-picker/picker';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
 
 type DataType = 'reps' | 'weight' | 'intensity';
 

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Calendar } from 'react-native-calendars';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import React, { useEffect, useState } from 'react';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 
 interface CalendarDayObject {
   dateString: string;
@@ -46,30 +46,30 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.pickerWrapper}>
-          <Picker
-            selectedValue={currentMonth}
-            style={styles.picker}
-            onValueChange={(itemValue) => setCurrentMonth(itemValue)}
-            dropdownIconColor={draculaTheme.text.primary}
-            itemStyle={styles.pickerItem}
-          >
-            {monthNames.map((month, index) => (
+        <Picker
+          selectedValue={currentMonth}
+          style={styles.picker}
+          onValueChange={(itemValue) => setCurrentMonth(itemValue)}
+          dropdownIconColor={draculaTheme.text.primary}
+          itemStyle={styles.pickerItem}
+        >
+          {monthNames.map((month, index) => (
             <Picker.Item key={month} label={month} value={index} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
-            ))}
-          </Picker>
+          ))}
+        </Picker>
       </View>
       <View style={styles.pickerWrapper}>
-          <Picker
-            selectedValue={currentYear}
-            style={styles.picker}
-            onValueChange={(itemValue) => setCurrentYear(itemValue)}
-            dropdownIconColor={draculaTheme.text.primary}
-            itemStyle={styles.pickerItem}
-          >
-            {years.map((year) => (
+        <Picker
+          selectedValue={currentYear}
+          style={styles.picker}
+          onValueChange={(itemValue) => setCurrentYear(itemValue)}
+          dropdownIconColor={draculaTheme.text.primary}
+          itemStyle={styles.pickerItem}
+        >
+          {years.map((year) => (
             <Picker.Item key={year} label={year.toString()} value={year} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
-            ))}
-          </Picker>
+          ))}
+        </Picker>
       </View>
     </View>
   );

@@ -1,23 +1,23 @@
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
-import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import CalorieOverview from '@/app/components/calorieOverview';
 import MakroOverview from '@/app/components/makroOverview';
 import RecentActivities from '@/app/components/recentActivities';
+import { useDate } from '@/app/contexts/DateContext';
+import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import {
-  getUserProfile,
-  getNutritionSummary,
   getFoodEntriesForDate,
+  getNutritionSummary,
+  getUserProfile,
   getWorkoutEntries
 } from '@/services/database';
 import {
   FoodEntry,
   WorkoutEntry
-} from '@/types/types'
+} from '@/types/types';
 import { draculaTheme, spacing, typography } from '../../styles/theme';
-import { useDate } from '@/app/contexts/DateContext';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 
 interface DashboardState {
   calorieData: {

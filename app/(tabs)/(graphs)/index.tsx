@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
-import { getWeightEntries, getNutritionSummary, addWeightEntry } from '@/services/database';
-import { NutritionSummary } from '@/types/types'
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
+import { addWeightEntry, getNutritionSummary, getWeightEntries } from '@/services/database';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { NutritionSummary } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
 
 interface DietReportState {
   weightData: {

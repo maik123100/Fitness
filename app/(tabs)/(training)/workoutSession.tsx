@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal } from 'react-native';
-import { getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutTemplateExercises, getExerciseTemplate, getWorkoutEntry, updateWorkoutEntry } from '@/services/database';
-import { ActiveWorkoutSession, WorkoutTemplateExercise, WorkoutSet, WorkoutEntry } from '@/types/types'
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { finishWorkoutSession, getActiveWorkoutSession, getExerciseTemplate, getWorkoutEntry, getWorkoutTemplateExercises, updateActiveWorkoutSession, updateWorkoutEntry } from '@/services/database';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { ActiveWorkoutSession, WorkoutEntry, WorkoutSet, WorkoutTemplateExercise } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function WorkoutSessionScreen() {
   // Separate state for clarity
@@ -106,11 +106,11 @@ export default function WorkoutSessionScreen() {
       setExercises(exercisesWithDetails);
       setIsEditing(false);
       setElapsedTime(0);
-      
+
       // Find the first uncompleted set as current
       const firstUncompletedSet = activeSession.sets.find((s: WorkoutSet) => !s.completed);
       setCurrentSetId(firstUncompletedSet?.id || null);
-      
+
       // Set current exercise based on first uncompleted set or first exercise
       if (firstUncompletedSet) {
         const exerciseForSet = exercisesWithDetails.find(
@@ -166,11 +166,11 @@ export default function WorkoutSessionScreen() {
 
     // Mark set as completed
     handleSetUpdate(setId, 'completed', true);
-    
+
     // Find next uncompleted set
     const currentSetIndex = session.sets.findIndex((s: WorkoutSet) => s.id === setId);
     const nextSet = session.sets.find((s: WorkoutSet, index: number) => index > currentSetIndex && !s.completed);
-    
+
     if (nextSet) {
       setCurrentSetId(nextSet.id);
       // Start rest timer (90 seconds default)
@@ -193,7 +193,7 @@ export default function WorkoutSessionScreen() {
   // Get recommended next exercise (first exercise with incomplete sets)
   const getRecommendedExercise = () => {
     if (!session) return null;
-    
+
     for (const exercise of exercises) {
       const exerciseSets = session.sets.filter(
         (set: WorkoutSet) => set.workout_template_exercise_id === exercise.id
@@ -209,7 +209,7 @@ export default function WorkoutSessionScreen() {
   // Switch to a different exercise
   const switchToExercise = (exerciseId: string) => {
     setCurrentExerciseId(exerciseId);
-    
+
     // Find first incomplete set for this exercise
     if (session) {
       const exerciseSets = session.sets.filter(
@@ -224,11 +224,11 @@ export default function WorkoutSessionScreen() {
   // Calculate workout progress
   const calculateProgress = () => {
     if (!session) return { completedSets: 0, totalSets: 0, percentage: 0 };
-    
+
     const completedSets = session.sets.filter((s: WorkoutSet) => s.completed).length;
     const totalSets = session.sets.length;
     const percentage = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
-    
+
     return { completedSets, totalSets, percentage };
   };
 
@@ -250,7 +250,7 @@ export default function WorkoutSessionScreen() {
 
   const confirmFinishWorkout = () => {
     if (!session) return;
-    
+
     const calories = parseFloat(caloriesBurned) || 0;
     finishWorkoutSession(session as ActiveWorkoutSession, calories);
     setShowFinishModal(false);
@@ -314,14 +314,14 @@ export default function WorkoutSessionScreen() {
               autoFocus={true}
             />
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={styles.modalCancelButton} 
+              <TouchableOpacity
+                style={styles.modalCancelButton}
                 onPress={() => setShowFinishModal(false)}
               >
                 <Text style={styles.modalCancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.modalConfirmButton} 
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
                 onPress={confirmFinishWorkout}
               >
                 <Text style={styles.modalConfirmButtonText}>Finish</Text>
@@ -406,7 +406,7 @@ export default function WorkoutSessionScreen() {
         </View>
       )}
 
-      <ScrollView 
+      <ScrollView
         style={styles.contentContainer}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -444,104 +444,104 @@ export default function WorkoutSessionScreen() {
         {exercises
           .filter(exercise => isEditing || exercise.id === currentExerciseId)
           .map((exercise) => {
-          // Get sets for this exercise
-          const exerciseSets = session.sets.filter(
-            (set: WorkoutSet) => set.workout_template_exercise_id === exercise.id
-          );
+            // Get sets for this exercise
+            const exerciseSets = session.sets.filter(
+              (set: WorkoutSet) => set.workout_template_exercise_id === exercise.id
+            );
 
-          const completedSets = exerciseSets.filter((s: WorkoutSet) => s.completed).length;
-          const totalSets = exerciseSets.length;
+            const completedSets = exerciseSets.filter((s: WorkoutSet) => s.completed).length;
+            const totalSets = exerciseSets.length;
 
-          return (
-            <View key={exercise.id} style={styles.exerciseCard}>
-              <View style={styles.exerciseHeader}>
-                <Text style={styles.exerciseTitle}>{exercise.exercise_name}</Text>
-                <Text style={styles.exerciseProgress}>{completedSets}/{totalSets}</Text>
-              </View>
+            return (
+              <View key={exercise.id} style={styles.exerciseCard}>
+                <View style={styles.exerciseHeader}>
+                  <Text style={styles.exerciseTitle}>{exercise.exercise_name}</Text>
+                  <Text style={styles.exerciseProgress}>{completedSets}/{totalSets}</Text>
+                </View>
 
-              {/* Render each set with improved UI */}
-              {exerciseSets.map((set: WorkoutSet, index: number) => {
-                const isCurrentSet = !isEditing && set.id === currentSetId;
-                const isPendingSet = !set.completed && !isCurrentSet;
+                {/* Render each set with improved UI */}
+                {exerciseSets.map((set: WorkoutSet, index: number) => {
+                  const isCurrentSet = !isEditing && set.id === currentSetId;
+                  const isPendingSet = !set.completed && !isCurrentSet;
 
-                return (
-                  <View
-                    key={set.id}
-                    style={[
-                      styles.setCard,
-                      set.completed && styles.setCardCompleted,
-                      isCurrentSet && styles.setCardCurrent,
-                    ]}
-                  >
-                    <View style={styles.setHeader}>
-                      <View style={styles.setNumberContainer}>
-                        {set.completed ? (
-                          <Ionicons name="checkmark-circle" size={24} color={draculaTheme.green} />
-                        ) : isCurrentSet ? (
-                          <Ionicons name="play-circle" size={24} color={draculaTheme.cyan} />
-                        ) : (
-                          <Ionicons name="ellipse-outline" size={24} color={draculaTheme.comment} />
-                        )}
-                        <Text style={[styles.setNumber, isCurrentSet && styles.setNumberCurrent]}>
-                          Set {index + 1}
-                        </Text>
-                      </View>
-                      {isCurrentSet && <Text style={styles.currentLabel}>CURRENT</Text>}
-                    </View>
-
-                    <View style={styles.setContent}>
-                      {/* Target */}
-                      <View style={styles.targetSection}>
-                        <Text style={styles.sectionLabel}>Target</Text>
-                        <Text style={styles.targetText}>
-                          {set.targetWeight} kg × {set.targetReps} reps
-                        </Text>
+                  return (
+                    <View
+                      key={set.id}
+                      style={[
+                        styles.setCard,
+                        set.completed && styles.setCardCompleted,
+                        isCurrentSet && styles.setCardCurrent,
+                      ]}
+                    >
+                      <View style={styles.setHeader}>
+                        <View style={styles.setNumberContainer}>
+                          {set.completed ? (
+                            <Ionicons name="checkmark-circle" size={24} color={draculaTheme.green} />
+                          ) : isCurrentSet ? (
+                            <Ionicons name="play-circle" size={24} color={draculaTheme.cyan} />
+                          ) : (
+                            <Ionicons name="ellipse-outline" size={24} color={draculaTheme.comment} />
+                          )}
+                          <Text style={[styles.setNumber, isCurrentSet && styles.setNumberCurrent]}>
+                            Set {index + 1}
+                          </Text>
+                        </View>
+                        {isCurrentSet && <Text style={styles.currentLabel}>CURRENT</Text>}
                       </View>
 
-                      {/* Actual Input */}
-                      <View style={styles.actualSection}>
-                        <Text style={styles.sectionLabel}>Actual</Text>
-                        <View style={styles.inputRow}>
-                          <TextInput
-                            style={[styles.input, isPendingSet && styles.inputDisabled]}
-                            placeholder={`${set.targetWeight}`}
-                            placeholderTextColor={draculaTheme.comment}
-                            keyboardType="numeric"
-                            value={set.weight.toString()}
-                            onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
-                            editable={!isPendingSet}
-                          />
-                          <Text style={styles.inputUnit}>kg</Text>
-                          <Text style={styles.inputSeparator}>×</Text>
-                          <TextInput
-                            style={[styles.input, isPendingSet && styles.inputDisabled]}
-                            placeholder={`${set.targetReps}`}
-                            placeholderTextColor={draculaTheme.comment}
-                            keyboardType="numeric"
-                            value={set.reps.toString()}
-                            onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
-                            editable={!isPendingSet}
-                          />
-                          <Text style={styles.inputUnit}>reps</Text>
+                      <View style={styles.setContent}>
+                        {/* Target */}
+                        <View style={styles.targetSection}>
+                          <Text style={styles.sectionLabel}>Target</Text>
+                          <Text style={styles.targetText}>
+                            {set.targetWeight} kg × {set.targetReps} reps
+                          </Text>
+                        </View>
+
+                        {/* Actual Input */}
+                        <View style={styles.actualSection}>
+                          <Text style={styles.sectionLabel}>Actual</Text>
+                          <View style={styles.inputRow}>
+                            <TextInput
+                              style={[styles.input, isPendingSet && styles.inputDisabled]}
+                              placeholder={`${set.targetWeight}`}
+                              placeholderTextColor={draculaTheme.comment}
+                              keyboardType="numeric"
+                              value={set.weight.toString()}
+                              onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
+                              editable={!isPendingSet}
+                            />
+                            <Text style={styles.inputUnit}>kg</Text>
+                            <Text style={styles.inputSeparator}>×</Text>
+                            <TextInput
+                              style={[styles.input, isPendingSet && styles.inputDisabled]}
+                              placeholder={`${set.targetReps}`}
+                              placeholderTextColor={draculaTheme.comment}
+                              keyboardType="numeric"
+                              value={set.reps.toString()}
+                              onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
+                              editable={!isPendingSet}
+                            />
+                            <Text style={styles.inputUnit}>reps</Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
 
-                    {/* Complete Set Button */}
-                    {isCurrentSet && !set.completed && (
-                      <TouchableOpacity
-                        style={styles.completeButton}
-                        onPress={() => handleCompleteSet(set.id)}
-                      >
-                        <Text style={styles.completeButtonText}>Complete Set</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          );
-        })}
+                      {/* Complete Set Button */}
+                      {isCurrentSet && !set.completed && (
+                        <TouchableOpacity
+                          style={styles.completeButton}
+                          onPress={() => handleCompleteSet(set.id)}
+                        >
+                          <Text style={styles.completeButtonText}>Complete Set</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })}
       </ScrollView>
 
       {/* Finish/Update button */}

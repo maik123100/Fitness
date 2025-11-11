@@ -60,7 +60,7 @@ export interface MineralFields {
 }
 
 // Complete nutrition fields combining all nutrients
-export interface CompleteNutritionFields extends BaseNutritionFields, VitaminFields, MineralFields {}
+export interface CompleteNutritionFields extends BaseNutritionFields, VitaminFields, MineralFields { }
 
 export interface FoodItem extends CompleteNutritionFields {
   id: string;
@@ -174,20 +174,20 @@ export interface WorkoutEntry {
 }
 
 export interface UserProfile {
-	id: string;
-	birthdate: string;
-	gender: 'male' | 'female';
-	height: number;
-	weight: number;
-	activityLevel: ActivityLevel;
-	goalType: GoalType;
-	targetWeight?: number;
-	targetCalories: number;
-	targetProtein: number;
-	targetCarbs: number;
-	targetFat: number;
-	createdAt: number;
-	updatedAt: number;
+  id: string;
+  birthdate: string;
+  gender: 'male' | 'female';
+  height: number;
+  weight: number;
+  activityLevel: ActivityLevel;
+  goalType: GoalType;
+  targetWeight?: number;
+  targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface WeightEntry {

@@ -1,24 +1,24 @@
-import { eq, like, and, desc, asc, sql } from 'drizzle-orm';
+import { formatDateToYYYYMMDD, parseDateFromYYYYMMDD } from '@/app/utils/dateHelpers';
 import { db } from '@/services/db';
 import * as schema from '@/services/db/schema';
 import {
+  ActiveWorkoutSession,
   Activity,
   DailyNutrition,
-  FoodItem,
+  ExerciseTemplate,
   FoodEntry,
+  FoodItem,
+  MineralFields,
   Recipe,
   RecipeIngredient,
+  UserProfile,
+  VitaminFields,
+  WeightEntry,
+  WorkoutEntry,
   WorkoutTemplate,
   WorkoutTemplateExercise,
-  ExerciseTemplate,
-  WorkoutEntry,
-  ActiveWorkoutSession,
-  UserProfile,
-  WeightEntry,
-  VitaminFields,
-  MineralFields,
 } from '@/types/types';
-import { parseDateFromYYYYMMDD, formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { and, asc, desc, eq, like, sql } from 'drizzle-orm';
 
 // ============== Food Database Functions ==============
 
@@ -132,7 +132,7 @@ export const getAllFoodItems = (): FoodItem[] => {
 
 export const searchFoodItems = (query: string, category?: string, limit: number = 20): FoodItem[] => {
   const conditions = [like(schema.foodItems.name, `%${query}%`)];
-  
+
   if (category) {
     conditions.push(eq(schema.foodItems.category, category));
   }
@@ -287,7 +287,7 @@ export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplate
 export const startWorkoutSession = (templateId: string, date: string): ActiveWorkoutSession => {
   // Delete any existing session
   db.delete(schema.activeWorkoutSession).run();
-  
+
   const exercises = getWorkoutTemplateExercises(templateId);
   const sets: any[] = exercises.flatMap(exercise => {
     const exerciseTemplate = getExerciseTemplate(exercise.exercise_template_id);
@@ -419,7 +419,7 @@ export const deleteWorkoutEntry = (id: string): void => {
 
 export const saveUserProfile = (profile: UserProfile): void => {
   const now = Date.now();
-  
+
   db.insert(schema.userProfile).values({
     id: profile.id,
     birthdate: profile.birthdate,
@@ -470,7 +470,7 @@ export const getUserProfile = (): UserProfile | null => {
     .orderBy(desc(schema.userProfile.updatedAt))
     .limit(1)
     .get();
-  
+
   if (!row) return null;
 
   return {
@@ -635,14 +635,14 @@ export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): {
   }
 
   const result: { date: string, totalCalories: number, targetCalories: number }[] = [];
-  
+
   // Parse the dates properly in local timezone to avoid timezone issues
   let currentDate = parseDateFromYYYYMMDD(startDate);
   const end = parseDateFromYYYYMMDD(endDate);
 
   while (currentDate <= end) {
     const dateString = formatDateToYYYYMMDD(currentDate);
-    
+
     const burned = dailyBurned[dateString] || 0;
     result.push({
       date: dateString,
@@ -668,7 +668,7 @@ export const getExerciseProgression = (exerciseTemplateId: string, period: numbe
     .from(schema.workoutTemplateExercises)
     .where(eq(schema.workoutTemplateExercises.exerciseTemplateId, exerciseTemplateId))
     .all();
-  
+
   const workoutTemplateExerciseIds = workoutTemplateExercises.map(wte => wte.id);
 
   if (workoutTemplateExerciseIds.length === 0) {

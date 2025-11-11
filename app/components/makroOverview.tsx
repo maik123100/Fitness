@@ -1,8 +1,8 @@
 
-import { Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { ProgressChart } from 'react-native-chart-kit';
-import { draculaTheme, spacing, typography, borderRadius } from '@/styles/theme';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
+import { Dimensions, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ProgressChart } from 'react-native-chart-kit';
 
 export type Makro = {
   protein: number;

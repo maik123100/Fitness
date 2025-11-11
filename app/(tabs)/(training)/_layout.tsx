@@ -1,5 +1,5 @@
-import { Stack, usePathname } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
+import { Stack, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 
 export default function TrainingLayout() {

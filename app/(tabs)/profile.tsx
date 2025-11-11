@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import DatePickerModal from '@/app/components/DatePickerModal';
 import { getUserProfile, saveUserProfile } from '@/services/database';
 import { resetDatabase } from '@/services/db';
-import { UserProfile, ActivityLevel, GoalType, VitaminFields, MineralFields } from '@/types/types'
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { setOnboardingCompleted } from '@/services/onboardingService';
-import { useRouter } from 'expo-router';
-import DatePickerModal from '@/app/components/DatePickerModal';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { ActivityLevel, GoalType, MineralFields, UserProfile, VitaminFields } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);

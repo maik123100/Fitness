@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { getOnboardingCompleted } from '../services/onboardingService';
 
 export default function Index() {

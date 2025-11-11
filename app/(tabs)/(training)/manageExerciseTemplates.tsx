@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { getExerciseTemplates, addExerciseTemplate, deleteExerciseTemplate, updateExerciseTemplate } from '@/services/database';
-import { ExerciseTemplate, SetTarget } from '@/types/types';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from "expo-router";
 import SetTargetInputList from '@/app/components/SetTargetInputList';
+import { addExerciseTemplate, deleteExerciseTemplate, getExerciseTemplates, updateExerciseTemplate } from '@/services/database';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { ExerciseTemplate, SetTarget } from '@/types/types';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from "expo-router";
+import { memo, useCallback, useEffect, useState } from 'react';
+import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ManageExerciseTemplatesState {
   exerciseTemplates: ExerciseTemplate[];
@@ -48,27 +48,27 @@ const ListHeader = memo(({
   styles,
 }: ListHeaderProps) => {
   return (
-  <View>
-    <View style={styles.headerContainer}>
-      <Text style={styles.sectionTitle}>Add New Exercise Template</Text>
-      <TouchableOpacity style={styles.doneButton} onPress={() => router.back()}>
-        <Text style={styles.doneButtonText}>Done</Text>
+    <View>
+      <View style={styles.headerContainer}>
+        <Text style={styles.sectionTitle}>Add New Exercise Template</Text>
+        <TouchableOpacity style={styles.doneButton} onPress={() => router.back()}>
+          <Text style={styles.doneButtonText}>Done</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.label}>Exercise Name</Text>
+      <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
+      <Text style={styles.label}>Default Set Targets</Text>
+      <SetTargetInputList
+        setTargets={newTemplateForm.default_set_targets}
+        onChange={(targets: SetTarget[]) => handleFormChange('default_set_targets', targets)}
+      />
+      <TouchableOpacity style={styles.addButton} onPress={handleAddExerciseTemplate}>
+        <Text style={styles.addButtonText}>Add Exercise Template</Text>
       </TouchableOpacity>
-    </View>
-    <Text style={styles.label}>Exercise Name</Text>
-    <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
-    <Text style={styles.label}>Default Set Targets</Text>
-    <SetTargetInputList
-      setTargets={newTemplateForm.default_set_targets}
-      onChange={(targets: SetTarget[]) => handleFormChange('default_set_targets', targets)}
-    />
-    <TouchableOpacity style={styles.addButton} onPress={handleAddExerciseTemplate}>
-      <Text style={styles.addButtonText}>Add Exercise Template</Text>
-    </TouchableOpacity>
 
-    <Text style={styles.sectionTitle}>Existing Exercise Templates</Text>
-  </View>
-);
+      <Text style={styles.sectionTitle}>Existing Exercise Templates</Text>
+    </View>
+  );
 });
 
 ListHeader.displayName = 'ListHeader';

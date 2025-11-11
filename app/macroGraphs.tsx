@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { ProgressBar } from 'react-native-paper';
 import { getNutritionSummary, getUserProfile } from '@/services/database';
-import { NutritionSummary, VitaminFields, MineralFields } from '@/types/types'
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
-import { useRouter } from 'expo-router';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { MineralFields, NutritionSummary, VitaminFields } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ProgressBar } from 'react-native-paper';
 
 interface MacroDisplayProps {
   actual: number;

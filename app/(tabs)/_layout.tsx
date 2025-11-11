@@ -1,9 +1,9 @@
-import React, { JSX } from 'react';
-import { Tabs } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import Entypo from '@expo/vector-icons/Entypo';
-import { DateProvider } from '@/app/contexts/DateContext';
 import DaySelector from '@/app/components/DaySelector';
+import { DateProvider } from '@/app/contexts/DateContext';
+import Entypo from '@expo/vector-icons/Entypo';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Tabs } from 'expo-router';
+import React, { JSX } from 'react';
 import { View } from 'react-native';
 
 type TabLayoutProps = {
@@ -82,11 +82,11 @@ export default function TabLayout() {
             listeners={
               name.startsWith('(')
                 ? ({ navigation }) => ({
-                    tabPress: (e) => {
-                      e.preventDefault();
-                      navigation.jumpTo(name, { screen: 'index' });
-                    },
-                  })
+                  tabPress: (e) => {
+                    e.preventDefault();
+                    navigation.jumpTo(name, { screen: 'index' });
+                  },
+                })
                 : undefined
             }
           />

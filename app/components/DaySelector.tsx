@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useDate } from '@/app/contexts/DateContext';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DatePickerModal from './DatePickerModal';
 
 const DaySelector: React.FC = () => {
@@ -20,16 +20,16 @@ const DaySelector: React.FC = () => {
     // Don't mutate the original date - create a copy
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
-    
+
     const normalizedToday = new Date(today);
     normalizedToday.setHours(0, 0, 0, 0);
-    
+
     const normalizedYesterday = new Date(yesterday);
     normalizedYesterday.setHours(0, 0, 0, 0);
-    
+
     const normalizedTomorrow = new Date(tomorrow);
     normalizedTomorrow.setHours(0, 0, 0, 0);
-    
+
     if (normalizedDate.getTime() === normalizedToday.getTime()) {
       return 'Today';
     } else if (normalizedDate.getTime() === normalizedYesterday.getTime()) {

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
-import { getCalorieIntakeForPeriod } from '@/services/database';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { getCalorieIntakeForPeriod } from '@/services/database';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
 
 interface ChartData {
   labels: string[];
@@ -43,7 +43,7 @@ export default function CalorieAnalysisScreen() {
 
     if (data.length > 0) {
       const labels = data.map((d) => new Date(d.date).toLocaleDateString([], { month: 'short', day: 'numeric' }));
-      
+
       // Calculate if over or under for each day to determine colors
       const overUnderData = data.map(d => d.totalCalories - d.targetCalories);
       const statusData: DayStatus[] = data.map(d => ({
@@ -51,9 +51,9 @@ export default function CalorieAnalysisScreen() {
         isOver: d.totalCalories > d.targetCalories,
         difference: d.totalCalories - d.targetCalories,
       }));
-      
+
       setDayStatus(statusData);
-      
+
       const datasets: ChartData['datasets'] = [
         {
           data: data.map(d => d.totalCalories),
@@ -85,10 +85,10 @@ export default function CalorieAnalysisScreen() {
       const over = data.filter(d => d.totalCalories > d.targetCalories).length;
       const under = data.length - over;
       const avgTarget = data.reduce((sum, d) => sum + d.targetCalories, 0) / data.length;
-      
+
       // Calculate base target from user profile (should be consistent)
       const minTarget = Math.min(...data.map(d => d.targetCalories));
-      
+
       setSummary({ over, under, baseTarget: minTarget, avgTarget });
     }
   };

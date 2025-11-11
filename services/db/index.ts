@@ -1,8 +1,8 @@
-import { drizzle } from 'drizzle-orm/expo-sqlite';
-import { openDatabaseSync, deleteDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
-import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from '@/drizzle/migrations';
 import * as schema from '@/services/db/schema';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+import { deleteDatabaseSync, openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'fitness.db';
 
@@ -22,7 +22,7 @@ const hasOldSchema = (dbInstance: SQLiteDatabase): boolean => {
 // Initialize database - check for old schema and reset if needed BEFORE any drizzle operations
 const expoDb = (() => {
   let database = openDatabaseSync(DATABASE_NAME);
-  
+
   // If old schema detected, delete and recreate
   if (hasOldSchema(database)) {
     console.log('🔄 Old database schema detected. Resetting database...');
@@ -38,7 +38,7 @@ const expoDb = (() => {
       throw error;
     }
   }
-  
+
   return database;
 })();
 
@@ -51,13 +51,13 @@ export const rawDb = expoDb;
 // Hook to initialize migrations
 export function useDatabase() {
   const { success, error } = useMigrations(db, migrations);
-  
+
   if (error) {
     console.error('❌ Migration error:', error);
   } else if (success) {
     console.log('✅ Database migrations completed successfully');
   }
-  
+
   return { success, error };
 }
 

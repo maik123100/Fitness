@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, Button } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useRouter } from 'expo-router';
-import { FoodItem, FoodCategory } from '@/types/types';
 import { addFoodItem, getAllFoodItems } from '@/services/database';
-import { draculaTheme, spacing, borderRadius, typography, shadows } from '@/styles/theme';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { borderRadius, draculaTheme, shadows, spacing, typography } from '@/styles/theme';
+import { FoodCategory, FoodItem } from '@/types/types';
+import { Picker } from '@react-native-picker/picker';
+import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, Button, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { useSnackbar } from '@/app/components/SnackbarProvider';
 
@@ -160,7 +160,7 @@ const AddFood: React.FC = () => {
 
   const renderInputField = (field: { label: string; key: string; isNumber: boolean }) => {
     const value = (food as any)[field.key];
-    
+
     return (
       <View key={field.key}>
         <Text style={styles.label}>{field.label}</Text>
@@ -183,13 +183,13 @@ const AddFood: React.FC = () => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.subtitle}>Add New Food</Text>
-        
+
         {/* General Fields */}
         {generalFields.slice(0, 2).map(renderInputField)}
-        
+
         {/* Barcode field (without scanner for now, shown below) */}
         {renderInputField({ label: 'Barcode', key: 'barcode', isNumber: false })}
-        
+
         {/* Barcode Scanner Button */}
         <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanner(true)}>
           <Text style={styles.scanButtonText}>Scan Barcode</Text>

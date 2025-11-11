@@ -1,23 +1,23 @@
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 import { db } from '@/services/db';
 import { foodEntries } from '@/services/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 // Configure notification handler to check if food has been tracked
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     // Get meal type from notification data
     const mealType = notification.request.content.data?.mealType as string;
-    
+
     if (mealType) {
       // Get current date
       const now = new Date();
       const currentDate = now.toISOString().split('T')[0];
-      
+
       // Check if user has already tracked food for this meal
       const hasTracked = await hasFoodTrackedForMeal(currentDate, mealType);
-      
+
       // Only show notification if food hasn't been tracked yet
       if (hasTracked) {
         console.log(`Skipping ${mealType} notification - food already tracked`);
@@ -30,7 +30,7 @@ Notifications.setNotificationHandler({
         };
       }
     }
-    
+
     return {
       shouldShowAlert: true,
       shouldPlaySound: true,
@@ -109,16 +109,16 @@ export async function scheduleMealReminders() {
       const currentTime = currentHour * 60 + currentMinute;
       const mealTime = meal.hour * 60 + meal.minute;
       const hasPassed = currentTime >= mealTime;
-      
+
       // Calculate the next trigger time
       const nextTrigger = new Date();
       nextTrigger.setHours(meal.hour, meal.minute, 0, 0);
-      
+
       if (hasPassed) {
         // If time has passed, set for tomorrow
         nextTrigger.setDate(nextTrigger.getDate() + 1);
       }
-      
+
       // Use DateTrigger for the first notification, then it will repeat daily
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -132,11 +132,11 @@ export async function scheduleMealReminders() {
           date: nextTrigger,
         },
       });
-      
+
       // Schedule a repeating daily notification starting from the day after the first trigger
       const dailyStart = new Date(nextTrigger);
       dailyStart.setDate(dailyStart.getDate() + 1);
-      
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title: meal.title,
@@ -150,7 +150,7 @@ export async function scheduleMealReminders() {
           minute: meal.minute,
         },
       });
-      
+
       const timeLabel = hasPassed ? 'starting tomorrow' : 'today';
       console.log(`Scheduled notification for ${meal.mealType} at ${meal.hour}:${meal.minute.toString().padStart(2, '0')} (${timeLabel})`);
     } catch (error) {

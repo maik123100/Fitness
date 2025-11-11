@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch } from 'react-native';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import { SetTarget } from '@/types/types';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import React, { useState } from 'react';
+import { StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface SetTargetInputListProps {
   setTargets: SetTarget[];

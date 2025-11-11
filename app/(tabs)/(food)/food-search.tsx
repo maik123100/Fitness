@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, FlatList, Alert, Modal } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { draculaTheme, spacing, borderRadius, typography } from '@/styles/theme';
 import { useSnackbar } from '@/app/components/SnackbarProvider';
 import {
-  getAllFoodItems,
   deleteFoodItem,
+  getAllFoodItems,
 } from '@/services/database';
+import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import { FoodItem, MealType } from '@/types/types';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function FoodSearchScreen() {
   const router = useRouter();
