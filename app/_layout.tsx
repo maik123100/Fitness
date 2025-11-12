@@ -1,4 +1,5 @@
 import { rawDb, useDatabase } from "@/services/db";
+import { seedMockData, shouldSeedMockData } from '@/services/mockData';
 import { initializeNotifications } from '@/services/notificationService';
 import { getOnboardingCompleted } from '@/services/onboardingService';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
@@ -21,6 +22,15 @@ export default function RootLayout() {
     const loadOnboarding = async () => {
       await getOnboardingCompleted();
       setOnboardingLoaded(true);
+
+      // Seed mock data if enabled
+      if (shouldSeedMockData()) {
+        try {
+          seedMockData();
+        } catch (error) {
+          console.error('Failed to seed mock data:', error);
+        }
+      }
 
       // Initialize notifications after onboarding is loaded
       await initializeNotifications();

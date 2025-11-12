@@ -5,7 +5,7 @@ import { ExerciseTemplate, SetTarget } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -103,7 +103,7 @@ export default function CreateWorkoutTemplateScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-        <DraggableFlatList
+        <FlatList
           data={filteredExercises}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
