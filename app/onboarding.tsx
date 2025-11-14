@@ -1,12 +1,13 @@
 import DatePickerModal from '@/app/components/DatePickerModal';
 import { saveUserProfile } from '@/services/database';
 import { setOnboardingCompleted } from '@/services/onboardingService';
-import { ActivityLevel, GoalType, UserProfile } from '@/types/types';
+import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, draculaTheme, spacing, typography } from '../styles/theme';
+import { formatDateToYYYYMMDD } from './utils/dateHelpers';
 
 const activityLevels: Record<ActivityLevel, string> = {
   'sedentary': 'Sedentary',
@@ -78,7 +79,7 @@ export default function OnboardingScreen() {
       'extremely-active': 1.9,
     };
 
-    const tdee = bmr * activityMultipliers[profile.activityLevel!];
+    const tdee = bmr * activityMultipliers[profile.activityLevel! as ActivityLevel];
 
     let targetCalories = tdee;
     if (profile.goalType === 'lose-weight') {
@@ -95,11 +96,42 @@ export default function OnboardingScreen() {
       weight: weightKg,
       activityLevel: profile.activityLevel!,
       goalType: profile.goalType!,
-      targetWeight: profile.targetWeight,
+      targetWeight: profile.targetWeight || null,
       targetCalories,
       targetCarbs: (targetCalories * 0.4) / 4,
       targetProtein: (targetCalories * 0.3) / 4,
       targetFat: (targetCalories * 0.3) / 9,
+      // Target micronutrients (not set during onboarding, default to null)
+      targetVitaminA: null,
+      targetVitaminC: null,
+      targetVitaminD: null,
+      targetVitaminB6: null,
+      targetVitaminE: null,
+      targetVitaminK: null,
+      targetThiamin: null,
+      targetVitaminB12: null,
+      targetRiboflavin: null,
+      targetFolate: null,
+      targetNiacin: null,
+      targetCholine: null,
+      targetPantothenicAcid: null,
+      targetBiotin: null,
+      targetCarotenoids: null,
+      targetCalcium: null,
+      targetChloride: null,
+      targetChromium: null,
+      targetCopper: null,
+      targetFluoride: null,
+      targetIodine: null,
+      targetIron: null,
+      targetMagnesium: null,
+      targetManganese: null,
+      targetMolybdenum: null,
+      targetPhosphorus: null,
+      targetPotassium: null,
+      targetSelenium: null,
+      targetSodium: null,
+      targetZinc: null,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -131,7 +163,7 @@ export default function OnboardingScreen() {
             <DatePickerModal
               isVisible={isDatePickerVisible}
               onClose={() => setDatePickerVisibility(false)}
-              onSelectDate={(date) => handleUpdateProfile('birthdate', date.toISOString().split('T')[0])}
+              onSelectDate={(date) => { handleUpdateProfile('birthdate', formatDateToYYYYMMDD(date)) }}
               currentDate={profile.birthdate ? new Date(profile.birthdate) : new Date()}
             />
             <View style={styles.segmentedControl}>
@@ -145,8 +177,14 @@ export default function OnboardingScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={profile.height?.toString()} onChangeText={(text) => handleUpdateProfile('height', parseFloat(text))} />
-            <TextInput style={styles.input} placeholder="Weight (kg)" keyboardType="numeric" value={profile.weight?.toString()} onChangeText={(text) => handleUpdateProfile('weight', parseFloat(text))} />
+            <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={profile.height?.toString()} onChangeText={(text) => {
+              handleUpdateProfile('height', text ? parseFloat(text) : undefined)
+            }
+            } />
+            <TextInput style={styles.input} placeholder="Weight (kg)" keyboardType="numeric" value={profile.weight?.toString()} onChangeText={(text) => {
+              handleUpdateProfile('weight', text ? parseFloat(text) : undefined)
+            }
+            } />
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button} onPress={handlePrev}>
                 <Text style={styles.buttonText}>Back</Text>

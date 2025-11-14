@@ -1,6 +1,6 @@
 import { finishWorkoutSession, getActiveWorkoutSession, getExerciseTemplate, getWorkoutEntry, getWorkoutTemplateExercises, updateActiveWorkoutSession, updateWorkoutEntry } from '@/services/database';
 import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
-import { ActiveWorkoutSession, WorkoutEntry, WorkoutSet, WorkoutTemplateExercise } from '@/types/types';
+import { ActiveWorkoutSession, WorkoutEntry, WorkoutTemplateExercise, WorkoutSet } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -42,13 +42,13 @@ export default function WorkoutSessionScreen() {
     }
 
     const activeSession = session as ActiveWorkoutSession;
-    if (!activeSession.start_time) {
+    if (!activeSession.startTime) {
       return;
     }
 
     // Update elapsed time every second
     const updateTimer = () => {
-      const secondsElapsed = Math.floor((Date.now() - activeSession.start_time) / 1000);
+      const secondsElapsed = Math.floor((Date.now() - activeSession.startTime) / 1000);
       setElapsedTime(secondsElapsed);
     };
 
@@ -89,7 +89,7 @@ export default function WorkoutSessionScreen() {
   const loadExercisesForWorkout = (workoutTemplateId: string) => {
     const templateExercises = getWorkoutTemplateExercises(workoutTemplateId);
     return templateExercises.map(te => {
-      const exerciseTemplate = getExerciseTemplate(te.exercise_template_id);
+      const exerciseTemplate = getExerciseTemplate(te.exerciseTemplateId);
       return {
         ...te,
         exercise_name: exerciseTemplate?.name || 'Unknown Exercise',
@@ -101,7 +101,7 @@ export default function WorkoutSessionScreen() {
   const loadActiveSession = () => {
     const activeSession = getActiveWorkoutSession();
     if (activeSession) {
-      const exercisesWithDetails = loadExercisesForWorkout(activeSession.workout_template_id);
+      const exercisesWithDetails = loadExercisesForWorkout(activeSession.workoutTemplateId);
       setSession(activeSession);
       setExercises(exercisesWithDetails);
       setIsEditing(false);
@@ -114,7 +114,7 @@ export default function WorkoutSessionScreen() {
       // Set current exercise based on first uncompleted set or first exercise
       if (firstUncompletedSet) {
         const exerciseForSet = exercisesWithDetails.find(
-          ex => activeSession.sets.some((s: WorkoutSet) => s.id === firstUncompletedSet.id && s.workout_template_exercise_id === ex.id)
+          ex => activeSession.sets.some((s: WorkoutSet) => s.id === firstUncompletedSet.id && s.workoutTemplateExerciseId === ex.id)
         );
         setCurrentExerciseId(exerciseForSet?.id || exercisesWithDetails[0]?.id || null);
       } else {
@@ -127,7 +127,7 @@ export default function WorkoutSessionScreen() {
   const loadWorkoutEntry = (id: string) => {
     const workoutEntry = getWorkoutEntry(id);
     if (workoutEntry) {
-      const exercisesWithDetails = loadExercisesForWorkout(workoutEntry.workout_template_id);
+      const exercisesWithDetails = loadExercisesForWorkout(workoutEntry.workoutTemplateId);
       setSession(workoutEntry);
       setExercises(exercisesWithDetails);
       setIsEditing(true);
@@ -196,7 +196,7 @@ export default function WorkoutSessionScreen() {
 
     for (const exercise of exercises) {
       const exerciseSets = session.sets.filter(
-        (set: WorkoutSet) => set.workout_template_exercise_id === exercise.id
+        (set: WorkoutSet) => set.workoutTemplateExerciseId === exercise.id
       );
       const hasIncompleteSets = exerciseSets.some((s: WorkoutSet) => !s.completed);
       if (hasIncompleteSets) {
@@ -213,7 +213,7 @@ export default function WorkoutSessionScreen() {
     // Find first incomplete set for this exercise
     if (session) {
       const exerciseSets = session.sets.filter(
-        (set: WorkoutSet) => set.workout_template_exercise_id === exerciseId && !set.completed
+        (set: WorkoutSet) => set.workoutTemplateExerciseId === exerciseId && !set.completed
       );
       if (exerciseSets.length > 0) {
         setCurrentSetId(exerciseSets[0].id);
@@ -367,7 +367,7 @@ export default function WorkoutSessionScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exerciseChips}>
             {exercises.map((exercise) => {
               const exerciseSets = session?.sets.filter(
-                (set: WorkoutSet) => set.workout_template_exercise_id === exercise.id
+                (set: WorkoutSet) => set.workoutTemplateExerciseId === exercise.id
               ) || [];
               const completedCount = exerciseSets.filter((s: WorkoutSet) => s.completed).length;
               const totalCount = exerciseSets.length;
@@ -446,7 +446,7 @@ export default function WorkoutSessionScreen() {
           .map((exercise) => {
             // Get sets for this exercise
             const exerciseSets = session.sets.filter(
-              (set: WorkoutSet) => set.workout_template_exercise_id === exercise.id
+              (set: WorkoutSet) => set.workoutTemplateExerciseId === exercise.id
             );
 
             const completedSets = exerciseSets.filter((s: WorkoutSet) => s.completed).length;

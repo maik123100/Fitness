@@ -2,22 +2,24 @@ import { formatDateToYYYYMMDD, parseDateFromYYYYMMDD } from '@/app/utils/dateHel
 import { db } from '@/services/db';
 import * as schema from '@/services/db/schema';
 import {
-  ActiveWorkoutSession,
   Activity,
   DailyNutrition,
-  ExerciseTemplate,
   FoodEntry,
   FoodItem,
-  MineralFields,
   Recipe,
   RecipeIngredient,
   UserProfile,
-  VitaminFields,
   WeightEntry,
+} from '@/services/db/schema';
+import {
+  ActiveWorkoutSession,
+  ExerciseTemplate,
+  MineralFields,
+  VitaminFields,
   WorkoutEntry,
-  WorkoutTemplate,
   WorkoutTemplateExercise,
 } from '@/types/types';
+import { WorkoutTemplate } from '@/services/db/schema';
 import { and, asc, desc, eq, like, sql } from 'drizzle-orm';
 
 // ============== Food Database Functions ==============
@@ -220,7 +222,7 @@ export const addExerciseTemplate = (template: ExerciseTemplate): void => {
   db.insert(schema.exerciseTemplates).values({
     id: template.id,
     name: template.name,
-    defaultSetTargets: JSON.stringify(template.default_set_targets),
+    defaultSetTargets: JSON.stringify(template.defaultSetTargets),
   }).run();
 };
 
@@ -228,7 +230,7 @@ export const getExerciseTemplates = (): ExerciseTemplate[] => {
   return db.select().from(schema.exerciseTemplates).all().map(row => ({
     id: row.id,
     name: row.name,
-    default_set_targets: JSON.parse(row.defaultSetTargets),
+    defaultSetTargets: JSON.parse(row.defaultSetTargets),
   }));
 };
 
@@ -238,7 +240,7 @@ export const getExerciseTemplate = (id: string): ExerciseTemplate | null => {
   return {
     id: row.id,
     name: row.name,
-    default_set_targets: JSON.parse(row.defaultSetTargets),
+    defaultSetTargets: JSON.parse(row.defaultSetTargets),
   };
 };
 
@@ -250,7 +252,7 @@ export const updateExerciseTemplate = (template: ExerciseTemplate): void => {
   db.update(schema.exerciseTemplates)
     .set({
       name: template.name,
-      defaultSetTargets: JSON.stringify(template.default_set_targets),
+      defaultSetTargets: JSON.stringify(template.defaultSetTargets),
     })
     .where(eq(schema.exerciseTemplates.id, template.id))
     .run();
@@ -259,9 +261,9 @@ export const updateExerciseTemplate = (template: ExerciseTemplate): void => {
 export const addWorkoutTemplateExercise = (exercise: WorkoutTemplateExercise): void => {
   db.insert(schema.workoutTemplateExercises).values({
     id: exercise.id,
-    workoutTemplateId: exercise.workout_template_id,
-    exerciseTemplateId: exercise.exercise_template_id,
-    setTargets: JSON.stringify(exercise.set_targets),
+    workoutTemplateId: exercise.workoutTemplateId,
+    exerciseTemplateId: exercise.exerciseTemplateId,
+    setTargets: JSON.stringify(exercise.setTargets),
     order: exercise.order,
   }).run();
 };
@@ -275,9 +277,9 @@ export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplate
     .all()
     .map(row => ({
       id: row.id,
-      workout_template_id: row.workoutTemplateId,
-      exercise_template_id: row.exerciseTemplateId,
-      set_targets: JSON.parse(row.setTargets),
+      workoutTemplateId: row.workoutTemplateId,
+      exerciseTemplateId: row.exerciseTemplateId,
+      setTargets: JSON.parse(row.setTargets),
       order: row.order,
     }));
 };
@@ -290,11 +292,11 @@ export const startWorkoutSession = (templateId: string, date: string): ActiveWor
 
   const exercises = getWorkoutTemplateExercises(templateId);
   const sets: any[] = exercises.flatMap(exercise => {
-    const exerciseTemplate = getExerciseTemplate(exercise.exercise_template_id);
+    const exerciseTemplate = getExerciseTemplate(exercise.exerciseTemplateId);
     if (!exerciseTemplate) return [];
-    return exercise.set_targets.map((target: any, index: number) => ({
+    return exercise.setTargets.map((target: any, index: number) => ({
       id: `${exercise.id}-${index}`,
-      workout_template_exercise_id: exercise.id,
+      workoutTemplateExerciseId: exercise.id,
       weight: 0,
       reps: 0,
       targetReps: target.reps,
@@ -305,16 +307,16 @@ export const startWorkoutSession = (templateId: string, date: string): ActiveWor
 
   const newSession: ActiveWorkoutSession = {
     id: Date.now().toString(),
-    workout_template_id: templateId,
-    start_time: Date.now(),
+    workoutTemplateId: templateId,
+    startTime: Date.now(),
     date: date,
     sets,
   };
 
   db.insert(schema.activeWorkoutSession).values({
     id: newSession.id,
-    workoutTemplateId: newSession.workout_template_id,
-    startTime: newSession.start_time,
+    workoutTemplateId: newSession.workoutTemplateId,
+    startTime: newSession.startTime,
     date: newSession.date,
     sets: JSON.stringify(newSession.sets),
   }).run();
@@ -328,8 +330,8 @@ export const getActiveWorkoutSession = (): ActiveWorkoutSession | null => {
 
   return {
     id: row.id,
-    workout_template_id: row.workoutTemplateId,
-    start_time: row.startTime,
+    workoutTemplateId: row.workoutTemplateId,
+    startTime: row.startTime,
     date: row.date,
     sets: JSON.parse(row.sets),
   };
@@ -345,9 +347,9 @@ export const updateActiveWorkoutSession = (session: ActiveWorkoutSession): void 
 export const finishWorkoutSession = (session: ActiveWorkoutSession, caloriesBurned: number = 0): void => {
   const newEntry: WorkoutEntry = {
     id: Date.now().toString(),
-    workout_template_id: session.workout_template_id,
+    workoutTemplateId: session.workoutTemplateId,
     date: session.date,
-    duration: Math.round((Date.now() - session.start_time) / 60000),
+    duration: Math.round((Date.now() - session.startTime) / 60000),
     caloriesBurned: caloriesBurned,
     sets: session.sets.filter((s: any) => s.completed),
     createdAt: Date.now(),
@@ -355,7 +357,7 @@ export const finishWorkoutSession = (session: ActiveWorkoutSession, caloriesBurn
 
   db.insert(schema.workoutEntries).values({
     id: newEntry.id,
-    workoutTemplateId: newEntry.workout_template_id,
+    workoutTemplateId: newEntry.workoutTemplateId,
     date: newEntry.date,
     duration: newEntry.duration,
     caloriesBurned: newEntry.caloriesBurned,
@@ -377,7 +379,7 @@ export const getWorkoutEntries = (date: string): WorkoutEntry[] => {
     .all()
     .map(row => ({
       id: row.id,
-      workout_template_id: row.workoutTemplateId,
+      workoutTemplateId: row.workoutTemplateId,
       date: row.date,
       duration: row.duration,
       caloriesBurned: row.caloriesBurned || 0,
@@ -391,7 +393,7 @@ export const getWorkoutEntry = (id: string): WorkoutEntry | null => {
   if (!row) return null;
   return {
     id: row.id,
-    workout_template_id: row.workoutTemplateId,
+    workoutTemplateId: row.workoutTemplateId,
     date: row.date,
     duration: row.duration,
     caloriesBurned: row.caloriesBurned || 0,
@@ -473,22 +475,7 @@ export const getUserProfile = (): UserProfile | null => {
 
   if (!row) return null;
 
-  return {
-    id: row.id,
-    birthdate: row.birthdate,
-    gender: row.gender as any,
-    height: row.height,
-    weight: row.weight,
-    activityLevel: row.activityLevel as any,
-    goalType: row.goalType as any,
-    targetWeight: row.targetWeight ?? undefined,
-    targetCalories: row.targetCalories,
-    targetProtein: row.targetProtein,
-    targetCarbs: row.targetCarbs,
-    targetFat: row.targetFat,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
+  return row as UserProfile;
 };
 
 // ============== Weight Tracking Functions ==============
@@ -688,7 +675,7 @@ export const getExerciseProgression = (exerciseTemplateId: string, period: numbe
 
   for (const entry of workoutEntries) {
     const sets = JSON.parse(entry.sets) as any[];
-    const relevantSets = sets.filter(set => workoutTemplateExerciseIds.includes(set.workout_template_exercise_id));
+    const relevantSets = sets.filter(set => workoutTemplateExerciseIds.includes(set.workoutTemplateExerciseId));
 
     if (relevantSets.length > 0) {
       if (!progression[entry.date]) {

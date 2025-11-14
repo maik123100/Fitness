@@ -13,10 +13,8 @@ import {
   getUserProfile,
   getWorkoutEntries
 } from '@/services/database';
-import {
-  FoodEntry,
-  WorkoutEntry
-} from '@/types/types';
+import { FoodEntry } from '@/services/db/schema';
+import { WorkoutEntry } from '@/types/types';
 import { draculaTheme, spacing, typography } from '../../styles/theme';
 
 interface DashboardState {

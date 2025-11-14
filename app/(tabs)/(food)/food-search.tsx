@@ -4,7 +4,7 @@ import {
   getAllFoodItems,
 } from '@/services/database';
 import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
-import { FoodItem, MealType } from '@/types/types';
+import { FoodItem, MealType } from '@/services/db/schema';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';

@@ -2,7 +2,8 @@ import { useDate } from '@/app/contexts/DateContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import { deleteWorkoutEntry, getActiveWorkoutSession, getWorkoutEntries, getWorkoutTemplate, getWorkoutTemplates, startWorkoutSession } from '@/services/database';
 import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
-import { ActiveWorkoutSession, WorkoutEntry, WorkoutTemplate } from '@/types/types';
+import { ActiveWorkoutSession, WorkoutEntry } from '@/types/types';
+import { WorkoutTemplate } from '@/services/db/schema';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -41,7 +42,7 @@ export default function WorkoutScreen() {
   };
 
   const handleTemplatePress = (templateId: string) => {
-    if (activeSession && activeSession.workout_template_id !== templateId) {
+    if (activeSession && activeSession.workoutTemplateId !== templateId) {
       // Ask user to discard active session
       router.navigate('/(tabs)/(training)/workoutSession')
     } else {
@@ -109,7 +110,7 @@ export default function WorkoutScreen() {
         renderItem={({ item }) => (
           <Swipeable ref={swipeableRef} renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}>
             <View style={styles.completedWorkoutCard}>
-              <Text style={styles.completedWorkoutTitle}>{getWorkoutTemplate(item.workout_template_id)?.name}</Text>
+              <Text style={styles.completedWorkoutTitle}>{getWorkoutTemplate(item.workoutTemplateId)?.name}</Text>
               <Text style={styles.completedWorkoutDetails}>Duration: {item.duration} mins</Text>
               <Text style={styles.completedWorkoutDetails}>Sets: {item.sets.length}</Text>
             </View>

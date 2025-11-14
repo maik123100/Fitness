@@ -65,10 +65,10 @@ export const foodItems = sqliteTable('food_items', {
   isVerified: integer('is_verified', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
-}, (table) => ({
-  nameIdx: index('idx_food_items_name').on(table.name),
-  categoryIdx: index('idx_food_items_category').on(table.category),
-}));
+}, (table) => [
+  index('idx_food_items_name').on(table.name),
+  index('idx_food_items_category').on(table.category),
+]);
 
 // Food entries table
 export const foodEntries = sqliteTable('food_entries', {
@@ -84,10 +84,10 @@ export const foodEntries = sqliteTable('food_entries', {
   totalFat: real('total_fat').notNull(),
   totalFiber: real('total_fiber').notNull(),
   createdAt: integer('created_at').notNull(),
-}, (table) => ({
-  dateIdx: index('idx_food_entries_date').on(table.date),
-  mealTypeIdx: index('idx_food_entries_meal_type').on(table.mealType),
-}));
+}, (table) => [
+  index('idx_food_entries_date').on(table.date),
+  index('idx_food_entries_meal_type').on(table.mealType),
+]);
 
 // Recipes table
 export const recipes = sqliteTable('recipes', {
@@ -146,9 +146,9 @@ export const workoutEntries = sqliteTable('workout_entries', {
   caloriesBurned: real('calories_burned').notNull().default(0),
   sets: text('sets').notNull(), // JSON string of WorkoutSet[]
   createdAt: integer('created_at').notNull(),
-}, (table) => ({
-  dateIdx: index('idx_workout_entries_date').on(table.date),
-}));
+}, (table) => [
+  index('idx_workout_entries_date').on(table.date),
+]);
 
 // Active workout session table
 export const activeWorkoutSession = sqliteTable('active_workout_session', {
@@ -213,9 +213,44 @@ export const weightEntries = sqliteTable('weight_entries', {
   weight: real('weight').notNull(),
   date: text('date').notNull(),
   createdAt: integer('created_at').notNull(),
-}, (table) => ({
-  dateIdx: index('idx_weight_entries_date').on(table.date),
-}));
+}, (table) => [
+  index('idx_weight_entries_date').on(table.date),
+]);
+
+export const targetMicros = sqliteTable('target_micro_nutrients', {
+  id: text('id').primaryKey(),
+  vitaminA: real('vitamin_a').default(0),
+  vitaminC: real('vitamin_c').default(0),
+  vitaminD: real('vitamin_d').default(0),
+  vitaminB6: real('vitamin_b6').default(0),
+  vitaminE: real('vitamin_e').default(0),
+  vitaminK: real('vitamin_k').default(0),
+  thiamin: real('thiamin').default(0),
+  vitaminB12: real('vitamin_b12').default(0),
+  riboflavin: real('riboflavin').default(0),
+  folate: real('folate').default(0),
+  niacin: real('niacin').default(0),
+  choline: real('choline').default(0),
+  pantothenicAcid: real('pantothenic_acid').default(0),
+  biotin: real('biotin').default(0),
+  carotenoids: real('carotenoids').default(0),
+  calcium: real('calcium').default(0),
+  chloride: real('chloride').default(0),
+  chromium: real('chromium').default(0),
+  copper: real('copper').default(0),
+  fluoride: real('fluoride').default(0),
+  iodine: real('iodine').default(0),
+  iron: real('iron').default(0),
+  magnesium: real('magnesium').default(0),
+  manganese: real('manganese').default(0),
+  molybdenum: real('molybdenum').default(0),
+  phosphorus: real('phosphorus').default(0),
+  potassium: real('potassium').default(0),
+  selenium: real('selenium').default(0),
+  sodium: real('sodium').default(0),
+  zinc: real('zinc').default(0),
+  createdAt: integer('created_at').notNull(),
+})
 
 // Export types for use in the application
 export type Activity = typeof activities.$inferSelect;
@@ -256,3 +291,57 @@ export type NewUserProfile = typeof userProfile.$inferInsert;
 
 export type WeightEntry = typeof weightEntries.$inferSelect;
 export type NewWeightEntry = typeof weightEntries.$inferInsert;
+
+export type TargetMicros = typeof targetMicros.$inferSelect;
+export type NewTargetMicros = typeof targetMicros.$inferInsert;
+
+// ============== Enum & Union Types ==============
+// These types define the allowed values for various fields
+
+export type FoodCategory =
+  | 'vegetables'
+  | 'fruits'
+  | 'grains'
+  | 'proteins'
+  | 'dairy'
+  | 'fats'
+  | 'beverages'
+  | 'snacks'
+  | 'prepared'
+  | 'supplements'
+  | 'condiments'
+  | 'other';
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export type ExerciseCategory =
+  | 'cardio'
+  | 'strength'
+  | 'flexibility'
+  | 'sports'
+  | 'daily';
+
+export type MuscleGroup =
+  | 'chest'
+  | 'back'
+  | 'shoulders'
+  | 'biceps'
+  | 'triceps'
+  | 'legs'
+  | 'glutes'
+  | 'core'
+  | 'full-body';
+
+export type ActivityLevel =
+  | 'sedentary'
+  | 'lightly-active'
+  | 'moderately-active'
+  | 'very-active'
+  | 'extremely-active';
+
+export type GoalType =
+  | 'lose-weight'
+  | 'maintain-weight'
+  | 'gain-weight'
+  | 'build-muscle'
+  | 'improve-fitness';

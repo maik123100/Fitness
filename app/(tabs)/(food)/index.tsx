@@ -12,7 +12,7 @@ import {
   FoodEntry,
   FoodItem,
   MealType,
-} from '@/types/types';
+} from '@/services/db/schema';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -85,7 +85,7 @@ export default function FoodDiaryScreen() {
     const entries = getFoodEntriesForDate(formatDateToYYYYMMDD(selectedDate));
     const groupedEntries: Record<MealType, FoodEntry[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
     entries.forEach(entry => {
-      groupedEntries[entry.mealType].push(entry);
+      groupedEntries[entry.mealType as MealType].push(entry);
     });
     setState(prev => ({ ...prev, foodEntries: groupedEntries }));
   };

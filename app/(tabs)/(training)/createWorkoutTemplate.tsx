@@ -10,7 +10,7 @@ import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flat
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface OrderedExercise extends ExerciseTemplate {
-  set_targets: SetTarget[];
+  setTargets: SetTarget[];
 }
 
 export default function CreateWorkoutTemplateScreen() {
@@ -44,7 +44,7 @@ export default function CreateWorkoutTemplateScreen() {
       .filter(ex => selectedExerciseIds.has(ex.id))
       .map(ex => ({
         ...ex,
-        set_targets: ex.default_set_targets.map(target => ({ ...target })) // Deep copy default targets
+        setTargets: ex.defaultSetTargets.map(target => ({ ...target })) // Deep copy default targets
       }));
     setOrderedExercises(selected);
     setStep(2);
@@ -65,9 +65,9 @@ export default function CreateWorkoutTemplateScreen() {
     orderedExercises.forEach((exercise, index) => {
       addWorkoutTemplateExercise({
         id: Date.now().toString() + index,
-        workout_template_id: newTemplate.id,
-        exercise_template_id: exercise.id,
-        set_targets: exercise.set_targets,
+        workoutTemplateId: newTemplate.id,
+        exerciseTemplateId: exercise.id,
+        setTargets: exercise.setTargets,
         order: index,
       });
     });

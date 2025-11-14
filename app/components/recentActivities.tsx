@@ -1,7 +1,8 @@
 
 import { getFoodItem, getWorkoutTemplate } from '@/services/database';
 import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
-import { FoodEntry, WorkoutEntry } from '@/types/types';
+import { FoodEntry } from '@/services/db/schema';
+import { WorkoutEntry } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -25,7 +26,7 @@ export default function RecentActivities({ recentActivities }: { recentActivitie
         </View>
       );
     } else {
-      const workoutTemplate = getWorkoutTemplate(item.workout_template_id);
+      const workoutTemplate = getWorkoutTemplate(item.workoutTemplateId);
       return (
         <View style={styles.activityItem}>
           <View style={styles.activityLeft}>

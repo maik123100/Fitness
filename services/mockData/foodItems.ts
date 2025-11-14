@@ -1,10 +1,25 @@
-import { FoodItem } from '@/types/types';
+import { FoodItem } from '@/services/db/schema';
 
 const now = Date.now();
 
+// Helper to create FoodItem with default micronutrient values
+const createFoodItem = (item: Partial<FoodItem> & Pick<FoodItem, 'id' | 'name' | 'category' | 'calories' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'servingSize' | 'servingUnit' | 'isVerified' | 'createdAt' | 'updatedAt'>): FoodItem => ({
+  brand: null,
+  barcode: null,
+  vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0,
+  vitaminE: 0, vitaminK: 0, thiamin: 0, vitaminB12: 0,
+  riboflavin: 0, folate: 0, niacin: 0, choline: 0,
+  pantothenicAcid: 0, biotin: 0, carotenoids: 0,
+  calcium: 0, chloride: 0, chromium: 0, copper: 0,
+  fluoride: 0, iodine: 0, iron: 0, magnesium: 0,
+  manganese: 0, molybdenum: 0, phosphorus: 0,
+  potassium: 0, selenium: 0, sodium: 0, zinc: 0,
+  ...item,
+} as FoodItem);
+
 export const mockFoodItems: FoodItem[] = [
   // Proteins
-  {
+  createFoodItem({
     id: 'food-chicken-breast',
     name: 'Chicken Breast',
     category: 'proteins',
@@ -24,8 +39,8 @@ export const mockFoodItems: FoodItem[] = [
     phosphorus: 220,
     selenium: 27,
     zinc: 1,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-salmon',
     name: 'Salmon',
     category: 'proteins',
@@ -42,8 +57,8 @@ export const mockFoodItems: FoodItem[] = [
     vitaminD: 11,
     vitaminB12: 3.2,
     selenium: 41,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-eggs',
     name: 'Eggs',
     category: 'proteins',
@@ -62,8 +77,8 @@ export const mockFoodItems: FoodItem[] = [
     vitaminB12: 0.9,
     choline: 251,
     selenium: 30,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-ground-beef',
     name: 'Ground Beef (80/20)',
     category: 'proteins',
@@ -81,10 +96,10 @@ export const mockFoodItems: FoodItem[] = [
     zinc: 4.8,
     vitaminB12: 2.4,
     niacin: 4.8,
-  },
+  }),
 
   // Dairy
-  {
+  createFoodItem({
     id: 'food-greek-yogurt',
     name: 'Greek Yogurt (Plain)',
     category: 'dairy',
@@ -101,8 +116,8 @@ export const mockFoodItems: FoodItem[] = [
     calcium: 110,
     vitaminB12: 0.8,
     phosphorus: 135,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-milk',
     name: 'Whole Milk',
     category: 'dairy',
@@ -119,8 +134,8 @@ export const mockFoodItems: FoodItem[] = [
     calcium: 113,
     vitaminD: 1.3,
     vitaminB12: 0.4,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-cheese-cheddar',
     name: 'Cheddar Cheese',
     category: 'dairy',
@@ -138,10 +153,10 @@ export const mockFoodItems: FoodItem[] = [
     vitaminA: 1242,
     phosphorus: 512,
     zinc: 3.1,
-  },
+  }),
 
   // Grains
-  {
+  createFoodItem({
     id: 'food-brown-rice',
     name: 'Brown Rice (Cooked)',
     category: 'grains',
@@ -158,8 +173,8 @@ export const mockFoodItems: FoodItem[] = [
     manganese: 1.1,
     selenium: 10,
     magnesium: 43,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-oatmeal',
     name: 'Oatmeal (Cooked)',
     category: 'grains',
@@ -177,8 +192,8 @@ export const mockFoodItems: FoodItem[] = [
     phosphorus: 77,
     magnesium: 27,
     iron: 1,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-whole-wheat-bread',
     name: 'Whole Wheat Bread',
     category: 'grains',
@@ -196,8 +211,8 @@ export const mockFoodItems: FoodItem[] = [
     niacin: 5,
     folate: 44,
     iron: 2.5,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-pasta',
     name: 'Pasta (Cooked)',
     category: 'grains',
@@ -214,10 +229,10 @@ export const mockFoodItems: FoodItem[] = [
     thiamin: 0.1,
     folate: 18,
     selenium: 26,
-  },
+  }),
 
   // Vegetables
-  {
+  createFoodItem({
     id: 'food-broccoli',
     name: 'Broccoli',
     category: 'vegetables',
@@ -235,8 +250,8 @@ export const mockFoodItems: FoodItem[] = [
     vitaminK: 102,
     folate: 63,
     calcium: 47,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-spinach',
     name: 'Spinach',
     category: 'vegetables',
@@ -256,8 +271,8 @@ export const mockFoodItems: FoodItem[] = [
     folate: 194,
     iron: 2.7,
     calcium: 99,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-carrots',
     name: 'Carrots',
     category: 'vegetables',
@@ -274,8 +289,8 @@ export const mockFoodItems: FoodItem[] = [
     vitaminA: 16706,
     vitaminK: 13,
     potassium: 320,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-sweet-potato',
     name: 'Sweet Potato',
     category: 'vegetables',
@@ -293,10 +308,10 @@ export const mockFoodItems: FoodItem[] = [
     vitaminC: 2.4,
     manganese: 0.3,
     potassium: 337,
-  },
+  }),
 
   // Fruits
-  {
+  createFoodItem({
     id: 'food-banana',
     name: 'Banana',
     category: 'fruits',
@@ -314,8 +329,8 @@ export const mockFoodItems: FoodItem[] = [
     vitaminB6: 0.4,
     potassium: 358,
     magnesium: 27,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-apple',
     name: 'Apple',
     category: 'fruits',
@@ -331,8 +346,8 @@ export const mockFoodItems: FoodItem[] = [
     updatedAt: now,
     vitaminC: 4.6,
     potassium: 107,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-blueberries',
     name: 'Blueberries',
     category: 'fruits',
@@ -349,8 +364,8 @@ export const mockFoodItems: FoodItem[] = [
     vitaminC: 9.7,
     vitaminK: 19,
     manganese: 0.3,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-strawberries',
     name: 'Strawberries',
     category: 'fruits',
@@ -368,10 +383,10 @@ export const mockFoodItems: FoodItem[] = [
     folate: 24,
     potassium: 153,
     manganese: 0.4,
-  },
+  }),
 
   // Fats & Oils
-  {
+  createFoodItem({
     id: 'food-olive-oil',
     name: 'Olive Oil',
     category: 'fats',
@@ -387,8 +402,8 @@ export const mockFoodItems: FoodItem[] = [
     updatedAt: now,
     vitaminE: 14,
     vitaminK: 60,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-avocado',
     name: 'Avocado',
     category: 'fats',
@@ -406,8 +421,8 @@ export const mockFoodItems: FoodItem[] = [
     folate: 81,
     vitaminC: 10,
     potassium: 485,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-almonds',
     name: 'Almonds',
     category: 'fats',
@@ -425,8 +440,8 @@ export const mockFoodItems: FoodItem[] = [
     calcium: 269,
     magnesium: 270,
     phosphorus: 481,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-peanut-butter',
     name: 'Peanut Butter',
     category: 'fats',
@@ -443,10 +458,10 @@ export const mockFoodItems: FoodItem[] = [
     vitaminE: 8.3,
     niacin: 13.4,
     magnesium: 168,
-  },
+  }),
 
   // Beverages
-  {
+  createFoodItem({
     id: 'food-water',
     name: 'Water',
     category: 'beverages',
@@ -460,8 +475,8 @@ export const mockFoodItems: FoodItem[] = [
     isVerified: true,
     createdAt: now,
     updatedAt: now,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-coffee',
     name: 'Black Coffee',
     category: 'beverages',
@@ -475,8 +490,8 @@ export const mockFoodItems: FoodItem[] = [
     isVerified: true,
     createdAt: now,
     updatedAt: now,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-green-tea',
     name: 'Green Tea',
     category: 'beverages',
@@ -490,8 +505,8 @@ export const mockFoodItems: FoodItem[] = [
     isVerified: true,
     createdAt: now,
     updatedAt: now,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-orange-juice',
     name: 'Orange Juice',
     category: 'beverages',
@@ -508,10 +523,10 @@ export const mockFoodItems: FoodItem[] = [
     vitaminC: 50,
     folate: 30,
     potassium: 200,
-  },
+  }),
 
   // Snacks
-  {
+  createFoodItem({
     id: 'food-protein-bar',
     name: 'Protein Bar',
     brand: 'Generic',
@@ -528,8 +543,8 @@ export const mockFoodItems: FoodItem[] = [
     updatedAt: now,
     calcium: 150,
     iron: 2,
-  },
-  {
+  }),
+  createFoodItem({
     id: 'food-dark-chocolate',
     name: 'Dark Chocolate (70-85%)',
     category: 'snacks',
@@ -547,5 +562,5 @@ export const mockFoodItems: FoodItem[] = [
     magnesium: 228,
     copper: 1.8,
     manganese: 1.9,
-  },
+  }),
 ];

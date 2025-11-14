@@ -1,6 +1,6 @@
 import { addFoodItem, getAllFoodItems } from '@/services/database';
 import { borderRadius, draculaTheme, shadows, spacing, typography } from '@/styles/theme';
-import { FoodCategory, FoodItem } from '@/types/types';
+import { FoodCategory, FoodItem } from '@/services/db/schema';
 import { Picker } from '@react-native-picker/picker';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -12,8 +12,8 @@ import { useSnackbar } from '@/app/components/SnackbarProvider';
 const defaultFood: FoodItem = {
   id: Date.now().toString(),
   name: '',
-  brand: '',
-  barcode: '',
+  brand: null,
+  barcode: null,
   category: 'other',
   calories: 0,
   protein: 0,
@@ -25,6 +25,14 @@ const defaultFood: FoodItem = {
   isVerified: false,
   createdAt: Date.now(),
   updatedAt: Date.now(),
+  vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0,
+  vitaminE: 0, vitaminK: 0, thiamin: 0, vitaminB12: 0,
+  riboflavin: 0, folate: 0, niacin: 0, choline: 0,
+  pantothenicAcid: 0, biotin: 0, carotenoids: 0,
+  calcium: 0, chloride: 0, chromium: 0, copper: 0,
+  fluoride: 0, iodine: 0, iron: 0, magnesium: 0,
+  manganese: 0, molybdenum: 0, phosphorus: 0,
+  potassium: 0, selenium: 0, sodium: 0, zinc: 0,
 };
 
 const AddFood: React.FC = () => {

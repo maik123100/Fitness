@@ -3,7 +3,8 @@ import { getUserProfile, saveUserProfile } from '@/services/database';
 import { resetDatabase } from '@/services/db';
 import { setOnboardingCompleted } from '@/services/onboardingService';
 import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
-import { ActivityLevel, GoalType, MineralFields, UserProfile, VitaminFields } from '@/types/types';
+import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
+import { MineralFields, VitaminFields } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -35,11 +36,11 @@ export default function ProfileScreen() {
     if (userProfile) {
       setProfile(userProfile);
       setBirthdate(userProfile.birthdate);
-      setGender(userProfile.gender);
+      setGender(userProfile.gender as 'male' | 'female');
       setHeight(userProfile.height.toString());
       setWeight(userProfile.weight.toString());
-      setActivityLevel(userProfile.activityLevel);
-      setGoalType(userProfile.goalType);
+      setActivityLevel(userProfile.activityLevel as ActivityLevel);
+      setGoalType(userProfile.goalType as GoalType);
       setTargetWeight(userProfile.targetWeight?.toString() || '');
     }
   };
@@ -90,12 +91,43 @@ export default function ProfileScreen() {
       weight: parseFloat(weight),
       activityLevel,
       goalType,
-      targetWeight: targetWeight ? parseFloat(targetWeight) : undefined,
+      targetWeight: targetWeight ? parseFloat(targetWeight) : null,
       targetCalories,
       // Simple macro split: 40% carbs, 30% protein, 30% fat
       targetCarbs: (targetCalories * 0.4) / 4,
       targetProtein: (targetCalories * 0.3) / 4,
       targetFat: (targetCalories * 0.3) / 9,
+      // Target micronutrients (not set by user, default to null)
+      targetVitaminA: null,
+      targetVitaminC: null,
+      targetVitaminD: null,
+      targetVitaminB6: null,
+      targetVitaminE: null,
+      targetVitaminK: null,
+      targetThiamin: null,
+      targetVitaminB12: null,
+      targetRiboflavin: null,
+      targetFolate: null,
+      targetNiacin: null,
+      targetCholine: null,
+      targetPantothenicAcid: null,
+      targetBiotin: null,
+      targetCarotenoids: null,
+      targetCalcium: null,
+      targetChloride: null,
+      targetChromium: null,
+      targetCopper: null,
+      targetFluoride: null,
+      targetIodine: null,
+      targetIron: null,
+      targetMagnesium: null,
+      targetManganese: null,
+      targetMolybdenum: null,
+      targetPhosphorus: null,
+      targetPotassium: null,
+      targetSelenium: null,
+      targetSodium: null,
+      targetZinc: null,
       createdAt: profile?.createdAt || Date.now(),
       updatedAt: Date.now(),
     };

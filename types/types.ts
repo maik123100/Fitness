@@ -1,18 +1,18 @@
-export interface Activity {
-  id: string;
-  activity: string;
-  calories: number;
-  type: 'eaten' | 'burned';
-  timestamp: number;
-}
+// ============================================================================
+// Application Types - Non-Database Entities
+// ============================================================================
+// This file contains only types that are NOT directly mapped to database tables.
+// For database entity types, import directly from '@/services/db/schema'
+//
+// Exception: Some Drizzle types have JSON fields stored as strings that need
+// to be parsed. For these, we provide application-level types with the parsed structure.
+// ============================================================================
 
-export interface DailyNutrition {
-  id: string;
-  date: string;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
+import type * as Schema from '@/services/db/schema';
+
+// ============================================================================
+// Composed/Helper Types - These are NOT database tables
+// ============================================================================
 
 // Base nutrition field types for composition
 export interface BaseNutritionFields {
@@ -62,92 +62,20 @@ export interface MineralFields {
 // Complete nutrition fields combining all nutrients
 export interface CompleteNutritionFields extends BaseNutritionFields, VitaminFields, MineralFields { }
 
-export interface FoodItem extends CompleteNutritionFields {
-  id: string;
-  name: string;
-  brand?: string;
-  barcode?: string;
-  category: FoodCategory;
-  servingSize: number;
-  servingUnit: string;
-  isVerified: boolean;
-  createdAt: number;
-  updatedAt: number;
-}
+// ============================================================================
+// Non-Database Entity Types
+// ============================================================================
 
-export interface FoodEntry {
-  id: string;
-  foodId: string;
-  userId?: string;
-  date: string;
-  mealType: MealType;
-  quantity: number;
-  unit: string;
-  totalCalories: number;
-  totalProtein: number;
-  totalCarbs: number;
-  totalFat: number;
-  totalFiber: number;
-  createdAt: number;
-}
-
-// Type utility to prefix fields with a string
-type PrefixFields<T, P extends string> = {
-  [K in keyof T as `${P}${Capitalize<string & K>}`]: T[K];
-};
-
-export interface Recipe {
-  id: string;
-  name: string;
-  description?: string;
-  instructions?: string;
-  servings: number;
-  prepTime?: number;
-  cookTime?: number;
-  ingredients: RecipeIngredient[];
-  caloriesPerServing: number;
-  proteinPerServing: number;
-  carbsPerServing: number;
-  fatPerServing: number;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface RecipeIngredient {
-  id: string;
-  recipeId: string;
-  foodId: string;
-  quantity: number;
-  unit: string;
-}
-
-export interface WorkoutTemplate {
-  id: string;
-  name: string;
-}
-
+// SetTarget is used in workout exercises but stored as JSON in the database
 export interface SetTarget {
   reps: number;
   weight: number;
 }
 
-export interface ExerciseTemplate {
-  id: string;
-  name: string;
-  default_set_targets: SetTarget[];
-}
-
-export interface WorkoutTemplateExercise {
-  id: string;
-  workout_template_id: string;
-  exercise_template_id: string;
-  set_targets: SetTarget[];
-  order: number;
-}
-
+// WorkoutSet is used during active workouts and stored as JSON in the database
 export interface WorkoutSet {
   id: string;
-  workout_template_exercise_id: string;
+  workoutTemplateExerciseId: string;
   weight: number;
   reps: number;
   targetReps: number;
@@ -155,96 +83,7 @@ export interface WorkoutSet {
   completed: boolean;
 }
 
-export interface ActiveWorkoutSession {
-  id: string;
-  workout_template_id: string;
-  start_time: number;
-  date: string;
-  sets: WorkoutSet[];
-}
-
-export interface WorkoutEntry {
-  id: string;
-  workout_template_id: string;
-  date: string;
-  duration: number;
-  caloriesBurned: number;
-  sets: WorkoutSet[];
-  createdAt: number;
-}
-
-export interface UserProfile {
-  id: string;
-  birthdate: string;
-  gender: 'male' | 'female';
-  height: number;
-  weight: number;
-  activityLevel: ActivityLevel;
-  goalType: GoalType;
-  targetWeight?: number;
-  targetCalories: number;
-  targetProtein: number;
-  targetCarbs: number;
-  targetFat: number;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface WeightEntry {
-  id: string;
-  weight: number;
-  date: string;
-  createdAt: number;
-}
-
-export type FoodCategory =
-  | 'vegetables'
-  | 'fruits'
-  | 'grains'
-  | 'proteins'
-  | 'dairy'
-  | 'fats'
-  | 'beverages'
-  | 'snacks'
-  | 'prepared'
-  | 'supplements'
-  | 'condiments'
-  | 'other';
-
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-
-export type ExerciseCategory =
-  | 'cardio'
-  | 'strength'
-  | 'flexibility'
-  | 'sports'
-  | 'daily';
-
-export type MuscleGroup =
-  | 'chest'
-  | 'back'
-  | 'shoulders'
-  | 'biceps'
-  | 'triceps'
-  | 'legs'
-  | 'glutes'
-  | 'core'
-  | 'full-body';
-
-export type ActivityLevel =
-  | 'sedentary'
-  | 'lightly-active'
-  | 'moderately-active'
-  | 'very-active'
-  | 'extremely-active';
-
-export type GoalType =
-  | 'lose-weight'
-  | 'maintain-weight'
-  | 'gain-weight'
-  | 'build-muscle'
-  | 'improve-fitness';
-
+// NutritionSummary is a computed type for displaying aggregated nutrition data
 export interface NutritionSummary {
   date: string;
   totalCalories: number;
@@ -257,3 +96,41 @@ export interface NutritionSummary {
   caloriesBurned: number;
   netCalories: number;
 }
+
+// ============================================================================
+// Application-level types for entities with JSON fields
+// ============================================================================
+// These types transform Drizzle string fields (JSON) into their parsed form
+
+export interface ExerciseTemplate {
+  id: string;
+  name: string;
+  defaultSetTargets: SetTarget[];
+}
+
+export interface WorkoutTemplateExercise {
+  id: string;
+  workoutTemplateId: string;
+  exerciseTemplateId: string;
+  setTargets: SetTarget[];
+  order: number;
+}
+
+export interface WorkoutEntry {
+  id: string;
+  workoutTemplateId: string;
+  date: string;
+  duration: number;
+  caloriesBurned: number;
+  sets: WorkoutSet[];
+  createdAt: number;
+}
+
+export interface ActiveWorkoutSession {
+  id: string;
+  workoutTemplateId: string;
+  startTime: number;
+  date: string;
+  sets: WorkoutSet[];
+}
+

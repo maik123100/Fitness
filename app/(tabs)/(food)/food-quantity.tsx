@@ -6,7 +6,7 @@ import {
   getFoodItem,
 } from '@/services/database';
 import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
-import { FoodEntry, FoodItem, MealType } from '@/types/types';
+import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';

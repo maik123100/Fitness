@@ -12,13 +12,13 @@ interface ManageExerciseTemplatesState {
   exerciseTemplates: ExerciseTemplate[];
   newTemplateForm: {
     name: string;
-    default_set_targets: SetTarget[];
+    defaultSetTargets: SetTarget[];
   };
   editModal: {
     visible: boolean;
     template: ExerciseTemplate | null;
     name: string;
-    default_set_targets: SetTarget[];
+    defaultSetTargets: SetTarget[];
   };
 }
 
@@ -59,8 +59,8 @@ const ListHeader = memo(({
       <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
       <Text style={styles.label}>Default Set Targets</Text>
       <SetTargetInputList
-        setTargets={newTemplateForm.default_set_targets}
-        onChange={(targets: SetTarget[]) => handleFormChange('default_set_targets', targets)}
+        setTargets={newTemplateForm.defaultSetTargets}
+        onChange={(targets: SetTarget[]) => handleFormChange('defaultSetTargets', targets)}
       />
       <TouchableOpacity style={styles.addButton} onPress={handleAddExerciseTemplate}>
         <Text style={styles.addButtonText}>Add Exercise Template</Text>
@@ -79,8 +79,8 @@ export default function ManageExerciseTemplates() {
 
   const [state, setState] = useState<ManageExerciseTemplatesState>({
     exerciseTemplates: [],
-    newTemplateForm: { name: '', default_set_targets: [{ reps: 8, weight: 0 }, { reps: 10, weight: 0 }, { reps: 12, weight: 0 }] }, // Default to 3 sets with 8, 10, 12 reps and 0 weight
-    editModal: { visible: false, template: null, name: '', default_set_targets: [] },
+    newTemplateForm: { name: '', defaultSetTargets: [{ reps: 8, weight: 0 }, { reps: 10, weight: 0 }, { reps: 12, weight: 0 }] }, // Default to 3 sets with 8, 10, 12 reps and 0 weight
+    editModal: { visible: false, template: null, name: '', defaultSetTargets: [] },
   });
 
   const { exerciseTemplates, newTemplateForm, editModal } = state;
@@ -103,9 +103,9 @@ export default function ManageExerciseTemplates() {
     addExerciseTemplate({
       id: Date.now().toString(),
       name: newTemplateForm.name,
-      default_set_targets: newTemplateForm.default_set_targets,
+      defaultSetTargets: newTemplateForm.defaultSetTargets,
     });
-    setState(prev => ({ ...prev, newTemplateForm: { name: '', default_set_targets: [{ reps: 8, weight: 0 }, { reps: 10, weight: 0 }, { reps: 12, weight: 0 }] } }));
+    setState(prev => ({ ...prev, newTemplateForm: { name: '', defaultSetTargets: [{ reps: 8, weight: 0 }, { reps: 10, weight: 0 }, { reps: 12, weight: 0 }] } }));
     loadExerciseTemplates();
   };
 
@@ -116,7 +116,7 @@ export default function ManageExerciseTemplates() {
         visible: true,
         template: template,
         name: template.name,
-        default_set_targets: template.default_set_targets,
+        defaultSetTargets: template.defaultSetTargets,
       },
     }));
   };
@@ -130,9 +130,9 @@ export default function ManageExerciseTemplates() {
     updateExerciseTemplate({
       ...editModal.template,
       name: editModal.name,
-      default_set_targets: editModal.default_set_targets,
+      defaultSetTargets: editModal.defaultSetTargets,
     });
-    setState(prev => ({ ...prev, editModal: { visible: false, template: null, name: '', default_set_targets: [] } }));
+    setState(prev => ({ ...prev, editModal: { visible: false, template: null, name: '', defaultSetTargets: [] } }));
     loadExerciseTemplates();
   };
 
@@ -184,7 +184,7 @@ export default function ManageExerciseTemplates() {
         }
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleEditPress(item)} style={styles.exerciseItem}>
-            <Text style={styles.exerciseText}>{item.name} ({item.default_set_targets.length} sets)</Text>
+            <Text style={styles.exerciseText}>{item.name} ({item.defaultSetTargets.length} sets)</Text>
             <TouchableOpacity onPress={() => handleDeleteExerciseTemplate(item.id)}>
               <Ionicons name="trash" size={24} color={draculaTheme.danger} />
             </TouchableOpacity>
@@ -204,8 +204,8 @@ export default function ManageExerciseTemplates() {
             <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={editModal.name} onChangeText={(text) => handleEditModalChange('name', text)} />
             <Text style={styles.label}>Default Set Targets</Text>
             <SetTargetInputList
-              setTargets={editModal.default_set_targets}
-              onChange={(targets: SetTarget[]) => handleEditModalChange('default_set_targets', targets)}
+              setTargets={editModal.defaultSetTargets}
+              onChange={(targets: SetTarget[]) => handleEditModalChange('defaultSetTargets', targets)}
             />
             <TouchableOpacity style={[styles.button, styles.buttonSave]} onPress={handleUpdateExerciseTemplate}>
               <Text style={styles.buttonText}>Save Changes</Text>
