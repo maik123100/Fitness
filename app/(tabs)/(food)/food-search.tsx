@@ -8,7 +8,7 @@ import { FoodItem, MealType } from '@/services/db/schema';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function FoodSearchScreen() {
@@ -19,20 +19,27 @@ export default function FoodSearchScreen() {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
-  const [debounceTimeout, setDebounceTimeout] = useState<number | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cameraModal, setCameraModal] = useState({ visible: false, scanned: false });
   const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
     const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
     setResults(allFoods);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleSearchQueryChange = (text: string) => {
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
-    const newTimeout = setTimeout(() => {
+    debounceTimeoutRef.current = setTimeout(() => {
       const allFoods = getAllFoodItems();
       if (text.length > 0) {
         const filteredResults = allFoods.filter(food =>
@@ -45,7 +52,6 @@ export default function FoodSearchScreen() {
     }, 500);
 
     setQuery(text);
-    setDebounceTimeout(newTimeout as any);
   };
 
   const handleAddFood = (foodItem: FoodItem) => {
