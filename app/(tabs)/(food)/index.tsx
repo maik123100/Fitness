@@ -9,13 +9,14 @@ import {
   getFoodItem,
 } from '@/services/database';
 import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
-import { borderRadius, spacing, typography } from '@/styles/theme';
+import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 type FoodDiaryState = {
   foodEntries: Record<MealType, FoodEntry[]>;
@@ -39,17 +40,24 @@ export default function FoodDiaryScreen() {
       visible: false,
       scanned: false,
     },
-    expandedMeals: { breakfast: true, lunch: true, dinner: true, snack: true },
+    expandedMeals: { breakfast: false, lunch: false, dinner: false, snack: false },
   });
 
   const { foodEntries, cameraModal, expandedMeals } = state;
 
   // Meal icons mapping
-  const mealIcons: Record<MealType, string> = {
+  const mealIcons: Record<MealType, keyof typeof Ionicons.glyphMap> = {
     breakfast: 'sunny',
     lunch: 'partly-sunny',
     dinner: 'moon',
     snack: 'cafe',
+  };
+
+  const mealLabels: Record<MealType, string> = {
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    snack: 'Snacks',
   };
 
   const toggleMealExpanded = (mealType: MealType) => {
@@ -109,7 +117,7 @@ export default function FoodDiaryScreen() {
   };
 
   // Render swipe actions for delete
-  const renderRightActions = (progress: any, dragX: any, item: FoodEntry) => {
+  const renderRightActions = (_progress: any, dragX: any, item: FoodEntry) => {
     const trans = dragX.interpolate({
       inputRange: [-80, 0],
       outputRange: [0, 80],
@@ -149,105 +157,234 @@ export default function FoodDiaryScreen() {
     }
   };
 
-  return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
-      {Object.keys(foodEntries).map((mealType) => {
-        const meal = mealType as MealType;
-        const mealTotals = calculateMealTotals(meal);
-        const isExpanded = expandedMeals[meal];
+  // Collapsible Meal Section Component
+  const MealSection = ({ mealType }: { mealType: MealType }) => {
+    const rotation = useSharedValue(expandedMeals[mealType] ? 180 : 0);
+    const mealTotals = calculateMealTotals(mealType);
+    const isExpanded = expandedMeals[mealType];
+    const entries = foodEntries[mealType];
 
-        return (
-          <View key={meal} style={styles.mealSection}>
-            {/* Meal Header - Collapsible */}
-            <TouchableOpacity
-              style={[styles.mealHeader, { backgroundColor: theme.surface.card }]}
-              onPress={() => toggleMealExpanded(meal)}
-            >
-              <View style={styles.mealHeaderLeft}>
-                <Ionicons
-                  name={mealIcons[meal] as any}
-                  size={24}
-                  color={theme.cyan}
-                  style={styles.mealIcon}
-                />
-                <Text style={[styles.mealTitle, { color: theme.foreground }]}>
-                  {meal.charAt(0).toUpperCase() + meal.slice(1)}
+    useEffect(() => {
+      rotation.value = withTiming(isExpanded ? 180 : 0, { duration: 300 });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isExpanded]);
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+      transform: [{ rotate: `${rotation.value}deg` }],
+    }));
+
+    return (
+      <View style={[styles.mealSection, { backgroundColor: theme.surface.card }, shadows.md]}>
+        {/* Meal Header */}
+        <Pressable
+          style={[styles.mealHeader, { borderBottomColor: theme.surface.secondary }]}
+          onPress={() => toggleMealExpanded(mealType)}
+          android_ripple={{ color: theme.selection }}
+        >
+          <View style={styles.mealHeaderLeft}>
+            <View style={[styles.iconContainer, { backgroundColor: theme.primary + '20' }]}>
+              <Ionicons name={mealIcons[mealType]} size={24} color={theme.primary} />
+            </View>
+            <View style={styles.mealHeaderText}>
+              <Text style={[styles.mealTitle, { color: theme.foreground }]}>
+                {mealLabels[mealType]}
+              </Text>
+              <Text style={[styles.mealSubtitle, { color: theme.comment }]}>
+                {entries.length} {entries.length === 1 ? 'item' : 'items'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.mealHeaderRight}>
+            <View style={styles.caloriesBadge}>
+              <Text style={[styles.mealCalories, { color: theme.primary }]}>
+                {Math.round(mealTotals.calories)}
+              </Text>
+              <Text style={[styles.caloriesLabel, { color: theme.comment }]}>kcal</Text>
+            </View>
+            <ReanimatedAnimated.View style={animatedIconStyle}>
+              <Ionicons name="chevron-down" size={24} color={theme.comment} />
+            </ReanimatedAnimated.View>
+          </View>
+        </Pressable>
+
+        {/* Meal Content */}
+        {isExpanded && (
+          <View style={styles.mealContent}>
+            {entries.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="restaurant-outline" size={48} color={theme.comment} style={styles.emptyIcon} />
+                <Text style={[styles.emptyStateText, { color: theme.comment }]}>
+                  No food added yet
+                </Text>
+                <Text style={[styles.emptyStateSubtext, { color: theme.comment }]}>
+                  Tap the button below to add food
                 </Text>
               </View>
-              <View style={styles.mealHeaderRight}>
-                <Text style={[styles.mealCalories, { color: theme.nutrition.calories }]}>{Math.round(mealTotals.calories)} kcal</Text>
-                <Ionicons
-                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={20}
-                  color={theme.foreground}
-                />
-              </View>
-            </TouchableOpacity>
-
-            {/* Meal Content - Collapsible */}
-            {isExpanded && (
+            ) : (
               <>
-                {foodEntries[meal].map((item) => {
-                  const foodItem = getFoodItem(item.foodId);
+                {entries.map((entry) => {
+                  const foodItem = getFoodItem(entry.foodId);
                   return (
                     <Swipeable
-                      key={item.id}
-                      renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
-                      overshootRight={false}
+                      key={entry.id}
+                      renderRightActions={(_progress, dragX) => renderRightActions(_progress, dragX, entry)}
                     >
-                      <View style={[styles.foodItem, { backgroundColor: theme.surface.card }]}>
+                      <View style={[styles.foodItem, { borderBottomColor: theme.surface.secondary }]}>
                         <View style={styles.foodItemLeft}>
-                          <Text style={[styles.foodName, { color: theme.foreground }]}>{foodItem?.name}</Text>
+                          <Text style={[styles.foodName, { color: theme.foreground }]}>
+                            {foodItem?.name || 'Unknown Food'}
+                          </Text>
                           <View style={styles.foodDetails}>
-                            <Text style={[styles.foodServing, { color: theme.comment }]}>{item.quantity} {item.unit}</Text>
-                            <Text style={[styles.foodMacro, { color: theme.nutrition.protein }]}>P: {item.totalProtein.toFixed(1)}g</Text>
-                            <Text style={[styles.foodMacro, { color: theme.nutrition.carbs }]}>C: {item.totalCarbs.toFixed(1)}g</Text>
-                            <Text style={[styles.foodMacro, { color: theme.nutrition.fat }]}>F: {item.totalFat.toFixed(1)}g</Text>
+                            <View style={styles.servingContainer}>
+                              <Ionicons name="scale-outline" size={14} color={theme.comment} />
+                              <Text style={[styles.foodServing, { color: theme.comment }]}>
+                                {entry.quantity}{entry.unit}
+                              </Text>
+                            </View>
+                            <View style={styles.macroContainer}>
+                              <View style={styles.macroItem}>
+                                <Ionicons name="fitness-outline" size={12} color={theme.orange} />
+                                <Text style={[styles.foodMacro, { color: theme.comment }]}>
+                                  P: {Math.round(entry.totalProtein)}g
+                                </Text>
+                              </View>
+                              <View style={styles.macroItem}>
+                                <Ionicons name="leaf-outline" size={12} color={theme.green} />
+                                <Text style={[styles.foodMacro, { color: theme.comment }]}>
+                                  C: {Math.round(entry.totalCarbs)}g
+                                </Text>
+                              </View>
+                              <View style={styles.macroItem}>
+                                <Ionicons name="water" size={12} color={theme.cyan} />
+                                <Text style={[styles.foodMacro, { color: theme.comment }]}>
+                                  F: {Math.round(entry.totalFat)}g
+                                </Text>
+                              </View>
+                            </View>
                           </View>
                         </View>
-                        <Text style={[styles.foodCalories, { color: theme.nutrition.calories }]}>{item.totalCalories.toFixed(0)} kcal</Text>
+                        <View style={styles.foodItemRight}>
+                          <Text style={[styles.foodCalories, { color: theme.primary }]}>
+                            {Math.round(entry.totalCalories)}
+                          </Text>
+                          <Text style={[styles.foodCaloriesLabel, { color: theme.comment }]}>kcal</Text>
+                        </View>
                       </View>
                     </Swipeable>
                   );
                 })}
-
-                <TouchableOpacity
-                  style={[styles.addButton, { backgroundColor: theme.primary }]}
-                  onPress={() => openSearchScreen(meal)}
-                >
-                  <Ionicons name="add" size={20} color={theme.text.inverse} />
-                  <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add Food to {meal.charAt(0).toUpperCase() + meal.slice(1)}</Text>
-                </TouchableOpacity>
+                {/* Meal Totals */}
+                <View style={[styles.mealTotals, { backgroundColor: theme.surface.elevated }]}>
+                  <Text style={[styles.mealTotalsLabel, { color: theme.comment }]}>Meal Total</Text>
+                  <View style={styles.mealTotalsRow}>
+                    <View style={styles.totalItem}>
+                      <Ionicons name="fitness" size={16} color={theme.orange} />
+                      <Text style={[styles.totalValue, { color: theme.foreground }]}>
+                        {Math.round(mealTotals.protein)}g
+                      </Text>
+                      <Text style={[styles.totalLabel, { color: theme.comment }]}>Protein</Text>
+                    </View>
+                    <View style={styles.totalItem}>
+                      <Ionicons name="leaf" size={16} color={theme.green} />
+                      <Text style={[styles.totalValue, { color: theme.foreground }]}>
+                        {Math.round(mealTotals.carbs)}g
+                      </Text>
+                      <Text style={[styles.totalLabel, { color: theme.comment }]}>Carbs</Text>
+                    </View>
+                    <View style={styles.totalItem}>
+                      <Ionicons name="water" size={16} color={theme.cyan} />
+                      <Text style={[styles.totalValue, { color: theme.foreground }]}>
+                        {Math.round(mealTotals.fat)}g
+                      </Text>
+                      <Text style={[styles.totalLabel, { color: theme.comment }]}>Fat</Text>
+                    </View>
+                  </View>
+                </View>
               </>
             )}
-          </View>
-        );
-      })}
 
-      <Modal visible={cameraModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}>
-        <View style={[styles.scannerContainer, { backgroundColor: theme.background }]}>
-          {!permission?.granted && (
-            <View style={styles.permissionContainer}>
-              <Text style={[styles.permissionText, { color: theme.foreground }]}>We need your permission to show the camera</Text>
-              <TouchableOpacity style={[styles.permissionButton, { backgroundColor: theme.primary }]} onPress={requestPermission}>
-                <Text style={[styles.permissionButtonText, { color: theme.text.inverse }]}>Grant Permission</Text>
+            {/* Add Food Button */}
+            <Pressable
+              style={[styles.addButton, { backgroundColor: theme.primary }, shadows.sm]}
+              onPress={() => openSearchScreen(mealType)}
+              android_ripple={{ color: theme.surface.elevated }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={theme.text.inverse} />
+              <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add Food</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  return (
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.scrollContentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.pageTitle, { color: theme.foreground }]}>Food Diary</Text>
+        <Text style={[styles.pageSubtitle, { color: theme.comment }]}>
+          Track your daily nutrition
+        </Text>
+      </View>
+
+      {/* Meal Sections */}
+      {(Object.keys(foodEntries) as MealType[]).map((mealType) => (
+        <MealSection key={mealType} mealType={mealType} />
+      ))}
+
+      {/* Camera Modal */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={cameraModal.visible}
+        onRequestClose={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}
+      >
+        <View style={styles.scannerContainer}>
+          {permission?.granted ? (
+            <>
+              <CameraView
+                style={{ flex: 1 }}
+                facing="back"
+                onBarcodeScanned={cameraModal.scanned ? undefined : handleBarCodeScanned}
+              />
+              {cameraModal.scanned && (
+                <TouchableOpacity
+                  style={[styles.scanAgainButton, { backgroundColor: theme.primary }, shadows.md]}
+                  onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, scanned: false } }))}
+                >
+                  <Text style={[styles.scanAgainButtonText, { color: theme.text.inverse }]}>
+                    Tap to Scan Again
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: theme.danger }, shadows.md]}
+                onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}
+              >
+                <Ionicons name="close" size={24} color={theme.text.inverse} />
               </TouchableOpacity>
+            </>
+          ) : (
+            <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
+              <Ionicons name="camera-outline" size={64} color={theme.comment} style={styles.permissionIcon} />
+              <Text style={[styles.permissionText, { color: theme.foreground }]}>
+                Camera permission is required to scan barcodes
+              </Text>
+              <Pressable
+                style={[styles.permissionButton, { backgroundColor: theme.primary }, shadows.sm]}
+                onPress={requestPermission}
+              >
+                <Text style={[styles.permissionButtonText, { color: theme.text.inverse }]}>
+                  Grant Permission
+                </Text>
+              </Pressable>
             </View>
           )}
-          {permission?.granted && (
-            <CameraView
-              onBarcodeScanned={cameraModal.scanned ? undefined : handleBarCodeScanned}
-              style={StyleSheet.absoluteFillObject}
-            />
-          )}
-          {cameraModal.scanned && (
-            <TouchableOpacity style={[styles.scanAgainButton, { backgroundColor: theme.primary }]} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, scanned: false } }))}>
-              <Text style={[styles.scanAgainButtonText, { color: theme.text.inverse }]}>Tap to Scan Again</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={[styles.closeButton, { backgroundColor: theme.danger }]} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}>
-            <Text style={[styles.closeButtonText, { color: theme.text.inverse }]}>Close</Text>
-          </TouchableOpacity>
         </View>
       </Modal>
     </ScrollView>
@@ -257,10 +394,29 @@ export default function FoodDiaryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: spacing.md,
   },
+  scrollContentContainer: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  header: {
+    marginBottom: spacing.xl,
+    paddingTop: spacing.md,
+  },
+  pageTitle: {
+    fontSize: 36,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.regular,
+  },
+
+  // Meal Section
   mealSection: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.lg,
     overflow: 'hidden',
   },
@@ -268,40 +424,97 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.lg,
     borderBottomWidth: 1,
+    minHeight: 72,
   },
   mealHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  mealHeaderText: {
+    flex: 1,
+  },
+  mealTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    marginBottom: 2,
+  },
+  mealSubtitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.regular,
   },
   mealHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  mealIcon: {
-    marginRight: spacing.sm,
-  },
-  mealTitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+  caloriesBadge: {
+    alignItems: 'flex-end',
   },
   mealCalories: {
-    fontSize: typography.sizes.md,
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
   },
+  caloriesLabel: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.regular,
+  },
+
+  // Meal Content
+  mealContent: {
+    paddingBottom: spacing.sm,
+  },
+
+  // Empty State
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyIcon: {
+    marginBottom: spacing.md,
+    opacity: 0.5,
+  },
+  emptyStateText: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.regular,
+    textAlign: 'center',
+  },
+
+  // Food Item
   foodItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
+    minHeight: 68,
   },
   foodItemLeft: {
     flex: 1,
-    gap: spacing.xs,
+    gap: spacing.sm,
+  },
+  foodItemRight: {
+    alignItems: 'flex-end',
+    marginLeft: spacing.md,
   },
   foodName: {
     fontSize: typography.sizes.md,
@@ -309,56 +522,114 @@ const styles = StyleSheet.create({
   },
   foodDetails: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.md,
     flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  servingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   foodServing: {
     fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
   },
-  foodCalories: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+  macroContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
   },
-  foodNutrients: {
+  macroItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   foodMacro: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.regular,
   },
+  foodCalories: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+  },
+  foodCaloriesLabel: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.regular,
+  },
+
+  // Meal Totals
+  mealTotals: {
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  mealTotalsLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    marginBottom: spacing.sm,
+  },
+  mealTotalsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  totalItem: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  totalValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+  },
+  totalLabel: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.regular,
+  },
+
+  // Add Button
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.sm,
-    margin: spacing.md,
+    padding: spacing.md,
+    margin: spacing.lg,
+    marginTop: spacing.md,
     borderRadius: borderRadius.md,
+    minHeight: 52,
+    gap: spacing.sm,
   },
   addButtonText: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
-    marginLeft: spacing.sm,
+    fontWeight: typography.weights.semibold,
   },
+
+  // Scanner/Camera Modal
   scannerContainer: {
     flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
     backgroundColor: 'black',
   },
   permissionContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.xl,
+  },
+  permissionIcon: {
+    marginBottom: spacing.lg,
+    opacity: 0.5,
   },
   permissionText: {
     fontSize: typography.sizes.lg,
     textAlign: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
   permissionButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+    minHeight: 52,
   },
   permissionButtonText: {
     fontSize: typography.sizes.md,
@@ -366,28 +637,33 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 40,
-    right: 20,
-    padding: 10,
-    borderRadius: 5,
-  },
-  closeButtonText: {
-    fontSize: 16,
+    top: 48,
+    right: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scanAgainButton: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 48,
     alignSelf: 'center',
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+    minHeight: 52,
   },
   scanAgainButtonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
+
+  // Delete Action
   deleteAction: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 80,
+    width: 88,
     height: '100%',
   },
   deleteActionText: {
