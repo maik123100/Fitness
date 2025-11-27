@@ -5,12 +5,12 @@ import {
   getAllFoodItems,
 } from '@/services/database';
 import { FoodItem, MealType } from '@/services/db/schema';
-import { borderRadius, spacing, typography } from '@/styles/theme';
+import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function FoodSearchScreen() {
   const router = useRouter();
@@ -86,47 +86,111 @@ export default function FoodSearchScreen() {
   };
 
   return (
-    <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-      <View style={styles.searchBarContainer}>
-        <TextInput
-          style={[styles.searchInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-          placeholder="Search for food..."
-          placeholderTextColor={theme.comment}
-          value={query}
-          onChangeText={handleSearchQueryChange}
-        />
-        <TouchableOpacity style={[styles.barcodeScanButton, { backgroundColor: theme.primary }]} onPress={openBarcodeScanner}>
-          <Ionicons name="barcode-outline" size={24} color={theme.text.inverse} />
-        </TouchableOpacity>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.pageTitle, { color: theme.foreground }]}>Search Food</Text>
+        <Text style={[styles.pageSubtitle, { color: theme.comment }]}>
+          Find food items to add to your meal
+        </Text>
       </View>
-      <TouchableOpacity style={[styles.addNewFoodButton, { backgroundColor: theme.green }]} onPress={() => {
-        router.navigate('/(tabs)/(food)/add-food');
-      }}>
-        <Text style={[styles.addNewFoodButtonText, { color: theme.text.inverse }]}>Add New Food</Text>
-      </TouchableOpacity>
+
+      {/* Search Bar */}
+      <View style={styles.searchSection}>
+        <View style={[styles.searchInputContainer, { backgroundColor: theme.surface.input }, shadows.sm]}>
+          <Ionicons name="search-outline" size={20} color={theme.comment} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.foreground }]}
+            placeholder="Search for food..."
+            placeholderTextColor={theme.comment}
+            value={query}
+            onChangeText={handleSearchQueryChange}
+            autoFocus
+          />
+          {query.length > 0 && (
+            <Pressable onPress={() => handleSearchQueryChange('')} style={styles.clearButton}>
+              <Ionicons name="close-circle" size={20} color={theme.comment} />
+            </Pressable>
+          )}
+        </View>
+        <Pressable
+          style={[styles.scanButton, { backgroundColor: theme.primary }, shadows.sm]}
+          onPress={openBarcodeScanner}
+          android_ripple={{ color: theme.surface.elevated }}
+        >
+          <Ionicons name="barcode-outline" size={24} color={theme.text.inverse} />
+        </Pressable>
+      </View>
+
+      {/* Add New Food Button */}
+      <Pressable
+        style={[styles.addNewButton, { backgroundColor: theme.success }, shadows.md]}
+        onPress={() => router.navigate('/(tabs)/(food)/add-food')}
+        android_ripple={{ color: theme.surface.elevated }}
+      >
+        <Ionicons name="add-circle-outline" size={20} color={theme.text.inverse} style={styles.buttonIcon} />
+        <Text style={[styles.addNewButtonText, { color: theme.text.inverse }]}>Add New Food Item</Text>
+      </Pressable>
+
+      {/* Results Count */}
+      {query.length > 0 && (
+        <View style={styles.resultsHeader}>
+          <Text style={[styles.resultsCount, { color: theme.comment }]}>
+            {results.length} {results.length === 1 ? 'result' : 'results'} found
+          </Text>
+        </View>
+      )}
+
+      {/* Food List */}
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <View style={styles.searchResultItemRow}>
-            <TouchableOpacity style={[styles.searchResultItem, { backgroundColor: theme.surface.card }]} onPress={() => handleAddFood(item)}>
-              <Text style={[styles.searchResultName, { color: theme.foreground }]}>{item.name}</Text>
-              <View style={styles.searchResultNutrientRow}>
-                <Text style={[styles.searchResultNutrientLabel, { color: theme.comment }]}>Calories:</Text>
-                <Text style={[styles.searchResultNutrientValue, { color: theme.nutrition.calories }]}>{item.calories} kcal</Text>
+          <View style={[styles.foodCard, { backgroundColor: theme.surface.card }, shadows.sm]}>
+            <Pressable
+              style={styles.foodCardContent}
+              onPress={() => handleAddFood(item)}
+              android_ripple={{ color: theme.selection }}
+            >
+              <View style={styles.foodCardMain}>
+                <Text style={[styles.foodName, { color: theme.foreground }]}>{item.name}</Text>
+                <View style={styles.caloriesBadge}>
+                  <Ionicons name="flame" size={16} color={theme.orange} style={styles.calorieIcon} />
+                  <Text style={[styles.caloriesText, { color: theme.foreground }]}>
+                    {item.calories}
+                  </Text>
+                  <Text style={[styles.caloriesLabel, { color: theme.comment }]}>kcal</Text>
+                </View>
               </View>
-              <View style={styles.searchResultMacrosRow}>
-                <Text style={[styles.searchResultMacroText, { color: theme.comment }]}>Proteins: {item.protein}g</Text>
-                <Text style={[styles.searchResultMacroText, { color: theme.comment }]}>Carbs: {item.carbs}g</Text>
-                <Text style={[styles.searchResultMacroText, { color: theme.comment }]}>Fats: {item.fat}g</Text>
+              
+              <View style={styles.macrosRow}>
+                <View style={styles.macroItem}>
+                  <Ionicons name="fitness" size={14} color={theme.orange} />
+                  <Text style={[styles.macroLabel, { color: theme.comment }]}>Protein:</Text>
+                  <Text style={[styles.macroValue, { color: theme.foreground }]}>{item.protein}g</Text>
+                </View>
+                <View style={styles.macroItem}>
+                  <Ionicons name="leaf" size={14} color={theme.green} />
+                  <Text style={[styles.macroLabel, { color: theme.comment }]}>Carbs:</Text>
+                  <Text style={[styles.macroValue, { color: theme.foreground }]}>{item.carbs}g</Text>
+                </View>
+                <View style={styles.macroItem}>
+                  <Ionicons name="water" size={14} color={theme.cyan} />
+                  <Text style={[styles.macroLabel, { color: theme.comment }]}>Fat:</Text>
+                  <Text style={[styles.macroValue, { color: theme.foreground }]}>{item.fat}g</Text>
+                </View>
               </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.trashIconBtn}
+            </Pressable>
+
+            {/* Delete Button */}
+            <Pressable
+              style={[styles.deleteButton, { backgroundColor: theme.surface.elevated }]}
               onPress={() => {
                 Alert.alert(
                   'Delete Food Item',
-                  `Are you sure you want to delete "${item.name}" from your food list? This cannot be undone.`,
+                  `Are you sure you want to delete "${item.name}"? This cannot be undone.`,
                   [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -143,36 +207,73 @@ export default function FoodSearchScreen() {
                 );
               }}
             >
-              <Ionicons name="trash" size={24} color={theme.red} />
-            </TouchableOpacity>
+              <Ionicons name="trash-outline" size={20} color={theme.danger} />
+            </Pressable>
           </View>
         )}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="search-outline" size={64} color={theme.comment} style={styles.emptyIcon} />
+            <Text style={[styles.emptyText, { color: theme.foreground }]}>
+              {query.length > 0 ? 'No food items found' : 'Start searching for food'}
+            </Text>
+            <Text style={[styles.emptySubtext, { color: theme.comment }]}>
+              {query.length > 0 
+                ? 'Try a different search term or add a new food item'
+                : 'Type in the search box above to find food items'}
+            </Text>
+          </View>
+        }
       />
 
-      <Modal visible={cameraModal.visible} animationType="slide" onRequestClose={() => setCameraModal({ visible: false, scanned: false })}>
-        <View style={[styles.scannerContainer, { backgroundColor: theme.background }]}>
-          {!permission?.granted && (
-            <View style={styles.permissionContainer}>
-              <Text style={[styles.permissionText, { color: theme.foreground }]}>We need your permission to show the camera</Text>
-              <TouchableOpacity style={[styles.permissionButton, { backgroundColor: theme.primary }]} onPress={requestPermission}>
-                <Text style={[styles.permissionButtonText, { color: theme.text.inverse }]}>Grant Permission</Text>
+      {/* Camera Modal */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={cameraModal.visible}
+        onRequestClose={() => setCameraModal({ visible: false, scanned: false })}
+      >
+        <View style={styles.scannerContainer}>
+          {permission?.granted ? (
+            <>
+              <CameraView
+                style={{ flex: 1 }}
+                facing="back"
+                onBarcodeScanned={cameraModal.scanned ? undefined : handleBarCodeScanned}
+              />
+              {cameraModal.scanned && (
+                <TouchableOpacity
+                  style={[styles.scanAgainButton, { backgroundColor: theme.primary }, shadows.md]}
+                  onPress={() => setCameraModal({ visible: true, scanned: false })}
+                >
+                  <Text style={[styles.scanAgainButtonText, { color: theme.text.inverse }]}>
+                    Tap to Scan Again
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: theme.danger }, shadows.md]}
+                onPress={() => setCameraModal({ visible: false, scanned: false })}
+              >
+                <Ionicons name="close" size={24} color={theme.text.inverse} />
               </TouchableOpacity>
+            </>
+          ) : (
+            <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
+              <Ionicons name="camera-outline" size={64} color={theme.comment} style={styles.permissionIcon} />
+              <Text style={[styles.permissionText, { color: theme.foreground }]}>
+                Camera permission is required to scan barcodes
+              </Text>
+              <Pressable
+                style={[styles.permissionButton, { backgroundColor: theme.primary }, shadows.sm]}
+                onPress={requestPermission}
+              >
+                <Text style={[styles.permissionButtonText, { color: theme.text.inverse }]}>
+                  Grant Permission
+                </Text>
+              </Pressable>
             </View>
           )}
-          {permission?.granted && (
-            <CameraView
-              onBarcodeScanned={cameraModal.scanned ? undefined : handleBarCodeScanned}
-              style={StyleSheet.absoluteFillObject}
-            />
-          )}
-          {cameraModal.scanned && (
-            <TouchableOpacity style={[styles.scanAgainButton, { backgroundColor: theme.primary }]} onPress={() => setCameraModal({ visible: true, scanned: false })}>
-              <Text style={[styles.scanAgainButtonText, { color: theme.text.inverse }]}>Tap to Scan Again</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={[styles.closeButton, { backgroundColor: theme.danger }]} onPress={() => setCameraModal({ visible: false, scanned: false })}>
-            <Text style={[styles.closeButtonText, { color: theme.text.inverse }]}>Close</Text>
-          </TouchableOpacity>
         </View>
       </Modal>
     </View>
@@ -180,103 +281,206 @@ export default function FoodSearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  container: {
     flex: 1,
-    padding: spacing.md,
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+  },
+  pageTitle: {
+    fontSize: 36,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.regular,
+  },
+
+  // Search Section
+  searchSection: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    minHeight: 56,
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
   },
   searchInput: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    flex: 1,
     fontSize: typography.sizes.md,
-    flex: 1,
+    fontWeight: typography.weights.regular,
   },
-  searchBarContainer: {
+  clearButton: {
+    padding: spacing.xs,
+  },
+  scanButton: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Add New Button
+  addNewButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
-    width: '100%',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    minHeight: 56,
   },
-  barcodeScanButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    marginLeft: spacing.sm,
-    height: 50, // Match TextInput height
-    justifyContent: 'center',
-    alignItems: 'center',
+  buttonIcon: {
+    marginRight: spacing.sm,
   },
-  searchResultItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-  },
-  searchResultItem: {
-    flex: 1,
-  },
-  trashIconBtn: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: spacing.sm,
-  },
-  searchResultName: {
+  addNewButtonText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
-  searchResultNutrientRow: {
+
+  // Results Header
+  resultsHeader: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  resultsCount: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+  },
+
+  // Food List
+  listContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  foodCard: {
+    flexDirection: 'row',
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+  },
+  foodCardContent: {
+    flex: 1,
+    padding: spacing.lg,
+  },
+  foodCardMain: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: spacing.xs,
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
-  searchResultNutrientLabel: {
+  foodName: {
+    flex: 1,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    marginRight: spacing.md,
+  },
+  caloriesBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  calorieIcon: {
+    marginRight: 2,
+  },
+  caloriesText: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+  },
+  caloriesLabel: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.regular,
+  },
+  macrosRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+  },
+  macroItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  macroLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.regular,
+  },
+  macroValue: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
   },
-  searchResultNutrientValue: {
-    fontSize: typography.sizes.sm,
-  },
-  searchResultMacrosRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  searchResultMacroText: {
-    fontSize: typography.sizes.sm,
-  },
-  addNewFoodButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+
+  // Delete Button
+  deleteButton: {
+    width: 56,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.md,
   },
-  addNewFoodButtonText: {
+
+  // Empty State
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl * 2,
+    paddingHorizontal: spacing.xl,
+  },
+  emptyIcon: {
+    marginBottom: spacing.lg,
+    opacity: 0.5,
+  },
+  emptyText: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  emptySubtext: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
+    fontWeight: typography.weights.regular,
+    textAlign: 'center',
+    lineHeight: 24,
   },
+
+  // Scanner/Camera Modal
   scannerContainer: {
     flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
+    backgroundColor: 'black',
   },
   permissionContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.xl,
+  },
+  permissionIcon: {
+    marginBottom: spacing.lg,
+    opacity: 0.5,
   },
   permissionText: {
     fontSize: typography.sizes.lg,
     textAlign: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
   permissionButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+    minHeight: 52,
   },
   permissionButtonText: {
     fontSize: typography.sizes.md,
@@ -284,22 +488,25 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 40,
-    right: 20,
-    padding: 10,
-    borderRadius: 5,
-  },
-  closeButtonText: {
-    fontSize: 16,
+    top: 48,
+    right: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scanAgainButton: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 48,
     alignSelf: 'center',
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+    minHeight: 52,
   },
   scanAgainButtonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
 });
