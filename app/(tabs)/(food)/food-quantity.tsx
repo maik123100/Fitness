@@ -7,11 +7,12 @@ import {
   getFoodItem,
 } from '@/services/database';
 import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
-import { borderRadius, spacing, typography } from '@/styles/theme';
+import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function FoodQuantityScreen() {
   const router = useRouter();
@@ -91,188 +92,371 @@ export default function FoodQuantityScreen() {
     );
   }
 
+  const calculatedNutrients = {
+    calories: (foodItem.calories / foodItem.servingSize) * parseFloat(quantity || '0'),
+    protein: (foodItem.protein / foodItem.servingSize) * parseFloat(quantity || '0'),
+    carbs: (foodItem.carbs / foodItem.servingSize) * parseFloat(quantity || '0'),
+    fat: (foodItem.fat / foodItem.servingSize) * parseFloat(quantity || '0'),
+  };
+
   return (
-    <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-      <Text style={[styles.mealTitle, { color: theme.foreground }]}>Add {foodItem.name}</Text>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.pageTitle, { color: theme.foreground }]}>Add Portion</Text>
+        <Text style={[styles.pageSubtitle, { color: theme.comment }]}>
+          {foodItem.name}
+        </Text>
+      </View>
 
-      <View style={[styles.calculatedNutrientsContainer, { backgroundColor: theme.surface.card }]}>
-        <View style={styles.calculatedNutrientRow}>
-          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Calories:</Text>
-          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.calories }]}>{((foodItem.calories / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(0)} kcal</Text>
+      {/* Nutritional Preview Card */}
+      <View style={[styles.nutrientsCard, { backgroundColor: theme.surface.card }, shadows.md]}>
+        <Text style={[styles.cardTitle, { color: theme.foreground }]}>Nutritional Information</Text>
+        
+        <View style={styles.nutrientRow}>
+          <View style={styles.nutrientLeft}>
+            <Ionicons name="flame" size={20} color={theme.orange} style={styles.nutrientIcon} />
+            <Text style={[styles.nutrientLabel, { color: theme.comment }]}>Calories</Text>
+          </View>
+          <Text style={[styles.nutrientValue, { color: theme.foreground }]}>
+            {calculatedNutrients.calories.toFixed(0)} kcal
+          </Text>
         </View>
-        <View style={styles.calculatedNutrientRow}>
-          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Protein:</Text>
-          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.protein }]}>{((foodItem.protein / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
-        </View>
-        <View style={styles.calculatedNutrientRow}>
-          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Carbs:</Text>
-          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.carbs }]}>{((foodItem.carbs / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
-        </View>
-        <View style={styles.calculatedNutrientRow}>
-          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Fat:</Text>
-          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.fat }]}>{((foodItem.fat / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
+
+        <View style={styles.macrosGrid}>
+          <View style={styles.macroItem}>
+            <Ionicons name="fitness" size={16} color={theme.orange} />
+            <Text style={[styles.macroLabel, { color: theme.comment }]}>Protein</Text>
+            <Text style={[styles.macroValue, { color: theme.foreground }]}>
+              {calculatedNutrients.protein.toFixed(1)}g
+            </Text>
+          </View>
+          <View style={styles.macroItem}>
+            <Ionicons name="leaf" size={16} color={theme.green} />
+            <Text style={[styles.macroLabel, { color: theme.comment }]}>Carbs</Text>
+            <Text style={[styles.macroValue, { color: theme.foreground }]}>
+              {calculatedNutrients.carbs.toFixed(1)}g
+            </Text>
+          </View>
+          <View style={styles.macroItem}>
+            <Ionicons name="water" size={16} color={theme.cyan} />
+            <Text style={[styles.macroLabel, { color: theme.comment }]}>Fat</Text>
+            <Text style={[styles.macroValue, { color: theme.foreground }]}>
+              {calculatedNutrients.fat.toFixed(1)}g
+            </Text>
+          </View>
         </View>
       </View>
 
-      <View style={[styles.pickerWrapper, { backgroundColor: theme.surface.input }]}>
-        <Picker
-          selectedValue={selectedMealType}
-          onValueChange={(itemValue) => setSelectedMealType(itemValue as MealType)}
-          style={styles.picker}
-          dropdownIconColor={theme.text.primary}
-          itemStyle={styles.pickerItem}
-        >
-          {['breakfast', 'lunch', 'dinner', 'snack'].map((meal) => (
-            <Picker.Item label={meal.charAt(0).toUpperCase() + meal.slice(1)} value={meal} key={meal} color={theme.text.primary} style={{ color: theme.text.primary, backgroundColor: theme.surface.input }} />
-          ))}
-        </Picker>
-      </View>
-
-      <View style={styles.quickQuantityButtonsContainer}>
-        {[50, 100, 150, 200, 250].map((q) => (
-          <TouchableOpacity
-            key={q}
-            style={[styles.quickQuantityButton, { backgroundColor: theme.surface.card }]}
-            onPress={() => setQuantity(String(q))}
+      {/* Meal Type Selector */}
+      <View style={[styles.card, { backgroundColor: theme.surface.card }, shadows.md]}>
+        <Text style={[styles.cardTitle, { color: theme.foreground }]}>Meal Type</Text>
+        <View style={[styles.pickerWrapper, { backgroundColor: theme.surface.input }, shadows.sm]}>
+          <Picker
+            selectedValue={selectedMealType}
+            onValueChange={(itemValue) => setSelectedMealType(itemValue as MealType)}
+            style={styles.picker}
+            dropdownIconColor={theme.foreground}
+            mode="dialog"
           >
-            <Text style={[styles.quickQuantityButtonText, { color: theme.foreground }]}>{q} {foodItem.servingUnit || 'g'}</Text>
-          </TouchableOpacity>
-        ))}
+            {['breakfast', 'lunch', 'dinner', 'snack'].map((meal) => (
+              <Picker.Item 
+                label={meal.charAt(0).toUpperCase() + meal.slice(1)} 
+                value={meal} 
+                key={meal}
+              />
+            ))}
+          </Picker>
+        </View>
       </View>
 
-      <View style={styles.quantityInputContainer}>
-        <TouchableOpacity style={[styles.quantityStepperButton, { backgroundColor: theme.surface.card }]} onPress={() => handleQuantityChange(-10)}>
-          <Text style={[styles.quantityStepperButtonText, { color: theme.foreground }]}>-</Text>
-        </TouchableOpacity>
-        <TextInput
-          style={[styles.quantityInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-          placeholder={`Quantity in ${foodItem.servingUnit || 'g'}`}
-          placeholderTextColor={theme.comment}
-          keyboardType="numeric"
-          value={quantity}
-          onChangeText={(text: string) => setQuantity(text)}
-        />
-        <TouchableOpacity style={[styles.quantityStepperButton, { backgroundColor: theme.surface.card }]} onPress={() => handleQuantityChange(10)}>
-          <Text style={[styles.quantityStepperButtonText, { color: theme.foreground }]}>+</Text>
-        </TouchableOpacity>
+      {/* Quantity Input */}
+      <View style={[styles.card, { backgroundColor: theme.surface.card }, shadows.md]}>
+        <Text style={[styles.cardTitle, { color: theme.foreground }]}>Quantity ({foodItem.servingUnit || 'g'})</Text>
+        
+        {/* Quick Quantity Buttons */}
+        <View style={styles.quickButtons}>
+          {[50, 100, 150, 200, 250].map((amount) => {
+            const currentQuantity = parseFloat(quantity || '0');
+            const isSelected = currentQuantity === amount;
+            
+            console.log(`[Quick Button ${amount}] quantity="${quantity}", parsed=${currentQuantity}, isSelected=${isSelected}`);
+            
+            return (
+              <Pressable
+                key={amount}
+                style={[
+                  styles.quickButton,
+                  shadows.sm,
+                  { backgroundColor: isSelected ? theme.primary : theme.surface.input }
+                ]}
+                onPress={() => {
+                  console.log(`[Button ${amount} clicked] Setting quantity to: ${amount}`);
+                  setQuantity(String(amount));
+                }}
+              >
+                <Text 
+                  style={[
+                    styles.quickButtonText,
+                    { 
+                      color: isSelected ? theme.text.inverse : theme.foreground,
+                      fontWeight: isSelected ? typography.weights.bold : typography.weights.semibold,
+                    }
+                  ]}
+                >
+                  {amount}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Quantity Stepper */}
+        <View style={styles.stepperContainer}>
+          <Pressable
+            style={[styles.stepperButton, { backgroundColor: theme.surface.input }, shadows.sm]}
+            onPress={() => handleQuantityChange(-10)}
+            android_ripple={{ color: theme.selection }}
+          >
+            <Ionicons name="remove" size={24} color={theme.foreground} />
+          </Pressable>
+          
+          <View style={[styles.quantityDisplay, { backgroundColor: theme.surface.input }, shadows.sm]}>
+            <TextInput
+              style={[styles.quantityInput, { color: theme.foreground }]}
+              placeholder="100"
+              placeholderTextColor={theme.comment}
+              keyboardType="numeric"
+              value={quantity}
+              onChangeText={(text: string) => setQuantity(text)}
+              textAlign="center"
+            />
+          </View>
+
+          <Pressable
+            style={[styles.stepperButton, { backgroundColor: theme.surface.input }, shadows.sm]}
+            onPress={() => handleQuantityChange(10)}
+            android_ripple={{ color: theme.selection }}
+          >
+            <Ionicons name="add" size={24} color={theme.foreground} />
+          </Pressable>
+        </View>
       </View>
-      <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: theme.green }]}
-        onPress={addFoodEntryToDatabase}
-      >
-        <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: theme.red, marginTop: spacing.sm }]}
-        onPress={() => router.back()}
-      >
-        <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Cancel</Text>
-      </TouchableOpacity>
-    </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        <Pressable 
+          style={[styles.addButton, { backgroundColor: theme.success }, shadows.md]} 
+          onPress={addFoodEntryToDatabase}
+          android_ripple={{ color: theme.surface.elevated }}
+        >
+          <Ionicons name="checkmark-circle-outline" size={24} color={theme.text.inverse} style={styles.buttonIcon} />
+          <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add to Diary</Text>
+        </Pressable>
+
+        <Pressable 
+          style={[styles.cancelButton, { backgroundColor: theme.surface.card, borderColor: theme.danger, borderWidth: 2 }]} 
+          onPress={() => router.back()}
+          android_ripple={{ color: theme.selection }}
+        >
+          <Ionicons name="close-circle-outline" size={24} color={theme.danger} style={styles.buttonIcon} />
+          <Text style={[styles.cancelButtonText, { color: theme.danger }]}>Cancel</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: spacing.md,
   },
-  modalContainer: {
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  loadingContainer: {
     flex: 1,
-    padding: spacing.md,
-  },
-  mealTitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.md,
-  },
-  quantityInput: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    fontSize: typography.sizes.md,
-    flex: 1,
-    textAlign: 'center',
-    height: 50,
-  },
-  quantityInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    width: '100%',
-  },
-  quantityStepperButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 50,
   },
-  quantityStepperButtonText: {
+  loadingText: {
+    fontSize: typography.sizes.lg,
+  },
+  header: {
+    marginBottom: spacing.xl,
+    paddingTop: spacing.md,
+  },
+  pageTitle: {
+    fontSize: 36,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+  },
+
+  // Card Styles
+  card: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  nutrientsCard: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  cardTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
+    marginBottom: spacing.md,
+  },
+
+  // Nutrient Row
+  nutrientRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  nutrientLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  nutrientIcon: {
+    marginRight: spacing.sm,
+  },
+  nutrientLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+  nutrientValue: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+  },
+
+  // Macros Grid
+  macrosGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  macroItem: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  macroLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.regular,
+  },
+  macroValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+  },
+
+  // Picker
+  pickerWrapper: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    minHeight: 52,
+    justifyContent: 'center',
+  },
+  picker: {
+    height: 52,
+  },
+
+  // Quick Buttons
+  quickButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  quickButton: {
+    flex: 1,
+    minWidth: '30%',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    minHeight: 52,
+    justifyContent: 'center',
+  },
+  quickButtonSelected: {
+    // Will be set dynamically via inline style
+  },
+  quickButtonUnselected: {
+    // Will be set dynamically via inline style
+  },
+  quickButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+
+  // Stepper
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  stepperButton: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityDisplay: {
+    flex: 1,
+    borderRadius: borderRadius.md,
+    minHeight: 56,
+    justifyContent: 'center',
+  },
+  quantityInput: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    textAlign: 'center',
+  },
+
+  // Action Buttons
+  actionButtons: {
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    minHeight: 56,
+  },
+  buttonIcon: {
+    marginRight: spacing.sm,
   },
   addButtonText: {
-    fontSize: typography.sizes.md,
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    marginLeft: spacing.sm,
   },
-  pickerWrapper: {
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    overflow: 'hidden',
-    justifyContent: 'center',
-  },
-  picker: {
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-  },
-  pickerItem: {
-    fontSize: typography.sizes.md,
-  },
-  quickQuantityButtonsContainer: {
+  cancelButton: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    minHeight: 56,
   },
-  quickQuantityButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    margin: spacing.xs,
-  },
-  quickQuantityButtonText: {
-    fontSize: typography.sizes.md,
-  },
-  calculatedNutrientsContainer: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  calculatedNutrientRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: spacing.sm,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-  },
-  calculatedNutrientLabel: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-  },
-  calculatedNutrientValue: {
-    fontSize: typography.sizes.md,
+  cancelButtonText: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
   },
 });
