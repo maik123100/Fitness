@@ -120,7 +120,7 @@ const SetTargetInputList: React.FC<SetTargetInputListProps> = ({ setTargets, onC
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputGroupLabel, { color: theme.comment }]}>Reps</Text>
+              <Text style={[styles.inputGroupLabel, { color: theme.comment }]}>Weight</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
                 placeholder="e.g., 50"
