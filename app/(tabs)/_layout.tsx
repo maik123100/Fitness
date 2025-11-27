@@ -1,11 +1,11 @@
 import DaySelector from '@/app/components/DaySelector';
 import { DateProvider } from '@/app/contexts/DateContext';
 import { ThemeProvider, useTheme } from '@/app/contexts/ThemeContext';
-import Entypo from '@expo/vector-icons/Entypo';
+import { spacing } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import React, { JSX } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 type TabLayoutProps = {
   name: string;
@@ -18,35 +18,35 @@ const tabs: TabLayoutProps[] = [
     name: 'index',
     title: 'Dashboard',
     iconElement: ({ color, focused }) => (
-      <Ionicons name={focused ? 'home-sharp' : 'home-outline'} color={color} size={24} />
+      <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={26} />
     ),
   },
   {
     name: '(food)',
     title: 'Food',
     iconElement: ({ color, focused }) => (
-      <Ionicons name={focused ? 'fast-food' : 'fast-food-outline'} color={color} size={24} />
+      <Ionicons name={focused ? 'restaurant' : 'restaurant-outline'} color={color} size={26} />
     ),
   },
   {
     name: '(training)',
     title: 'Workouts',
     iconElement: ({ color, focused }) => (
-      <Ionicons name={focused ? 'barbell-sharp' : 'barbell-outline'} color={color} size={24} />
+      <Ionicons name={focused ? 'barbell' : 'barbell-outline'} color={color} size={26} />
     ),
   },
   {
     name: '(graphs)',
     title: 'Graphs',
     iconElement: ({ color, focused }) => (
-      <Entypo name={focused ? 'area-graph' : 'line-graph'} color={color} size={24} />
+      <Ionicons name={focused ? 'stats-chart' : 'stats-chart-outline'} color={color} size={26} />
     ),
   },
   {
     name: 'profile',
     title: 'Profile',
     iconElement: ({ color, focused }) => (
-      <Ionicons name={focused ? 'person-sharp' : 'person-outline'} color={color} size={24} />
+      <Ionicons name={focused ? 'person' : 'person-outline'} color={color} size={26} />
     ),
   },
 ]
@@ -58,16 +58,29 @@ function TabsContent() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.comment,
+        tabBarStyle: {
+          backgroundColor: theme.surface.card,
+          borderTopWidth: 1,
+          borderTopColor: theme.surface.elevated,
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 8,
+          elevation: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
         headerStyle: {
           backgroundColor: theme.background,
+          elevation: 0,
         },
         headerShadowVisible: false,
         headerTintColor: theme.foreground,
-        tabBarStyle: {
-          backgroundColor: theme.background,
-        },
         header: () => (
-          <View style={{ backgroundColor: theme.background, paddingTop: 50, paddingHorizontal: 16 }}>
+          <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
             <DaySelector />
           </View>
         ),
@@ -107,3 +120,11 @@ export default function TabLayout() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    paddingTop: 48,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+});
