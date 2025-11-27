@@ -3,11 +3,13 @@ import { useTheme } from '@/app/contexts/ThemeContext';
 import { addFoodItem, getAllFoodItems } from '@/services/database';
 import { FoodCategory, FoodItem } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Button, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 
 const defaultFood: FoodItem = {
@@ -138,50 +140,72 @@ const AddFood: React.FC = () => {
     }
   };
 
-  if (showScanner) {
-    if (!permission) {
-      // Camera permissions are still loading
-      return <View />;
-    }
+  // Collapsible Section Component
+  const CollapsibleSection = ({ 
+    title, 
+    isExpanded, 
+    onToggle, 
+    children,
+    icon 
+  }: { 
+    title: string; 
+    isExpanded: boolean; 
+    onToggle: () => void; 
+    children: React.ReactNode;
+    icon?: keyof typeof Ionicons.glyphMap;
+  }) => {
+    const rotation = useSharedValue(isExpanded ? 180 : 0);
 
-    if (!permission.granted) {
-      // Camera permissions are not granted yet
-      return (
-        <View style={styles.container}>
-          <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
-          <Button onPress={requestPermission} title="grant permission" />
-        </View>
-      );
-    }
+    React.useEffect(() => {
+      rotation.value = withTiming(isExpanded ? 180 : 0, { duration: 300 });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isExpanded]);
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+      transform: [{ rotate: `${rotation.value}deg` }],
+    }));
 
     return (
-      <View style={styles.scannerContainer}>
-        <CameraView
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-          style={StyleSheet.absoluteFillObject}
-        />
-        {scanned && <Button title={'Tap to Scan Again'} onPress={() => setScanned(false)} />}
-        <TouchableOpacity style={styles.closeButton} onPress={() => setShowScanner(false)}>
-          <Text style={styles.closeButtonText}>Close</Text>
-        </TouchableOpacity>
+      <View style={styles.sectionContainer}>
+        <Pressable 
+          style={[styles.sectionHeader, { backgroundColor: theme.surface.card }, shadows.sm]} 
+          onPress={onToggle}
+          android_ripple={{ color: theme.selection }}
+        >
+          <View style={styles.sectionHeaderContent}>
+            {icon && <Ionicons name={icon} size={24} color={theme.primary} style={styles.sectionIcon} />}
+            <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{title}</Text>
+          </View>
+          <ReanimatedAnimated.View style={animatedIconStyle}>
+            <Ionicons name="chevron-down" size={24} color={theme.comment} />
+          </ReanimatedAnimated.View>
+        </Pressable>
+
+        {isExpanded && (
+          <View style={[styles.sectionContent, { backgroundColor: theme.surface.card }]}>
+            {children}
+          </View>
+        )}
       </View>
     );
-  }
+  };
 
   const renderInputField = (field: { label: string; key: string; isNumber: boolean }) => {
     const value = (food as any)[field.key];
 
     return (
-      <View key={field.key}>
-        <Text style={[styles.label, { color: theme.foreground }]}>{field.label}</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-          placeholder={`Enter ${field.label.toLowerCase()}`}
-          placeholderTextColor={theme.text.secondary}
-          value={value?.toString() ?? ''}
-          onChangeText={(v) => handleChange(field.key, field.isNumber ? parseFloat(v) || 0 : v)}
-          keyboardType={field.isNumber ? 'decimal-pad' : 'default'}
-        />
+      <View key={field.key} style={styles.inputGroup}>
+        <Text style={[styles.label, { color: theme.text.secondary }]}>{field.label}</Text>
+        <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+          <TextInput
+            style={[styles.textInput, { color: theme.foreground }]}
+            placeholder={`Enter ${field.label.toLowerCase()}`}
+            placeholderTextColor={theme.comment}
+            value={value?.toString() ?? ''}
+            onChangeText={(v) => handleChange(field.key, field.isNumber ? parseFloat(v) || 0 : v)}
+            keyboardType={field.isNumber ? 'decimal-pad' : 'default'}
+          />
+        </View>
       </View>
     );
   };
@@ -191,67 +215,189 @@ const AddFood: React.FC = () => {
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.subtitle, { color: theme.foreground }]}>Add New Food</Text>
-
-        {/* General Fields */}
-        {generalFields.slice(0, 2).map(renderInputField)}
-
-        {/* Barcode field (without scanner for now, shown below) */}
-        {renderInputField({ label: 'Barcode', key: 'barcode', isNumber: false })}
-
-        {/* Barcode Scanner Button */}
-        <TouchableOpacity style={[styles.scanButton, { backgroundColor: theme.cyan }]} onPress={() => setShowScanner(true)}>
-          <Text style={[styles.scanButtonText, { color: theme.text.inverse }]}>Scan Barcode</Text>
-        </TouchableOpacity>
-
-        {/* Category Picker */}
-        <Text style={[styles.label, { color: theme.foreground }]}>Category</Text>
-        <View style={[styles.pickerWrapper, { backgroundColor: theme.surface.input }]}>
-          <Picker
-            selectedValue={food.category}
-            onValueChange={(itemValue) => handleChange('category', itemValue as FoodCategory)}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-            dropdownIconColor={theme.text.primary}
-            mode="dialog"
-          >
-            {['vegetables', 'fruits', 'grains', 'proteins', 'dairy', 'fats', 'beverages', 'snacks', 'prepared', 'supplements', 'condiments', 'other'].map((cat) => (
-              <Picker.Item
-                label={cat.charAt(0).toUpperCase() + cat.slice(1)}
-                value={cat}
-                key={cat}
-                color={theme.text.primary}
-                style={{ color: theme.text.primary, backgroundColor: theme.surface.input }}
-              />
-            ))}
-          </Picker>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={[styles.pageTitle, { color: theme.foreground }]}>Add New Food</Text>
+          <Text style={[styles.pageSubtitle, { color: theme.comment }]}>
+            Enter nutritional information
+          </Text>
         </View>
 
-        {/* Remaining general fields (Calories, Serving Size, Serving Unit) */}
-        {generalFields.slice(2).map(renderInputField)}
+        {/* General Information */}
+        <View style={[styles.card, { backgroundColor: theme.surface.card }, shadows.md]}>
+          <Text style={[styles.cardTitle, { color: theme.foreground }]}>Basic Information</Text>
+          
+          {generalFields.slice(0, 2).map(renderInputField)}
+          
+          {/* Barcode field */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.text.secondary }]}>Barcode (optional)</Text>
+            <View style={styles.barcodeRow}>
+              <View style={[styles.input, styles.barcodeInput, { backgroundColor: theme.surface.input }, shadows.sm]}>
+                <TextInput
+                  style={[styles.textInput, { color: theme.foreground }]}
+                  placeholder="Scan or enter barcode"
+                  placeholderTextColor={theme.comment}
+                  value={food.barcode?.toString() ?? ''}
+                  onChangeText={(v) => handleChange('barcode', v)}
+                />
+              </View>
+              <Pressable
+                style={[styles.scanButton, { backgroundColor: theme.primary }, shadows.sm]}
+                onPress={() => setShowScanner(true)}
+                android_ripple={{ color: theme.surface.elevated }}
+              >
+                <Ionicons name="barcode-outline" size={24} color={theme.text.inverse} />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Category Picker */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.text.secondary }]}>Category</Text>
+            <View style={[styles.pickerWrapper, { backgroundColor: theme.surface.input }, shadows.sm]}>
+              <Picker
+                selectedValue={food.category}
+                onValueChange={(itemValue) => handleChange('category', itemValue as FoodCategory)}
+                style={styles.picker}
+                dropdownIconColor={theme.foreground}
+                mode="dialog"
+              >
+                {['vegetables', 'fruits', 'grains', 'proteins', 'dairy', 'fats', 'beverages', 'snacks', 'prepared', 'supplements', 'condiments', 'other'].map((cat) => (
+                  <Picker.Item
+                    label={cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    value={cat}
+                    key={cat}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          {/* Serving Information */}
+          <View style={styles.inputRow}>
+            <View style={[styles.inputGroup, styles.inputHalf]}>
+              <Text style={[styles.label, { color: theme.text.secondary }]}>Serving Size</Text>
+              <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+                <TextInput
+                  style={[styles.textInput, { color: theme.foreground }]}
+                  placeholder="100"
+                  placeholderTextColor={theme.comment}
+                  value={food.servingSize?.toString() ?? ''}
+                  onChangeText={(v) => handleChange('servingSize', parseFloat(v) || 0)}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+            <View style={[styles.inputGroup, styles.inputHalf]}>
+              <Text style={[styles.label, { color: theme.text.secondary }]}>Unit</Text>
+              <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+                <TextInput
+                  style={[styles.textInput, { color: theme.foreground }]}
+                  placeholder="g"
+                  placeholderTextColor={theme.comment}
+                  value={food.servingUnit?.toString() ?? ''}
+                  onChangeText={(v) => handleChange('servingUnit', v)}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Calories */}
+          {renderInputField({ label: 'Calories', key: 'calories', isNumber: true })}
+        </View>
 
         {/* Macronutrients */}
-        <Text style={[styles.subtitle, { color: theme.foreground }]}>Macronutrients</Text>
-        {macroFields.map(renderInputField)}
+        <View style={[styles.card, { backgroundColor: theme.surface.card }, shadows.md]}>
+          <Text style={[styles.cardTitle, { color: theme.foreground }]}>Macronutrients</Text>
+          {macroFields.map(renderInputField)}
+        </View>
 
         {/* Vitamins Section */}
-        <TouchableOpacity onPress={() => setShowVitamins(!showVitamins)}>
-          <Text style={[styles.subtitle, { color: theme.foreground }]}>Vitamins (optional)</Text>
-        </TouchableOpacity>
-        {showVitamins && vitaminFields.map(renderInputField)}
+        <CollapsibleSection 
+          title="Vitamins (optional)" 
+          isExpanded={showVitamins} 
+          onToggle={() => setShowVitamins(!showVitamins)}
+          icon="leaf-outline"
+        >
+          {vitaminFields.map(renderInputField)}
+        </CollapsibleSection>
 
         {/* Minerals Section */}
-        <TouchableOpacity onPress={() => setShowMinerals(!showMinerals)}>
-          <Text style={[styles.subtitle, { color: theme.foreground }]}>Minerals (optional)</Text>
-        </TouchableOpacity>
-        {showMinerals && mineralFields.map(renderInputField)}
+        <CollapsibleSection 
+          title="Minerals (optional)" 
+          isExpanded={showMinerals} 
+          onToggle={() => setShowMinerals(!showMinerals)}
+          icon="diamond-outline"
+        >
+          {mineralFields.map(renderInputField)}
+        </CollapsibleSection>
 
         {/* Submit Button */}
-        <TouchableOpacity style={[styles.addBtn, { backgroundColor: theme.green }]} onPress={handleAddFood}>
-          <Text style={[styles.addBtnText, { color: theme.text.inverse }]}>Add Food</Text>
-        </TouchableOpacity>
+        <Pressable 
+          style={[styles.addButton, { backgroundColor: theme.success }, shadows.md]} 
+          onPress={handleAddFood}
+          android_ripple={{ color: theme.surface.elevated }}
+        >
+          <Ionicons name="checkmark-circle-outline" size={24} color={theme.text.inverse} style={styles.buttonIcon} />
+          <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add Food Item</Text>
+        </Pressable>
       </ScrollView>
+
+      {/* Camera Modal */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={showScanner}
+        onRequestClose={() => setShowScanner(false)}
+      >
+        <View style={styles.scannerContainer}>
+          {permission?.granted ? (
+            <>
+              <CameraView
+                style={{ flex: 1 }}
+                facing="back"
+                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+              />
+              {scanned && (
+                <TouchableOpacity
+                  style={[styles.scanAgainButton, { backgroundColor: theme.primary }, shadows.md]}
+                  onPress={() => setScanned(false)}
+                >
+                  <Text style={[styles.scanAgainButtonText, { color: theme.text.inverse }]}>
+                    Tap to Scan Again
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: theme.danger }, shadows.md]}
+                onPress={() => setShowScanner(false)}
+              >
+                <Ionicons name="close" size={24} color={theme.text.inverse} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
+              <Ionicons name="camera-outline" size={64} color={theme.comment} style={styles.permissionIcon} />
+              <Text style={[styles.permissionText, { color: theme.foreground }]}>
+                Camera permission is required to scan barcodes
+              </Text>
+              <Pressable
+                style={[styles.permissionButton, { backgroundColor: theme.primary }, shadows.sm]}
+                onPress={requestPermission}
+              >
+                <Text style={[styles.permissionButtonText, { color: theme.text.inverse }]}>
+                  Grant Permission
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -261,85 +407,192 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
-  title: {
-    fontSize: typography.sizes.title,
+  header: {
+    marginBottom: spacing.xl,
+    paddingTop: spacing.md,
+  },
+  pageTitle: {
+    fontSize: 36,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.regular,
+  },
+
+  // Card Styles
+  card: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  cardTitle: {
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.lg,
-    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
-    marginTop: spacing.sm,
+
+  // Section Styles (for collapsible sections)
+  sectionContainer: {
     marginBottom: spacing.md,
-    textAlign: 'center',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xs,
+    minHeight: 60,
+  },
+  sectionHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  sectionIcon: {
+    marginRight: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+  },
+  sectionContent: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    paddingTop: spacing.md,
+  },
+
+  // Input Styles
+  inputGroup: {
+    marginBottom: spacing.lg,
   },
   label: {
     fontSize: typography.sizes.md,
-    marginBottom: spacing.xs,
-    marginTop: spacing.sm,
+    fontWeight: typography.weights.medium,
+    marginBottom: spacing.sm,
   },
   input: {
-    borderRadius: borderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing.md,
-    marginBottom: spacing.md,
-    fontSize: typography.sizes.md,
-    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    minHeight: 52,
   },
+  textInput: {
+    flex: 1,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.regular,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  inputHalf: {
+    flex: 1,
+  },
+
+  // Barcode Row
+  barcodeRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  barcodeInput: {
+    flex: 1,
+  },
+  scanButton: {
+    width: 56,
+    height: 52,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Picker Styles
   pickerWrapper: {
     borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
     overflow: 'hidden',
+    minHeight: 52,
     justifyContent: 'center',
   },
   picker: {
     fontSize: typography.sizes.md,
-    height: 58,
-    width: '100%',
+    height: 52,
   },
-  pickerItem: {
-    fontSize: typography.sizes.md,
-  },
-  addBtn: {
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
+
+  // Add Button
+  addButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     marginTop: spacing.lg,
-    ...shadows.md,
+    minHeight: 56,
   },
-  addBtnText: {
+  buttonIcon: {
+    marginRight: spacing.sm,
+  },
+  addButtonText: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
   },
+
+  // Scanner/Camera Modal
   scannerContainer: {
     flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
+    backgroundColor: 'black',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  permissionIcon: {
+    marginBottom: spacing.lg,
+    opacity: 0.5,
+  },
+  permissionText: {
+    fontSize: typography.sizes.lg,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  permissionButton: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+    minHeight: 52,
+  },
+  permissionButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
   closeButton: {
     position: 'absolute',
-    top: 40,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 10,
-    borderRadius: 5,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  scanButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    top: 48,
+    right: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.lg,
   },
-  scanButtonText: {
+  scanAgainButton: {
+    position: 'absolute',
+    bottom: 48,
+    alignSelf: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+    minHeight: 52,
+  },
+  scanAgainButtonText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
