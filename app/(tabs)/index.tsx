@@ -94,8 +94,19 @@ export default function DashboardScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.header, { color: theme.foreground }]}>Dashboard</Text>
-      <ScrollView>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.pageTitle, { color: theme.foreground }]}>Dashboard</Text>
+        <Text style={[styles.pageSubtitle, { color: theme.comment }]}>
+          Your daily overview
+        </Text>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <CalorieOverview {...calorieData} />
         <MakroOverview currentMakro={makroData.current} targetMakro={makroData.target} />
         <RecentActivities recentActivities={recentActivities} />
@@ -107,11 +118,27 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: spacing.md,
   },
   header: {
-    fontSize: typography.sizes.heading,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+  },
+  pageTitle: {
+    fontSize: 36,
     fontWeight: typography.weights.bold,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.regular,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
 });

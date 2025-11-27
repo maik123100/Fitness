@@ -1,8 +1,8 @@
 
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { borderRadius, spacing, typography } from '@/styles/theme';
+import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
-import { Dimensions, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text } from 'react-native';
 import { ProgressChart } from 'react-native-chart-kit';
 
 export type Makro = {
@@ -64,29 +64,33 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
   };
 
   return (
-    <TouchableOpacity onPress={() => router.navigate('/macroGraphs')} style={[styles.container, { backgroundColor: theme.surface.card }]}>
-      <Text style={[styles.title, { color: theme.foreground }]}>Makro Overview</Text>
+    <Pressable 
+      onPress={() => router.navigate('/macroGraphs')} 
+      style={[styles.container, { backgroundColor: theme.surface.card }, shadows.md]}
+      android_ripple={{ color: theme.selection }}
+    >
+      <Text style={[styles.title, { color: theme.foreground }]}>Macro Overview</Text>
       <ProgressChart
         data={data}
-        width={Dimensions.get('window').width - (spacing.md * 2) - (spacing.md * 2)}
+        width={Dimensions.get('window').width - (spacing.lg * 4)}
         height={220}
         strokeWidth={16}
         radius={32}
         chartConfig={chartConfig}
         hideLegend={false}
       />
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.md,
   },
