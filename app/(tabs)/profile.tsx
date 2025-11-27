@@ -4,12 +4,13 @@ import { getUserProfile, saveUserProfile } from '@/services/database';
 import { resetDatabase } from '@/services/db';
 import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
 import { setOnboardingCompleted } from '@/services/onboardingService';
-import { borderRadius, spacing, typography, ThemeName } from '@/styles/theme';
+import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import { MineralFields, VitaminFields } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 export default function ProfileScreen() {
   const { theme, themeName, setTheme } = useTheme();
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
   const [showVitaminTargets, setShowVitaminTargets] = useState(false);
   const [showMineralTargets, setShowMineralTargets] = useState(false);
   const [showProfileInfo, setShowProfileInfo] = useState(false);
+  const [showAppearance, setShowAppearance] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -57,7 +59,6 @@ export default function ProfileScreen() {
     const ageDate = new Date(Date.now() - birthDate.getTime());
     const ageYears = Math.abs(ageDate.getUTCFullYear() - 1970);
 
-    // Basic BMR and TDEE calculation
     const weightKg = parseFloat(weight);
     const heightCm = parseFloat(height);
 
@@ -95,11 +96,9 @@ export default function ProfileScreen() {
       goalType,
       targetWeight: targetWeight ? parseFloat(targetWeight) : null,
       targetCalories,
-      // Simple macro split: 40% carbs, 30% protein, 30% fat
       targetCarbs: (targetCalories * 0.4) / 4,
       targetProtein: (targetCalories * 0.3) / 4,
       targetFat: (targetCalories * 0.3) / 9,
-      // Target micronutrients (not set by user, default to null)
       targetVitaminA: null,
       targetVitaminC: null,
       targetVitaminD: null,
@@ -155,7 +154,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: () => {
             resetDatabase();
-            setOnboardingCompleted(false); // Also reset onboarding after db reset
+            setOnboardingCompleted(false);
             router.replace('/onboarding');
           },
         },
@@ -164,496 +163,399 @@ export default function ProfileScreen() {
     );
   };
 
+  // Collapsible Section Component
+  const CollapsibleSection = ({ 
+    title, 
+    isExpanded, 
+    onToggle, 
+    children,
+    icon 
+  }: { 
+    title: string; 
+    isExpanded: boolean; 
+    onToggle: () => void; 
+    children: React.ReactNode;
+    icon?: keyof typeof Ionicons.glyphMap;
+  }) => {
+    const rotation = useSharedValue(isExpanded ? 180 : 0);
+
+    useEffect(() => {
+      rotation.value = withTiming(isExpanded ? 180 : 0, { duration: 300 });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isExpanded]);
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+      transform: [{ rotate: `${rotation.value}deg` }],
+    }));
+
+    return (
+      <View style={styles.sectionContainer}>
+        <Pressable 
+          style={[styles.sectionHeader, { backgroundColor: theme.surface.card }, shadows.sm]} 
+          onPress={onToggle}
+          android_ripple={{ color: theme.selection }}
+        >
+          <View style={styles.sectionHeaderContent}>
+            {icon && <Ionicons name={icon} size={24} color={theme.primary} style={styles.sectionIcon} />}
+            <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{title}</Text>
+          </View>
+          <Animated.View style={animatedIconStyle}>
+            <Ionicons name="chevron-down" size={24} color={theme.comment} />
+          </Animated.View>
+        </Pressable>
+
+        {isExpanded && (
+          <View style={[styles.sectionContent, { backgroundColor: theme.surface.card }]}>
+            {children}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Enhanced Input Field Component
+  const InputField = ({
+    label,
+    value,
+    onChangeText,
+    placeholder,
+    icon,
+    keyboardType = 'default',
+  }: {
+    label: string;
+    value: string;
+    onChangeText: (text: string) => void;
+    placeholder: string;
+    icon?: keyof typeof Ionicons.glyphMap;
+    keyboardType?: 'default' | 'numeric';
+  }) => (
+    <View style={styles.inputGroup}>
+      <Text style={[styles.label, { color: theme.text.secondary }]}>{label}</Text>
+      <View style={[styles.input, { backgroundColor: theme.surface.input, borderColor: theme.surface.secondary }, shadows.sm]}>
+        {icon && <Ionicons name={icon} size={20} color={theme.comment} style={styles.inputIcon} />}
+        <TextInput
+          style={[styles.textInput, { color: theme.foreground }]}
+          placeholder={placeholder}
+          placeholderTextColor={theme.comment}
+          keyboardType={keyboardType}
+          value={value}
+          onChangeText={onChangeText}
+        />
+      </View>
+    </View>
+  );
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.scrollContentContainer}>
-      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => {}}>
-        <Text style={[styles.title, { color: theme.foreground }]}>Theme</Text>
-      </TouchableOpacity>
-      
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: theme.foreground }]}>App Theme</Text>
-        <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
-          <TouchableOpacity
-            style={[styles.segment, themeName === 'dracula' && { backgroundColor: theme.primary }]}
-            onPress={() => setTheme('dracula')}
-          >
-            <Text style={[styles.segmentText, { color: theme.foreground }, themeName === 'dracula' && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>Dark</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.segment, themeName === 'light' && { backgroundColor: theme.primary }]}
-            onPress={() => setTheme('light')}
-          >
-            <Text style={[styles.segmentText, { color: theme.foreground }, themeName === 'light' && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>Light</Text>
-          </TouchableOpacity>
-        </View>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: theme.background }]} 
+      contentContainerStyle={styles.scrollContentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.pageTitle, { color: theme.foreground }]}>Profile Settings</Text>
+        <Text style={[styles.pageSubtitle, { color: theme.comment }]}>Manage your account and preferences</Text>
       </View>
 
-      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => setShowProfileInfo(!showProfileInfo)}>
-        <Text style={[styles.title, { color: theme.foreground }]}>Your Profile</Text>
-        <Ionicons name={showProfileInfo ? "chevron-up" : "chevron-down"} size={24} color={theme.foreground} />
-      </TouchableOpacity>
-
-      {showProfileInfo && (
-        <View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Birthdate</Text>
-            <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={[styles.input, { backgroundColor: theme.surface.input }]}>
-              <Text style={[styles.datePickerText, { color: theme.foreground }]}>{birthdate ? birthdate : 'Select your birthdate'}</Text>
-            </TouchableOpacity>
-            <DatePickerModal
-              isVisible={isDatePickerVisible}
-              onClose={() => setDatePickerVisibility(false)}
-              onSelectDate={(date) => setBirthdate(date.toISOString().split('T')[0])}
-              currentDate={birthdate ? new Date(birthdate) : new Date()}
-            />
+      {/* Theme Section */}
+      <CollapsibleSection 
+        title="Appearance" 
+        isExpanded={showAppearance} 
+        onToggle={() => setShowAppearance(!showAppearance)}
+        icon="color-palette-outline"
+      >
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.text.secondary }]}>App Theme</Text>
+          <View style={styles.themeSelector}>
+            <Pressable
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.surface.input },
+                themeName === 'dracula' && [styles.themeOptionActive, { backgroundColor: theme.primary }],
+                shadows.sm
+              ]}
+              onPress={() => setTheme('dracula')}
+            >
+              <Ionicons 
+                name="moon" 
+                size={20} 
+                color={themeName === 'dracula' ? theme.text.inverse : theme.comment} 
+                style={styles.themeIcon}
+              />
+              <Text 
+                style={[
+                  styles.themeText, 
+                  { color: theme.foreground },
+                  themeName === 'dracula' && { color: theme.text.inverse, fontWeight: typography.weights.semibold }
+                ]}
+              >
+                Dark
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.surface.input },
+                themeName === 'light' && [styles.themeOptionActive, { backgroundColor: theme.primary }],
+                shadows.sm
+              ]}
+              onPress={() => setTheme('light')}
+            >
+              <Ionicons 
+                name="sunny" 
+                size={20} 
+                color={themeName === 'light' ? theme.text.inverse : theme.comment}
+                style={styles.themeIcon}
+              />
+              <Text 
+                style={[
+                  styles.themeText, 
+                  { color: theme.foreground },
+                  themeName === 'light' && { color: theme.text.inverse, fontWeight: typography.weights.semibold }
+                ]}
+              >
+                Light
+              </Text>
+            </Pressable>
           </View>
+        </View>
+      </CollapsibleSection>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Gender</Text>
-            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
-              {['male', 'female'].map((g) => (
-                <TouchableOpacity
-                  key={g}
-                  style={[styles.segment, gender === g && { backgroundColor: theme.primary }]}
-                  onPress={() => setGender(g as 'male' | 'female')}
+      {/* Profile Info Section */}
+      <CollapsibleSection 
+        title="Your Profile" 
+        isExpanded={showProfileInfo} 
+        onToggle={() => setShowProfileInfo(!showProfileInfo)}
+        icon="person-outline"
+      >
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.text.secondary }]}>Birthdate</Text>
+          <Pressable 
+            onPress={() => setDatePickerVisibility(true)} 
+            style={[styles.input, { backgroundColor: theme.surface.input, borderColor: theme.surface.secondary }, shadows.sm]}
+          >
+            <Ionicons name="calendar-outline" size={20} color={theme.comment} style={styles.inputIcon} />
+            <Text style={[styles.inputText, { color: birthdate ? theme.foreground : theme.comment }]}>
+              {birthdate ? birthdate : 'Select your birthdate'}
+            </Text>
+          </Pressable>
+          <DatePickerModal
+            isVisible={isDatePickerVisible}
+            onClose={() => setDatePickerVisibility(false)}
+            onSelectDate={(date) => setBirthdate(date.toISOString().split('T')[0])}
+            currentDate={birthdate ? new Date(birthdate) : new Date()}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.text.secondary }]}>Gender</Text>
+          <View style={styles.segmentedControl}>
+            {['male', 'female'].map((g) => (
+              <Pressable
+                key={g}
+                style={[
+                  styles.segment, 
+                  { backgroundColor: theme.surface.input },
+                  gender === g && [styles.segmentActive, { backgroundColor: theme.primary }],
+                  shadows.sm
+                ]}
+                onPress={() => setGender(g as 'male' | 'female')}
+              >
+                <Ionicons 
+                  name={g === 'male' ? 'male' : 'female'} 
+                  size={18} 
+                  color={gender === g ? theme.text.inverse : theme.comment}
+                  style={styles.segmentIcon}
+                />
+                <Text 
+                  style={[
+                    styles.segmentText, 
+                    { color: theme.foreground }, 
+                    gender === g && { color: theme.text.inverse, fontWeight: typography.weights.semibold }
+                  ]}
                 >
-                  <Text style={[styles.segmentText, { color: theme.foreground }, gender === g && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>{g}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  {g.charAt(0).toUpperCase() + g.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
           </View>
+        </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Height (cm)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter your height"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={height}
-              onChangeText={setHeight}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Weight (kg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter your weight"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={weight}
-              onChangeText={setWeight}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Activity Level</Text>
-            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
-              {Object.keys(activityLevels).map((level) => (
-                <TouchableOpacity
-                  key={level}
-                  style={[styles.segment, activityLevel === level && { backgroundColor: theme.primary }]}
-                  onPress={() => setActivityLevel(level as ActivityLevel)}
-                >
-                  <Text style={[styles.segmentText, { color: theme.foreground }, activityLevel === level && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>{activityLevels[level as ActivityLevel]}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Goal</Text>
-            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
-              {Object.keys(goalTypes).map((goal) => (
-                <TouchableOpacity
-                  key={goal}
-                  style={[styles.segment, goalType === goal && { backgroundColor: theme.primary }]}
-                  onPress={() => setGoalType(goal as GoalType)}
-                >
-                  <Text style={[styles.segmentText, { color: theme.foreground }, goalType === goal && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>{goalTypes[goal as GoalType]}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {(goalType === 'lose-weight' || goalType === 'gain-weight') && (
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.foreground }]}>Target Weight (kg)</Text>
+        <View style={styles.inputRow}>
+          <View style={[styles.inputGroup, styles.inputHalf]}>
+            <Text style={[styles.label, { color: theme.text.secondary }]}>Height (cm)</Text>
+            <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+              <Ionicons name="resize-outline" size={20} color={theme.comment} style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-                placeholder="Enter your target weight"
+                style={[styles.textInput, { color: theme.foreground }]}
+                placeholder="180"
                 placeholderTextColor={theme.comment}
                 keyboardType="numeric"
-                value={targetWeight}
-                onChangeText={setTargetWeight}
+                value={height}
+                onChangeText={setHeight}
               />
             </View>
-          )}
-        </View>
-      )}
+          </View>
 
-      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => setShowVitaminTargets(!showVitaminTargets)}>
-        <Text style={[styles.title, { color: theme.foreground }]}>Vitamin Targets</Text>
-        <Ionicons name={showVitaminTargets ? "chevron-up" : "chevron-down"} size={24} color={theme.foreground} />
-      </TouchableOpacity>
-
-      {showVitaminTargets && (
-        <View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin A (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Vitamin A"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.vitaminA?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminA: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin C (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Vitamin C"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.vitaminC?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminC: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin D (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Vitamin D"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.vitaminD?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminD: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin B6 (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Vitamin B6"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.vitaminB6?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminB6: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin E (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Vitamin E"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.vitaminE?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminE: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin K (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Vitamin K"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.vitaminK?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminK: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Thiamin (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Thiamin"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.thiamin?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, thiamin: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin B12 (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Vitamin B12"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.vitaminB12?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminB12: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Riboflavin (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Riboflavin"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.riboflavin?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, riboflavin: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Folate (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Folate"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.folate?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, folate: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Niacin (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Niacin"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.niacin?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, niacin: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Choline (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Choline"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.choline?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, choline: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Pantothenic Acid (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Pantothenic Acid"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.pantothenicAcid?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, pantothenicAcid: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Biotin (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Biotin"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.biotin?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, biotin: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Carotenoids (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Carotenoids"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={vitaminTargets.carotenoids?.toString() || ''}
-              onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, carotenoids: parseFloat(text) || undefined })}
-            />
+          <View style={[styles.inputGroup, styles.inputHalf]}>
+            <Text style={[styles.label, { color: theme.text.secondary }]}>Weight (kg)</Text>
+            <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+              <Ionicons name="fitness-outline" size={20} color={theme.comment} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { color: theme.foreground }]}
+                placeholder="75"
+                placeholderTextColor={theme.comment}
+                keyboardType="numeric"
+                value={weight}
+                onChangeText={setWeight}
+              />
+            </View>
           </View>
         </View>
-      )}
 
-      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => setShowMineralTargets(!showMineralTargets)}>
-        <Text style={[styles.title, { color: theme.foreground }]}>Mineral Targets</Text>
-        <Ionicons name={showMineralTargets ? "chevron-up" : "chevron-down"} size={24} color={theme.foreground} />
-      </TouchableOpacity>
-
-      {showMineralTargets && (
-        <View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Calcium (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Calcium"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.calcium?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, calcium: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Chloride (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Chloride"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.chloride?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, chloride: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Chromium (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Chromium"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.chromium?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, chromium: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Copper (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Copper"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.copper?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, copper: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Fluoride (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Fluoride"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.fluoride?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, fluoride: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Iodine (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Iodine"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.iodine?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, iodine: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Iron (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Iron"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.iron?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, iron: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Magnesium (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Magnesium"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.magnesium?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, magnesium: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Manganese (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Manganese"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.manganese?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, manganese: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Molybdenum (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Molybdenum"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.molybdenum?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, molybdenum: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Phosphorus (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Phosphorus"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.phosphorus?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, phosphorus: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Potassium (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Potassium"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.potassium?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, potassium: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Selenium (mcg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Selenium"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.selenium?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, selenium: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Sodium (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Sodium"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.sodium?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, sodium: parseFloat(text) || undefined })}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.foreground }]}>Zinc (mg)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Enter target Zinc"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={mineralTargets.zinc?.toString() || ''}
-              onChangeText={(text) => setMineralTargets({ ...mineralTargets, zinc: parseFloat(text) || undefined })}
-            />
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.text.secondary }]}>Activity Level</Text>
+          <View style={styles.segmentedControlWrap}>
+            {Object.keys(activityLevels).map((level) => (
+              <Pressable
+                key={level}
+                style={[
+                  styles.segmentWrap, 
+                  { backgroundColor: theme.surface.input },
+                  activityLevel === level && [styles.segmentActive, { backgroundColor: theme.primary }],
+                  shadows.sm
+                ]}
+                onPress={() => setActivityLevel(level as ActivityLevel)}
+              >
+                <Text 
+                  style={[
+                    styles.segmentTextSmall, 
+                    { color: theme.foreground }, 
+                    activityLevel === level && { color: theme.text.inverse, fontWeight: typography.weights.semibold }
+                  ]}
+                >
+                  {activityLevels[level as ActivityLevel]}
+                </Text>
+              </Pressable>
+            ))}
           </View>
         </View>
-      )}
 
-      <TouchableOpacity style={[styles.saveButton, { backgroundColor: theme.green }]} onPress={handleSaveProfile}>
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.text.secondary }]}>Goal</Text>
+          <View style={styles.segmentedControlWrap}>
+            {Object.keys(goalTypes).map((goal) => (
+              <Pressable
+                key={goal}
+                style={[
+                  styles.segmentWrap, 
+                  { backgroundColor: theme.surface.input },
+                  goalType === goal && [styles.segmentActive, { backgroundColor: theme.primary }],
+                  shadows.sm
+                ]}
+                onPress={() => setGoalType(goal as GoalType)}
+              >
+                <Text 
+                  style={[
+                    styles.segmentTextSmall, 
+                    { color: theme.foreground }, 
+                    goalType === goal && { color: theme.text.inverse, fontWeight: typography.weights.semibold }
+                  ]}
+                >
+                  {goalTypes[goal as GoalType]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {(goalType === 'lose-weight' || goalType === 'gain-weight') && (
+          <InputField
+            label="Target Weight (kg)"
+            value={targetWeight}
+            onChangeText={setTargetWeight}
+            placeholder="Enter your target weight"
+            icon="flag-outline"
+            keyboardType="numeric"
+          />
+        )}
+      </CollapsibleSection>
+
+      {/* Vitamin Targets Section */}
+      <CollapsibleSection 
+        title="Vitamin Targets" 
+        isExpanded={showVitaminTargets} 
+        onToggle={() => setShowVitaminTargets(!showVitaminTargets)}
+        icon="leaf-outline"
+      >
+        {Object.entries(vitaminLabels).map(([key, label]) => (
+          <InputField
+            key={key}
+            label={label}
+            value={vitaminTargets[key as keyof VitaminFields]?.toString() || ''}
+            onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, [key]: parseFloat(text) || undefined })}
+            placeholder={`Enter ${label.split('(')[0].trim()}`}
+            icon="nutrition-outline"
+            keyboardType="numeric"
+          />
+        ))}
+      </CollapsibleSection>
+
+      {/* Mineral Targets Section */}
+      <CollapsibleSection 
+        title="Mineral Targets" 
+        isExpanded={showMineralTargets} 
+        onToggle={() => setShowMineralTargets(!showMineralTargets)}
+        icon="diamond-outline"
+      >
+        {Object.entries(mineralLabels).map(([key, label]) => (
+          <InputField
+            key={key}
+            label={label}
+            value={mineralTargets[key as keyof MineralFields]?.toString() || ''}
+            onChangeText={(text) => setMineralTargets({ ...mineralTargets, [key]: parseFloat(text) || undefined })}
+            placeholder={`Enter ${label.split('(')[0].trim()}`}
+            icon="water-outline"
+            keyboardType="numeric"
+          />
+        ))}
+      </CollapsibleSection>
+
+      {/* Action Buttons */}
+      <Pressable 
+        style={[styles.saveButton, { backgroundColor: theme.success }, shadows.md]} 
+        onPress={handleSaveProfile}
+        android_ripple={{ color: theme.surface.elevated }}
+      >
+        <Ionicons name="checkmark-circle-outline" size={24} color={theme.text.inverse} style={styles.buttonIcon} />
         <Text style={[styles.saveButtonText, { color: theme.text.inverse }]}>Save Profile</Text>
-      </TouchableOpacity>
+      </Pressable>
 
-      <TouchableOpacity style={[styles.resetButton, { backgroundColor: theme.red }]} onPress={handleResetOnboarding}>
-        <Text style={[styles.resetButtonText, { color: theme.text.inverse }]}>Reset Onboarding</Text>
-      </TouchableOpacity>
+      <View style={[styles.dangerZone, { backgroundColor: theme.surface.card, borderColor: theme.danger }, shadows.sm]}>
+        <View style={styles.dangerZoneHeader}>
+          <Ionicons name="warning-outline" size={24} color={theme.danger} style={styles.dangerZoneIcon} />
+          <Text style={[styles.dangerZoneTitle, { color: theme.danger }]}>Danger Zone</Text>
+        </View>
+        <Text style={[styles.dangerZoneDescription, { color: theme.comment }]}>
+          Irreversible actions that will affect your data
+        </Text>
+        
+        <Pressable 
+          style={[styles.dangerButton, { backgroundColor: theme.background, borderColor: theme.orange }]} 
+          onPress={handleResetOnboarding}
+        >
+          <Ionicons name="refresh-outline" size={20} color={theme.orange} style={styles.buttonIcon} />
+          <Text style={[styles.dangerButtonText, { color: theme.orange }]}>Reset Onboarding</Text>
+        </Pressable>
 
-      <TouchableOpacity style={[styles.resetButton, { backgroundColor: theme.red }]} onPress={handleResetDatabase}>
-        <Text style={[styles.resetButtonText, { color: theme.text.inverse }]}>Reset Database</Text>
-      </TouchableOpacity>
+        <Pressable 
+          style={[styles.dangerButton, { backgroundColor: theme.background, borderColor: theme.danger }]} 
+          onPress={handleResetDatabase}
+        >
+          <Ionicons name="trash-outline" size={20} color={theme.danger} style={styles.buttonIcon} />
+          <Text style={[styles.dangerButtonText, { color: theme.danger }]}>Reset Database</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -674,91 +576,260 @@ const goalTypes: Record<GoalType, string> = {
   'improve-fitness': 'Improve Fitness',
 };
 
+const vitaminLabels: Record<string, string> = {
+  vitaminA: 'Vitamin A (mcg)',
+  vitaminC: 'Vitamin C (mg)',
+  vitaminD: 'Vitamin D (mcg)',
+  vitaminB6: 'Vitamin B6 (mg)',
+  vitaminE: 'Vitamin E (mg)',
+  vitaminK: 'Vitamin K (mcg)',
+  thiamin: 'Thiamin (mg)',
+  vitaminB12: 'Vitamin B12 (mcg)',
+  riboflavin: 'Riboflavin (mg)',
+  folate: 'Folate (mcg)',
+  niacin: 'Niacin (mg)',
+  choline: 'Choline (mg)',
+  pantothenicAcid: 'Pantothenic Acid (mg)',
+  biotin: 'Biotin (mcg)',
+  carotenoids: 'Carotenoids (mcg)',
+};
+
+const mineralLabels: Record<string, string> = {
+  calcium: 'Calcium (mg)',
+  chloride: 'Chloride (mg)',
+  chromium: 'Chromium (mcg)',
+  copper: 'Copper (mg)',
+  fluoride: 'Fluoride (mg)',
+  iodine: 'Iodine (mcg)',
+  iron: 'Iron (mg)',
+  magnesium: 'Magnesium (mg)',
+  manganese: 'Manganese (mg)',
+  molybdenum: 'Molybdenum (mcg)',
+  phosphorus: 'Phosphorus (mg)',
+  potassium: 'Potassium (mg)',
+  selenium: 'Selenium (mcg)',
+  sodium: 'Sodium (mg)',
+  zinc: 'Zinc (mg)',
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: spacing.md,
   },
   scrollContentContainer: {
-    paddingBottom: spacing.lg,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
-  title: {
-    fontSize: typography.sizes.heading,
+  header: {
+    marginBottom: spacing.xl,
+  },
+  pageTitle: {
+    fontSize: typography.sizes.display,
     fontWeight: typography.weights.bold,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
-  inputGroup: {
+  pageSubtitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.regular,
+  },
+  
+  // Section Styles
+  sectionContainer: {
     marginBottom: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xs,
+    minHeight: 60,
+  },
+  sectionHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  sectionIcon: {
+    marginRight: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+  },
+  sectionContent: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    paddingTop: spacing.md,
+  },
+
+  // Input Styles
+  inputGroup: {
+    marginBottom: spacing.lg,
   },
   label: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
+    fontWeight: typography.weights.medium,
     marginBottom: spacing.sm,
   },
   input: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing.md,
     borderRadius: borderRadius.md,
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  inputIcon: {
+    marginRight: spacing.sm,
+  },
+  textInput: {
+    flex: 1,
     fontSize: typography.sizes.md,
+    fontWeight: typography.weights.regular,
+  },
+  inputText: {
+    fontSize: typography.sizes.md,
+    flex: 1,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  inputHalf: {
+    flex: 1,
+  },
+
+  // Theme Selector
+  themeSelector: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    height: 50,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    minHeight: 52,
   },
-  datePickerText: {
+  themeOptionActive: {
+    // Applied via inline style
+  },
+  themeIcon: {
+    marginRight: spacing.sm,
+  },
+  themeText: {
     fontSize: typography.sizes.md,
+    fontWeight: typography.weights.regular,
   },
+
+  // Segmented Control
   segmentedControl: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    borderRadius: borderRadius.md,
-    padding: spacing.xs,
+    gap: spacing.md,
   },
   segment: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borderRadius.sm,
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    flexBasis: '48%',
-    margin: '1%',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    minHeight: 52,
   },
   segmentActive: {
-    // Removed - backgroundColor applied inline
+    // Applied via inline style
+  },
+  segmentIcon: {
+    marginRight: spacing.sm,
   },
   segmentText: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.regular,
     textAlign: 'center',
   },
-  segmentTextActive: {
-    // Removed - color and fontWeight applied inline
+  
+  // Wrapped Segmented Control
+  segmentedControlWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
-  saveButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+  segmentWrap: {
+    flexBasis: '48%',
+    flexGrow: 0,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    minHeight: 48,
+  },
+  segmentTextSmall: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.regular,
+    textAlign: 'center',
+  },
+
+  // Button Styles
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     marginTop: spacing.lg,
+    minHeight: 56,
   },
   saveButtonText: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
   },
-  resetButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    marginTop: spacing.lg,
+  buttonIcon: {
+    marginRight: spacing.sm,
   },
-  resetButtonText: {
-    fontSize: typography.sizes.lg,
+
+  // Danger Zone
+  dangerZone: {
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+  },
+  dangerZoneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  dangerZoneIcon: {
+    marginRight: spacing.sm,
+  },
+  dangerZoneTitle: {
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
   },
-  collapsibleHeader: {
+  dangerZoneDescription: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.regular,
+    marginBottom: spacing.lg,
+  },
+  dangerButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
+    marginTop: spacing.md,
+    borderWidth: 1.5,
+    minHeight: 52,
+  },
+  dangerButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
   },
 });
