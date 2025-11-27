@@ -279,16 +279,16 @@ export default function WorkoutSessionScreen() {
         <View style={[styles.progressContainer, { backgroundColor: theme.surface.card, marginTop: insets.top }]}>
           <View style={styles.progressHeader}>
             <Text style={[styles.progressTitle, { color: theme.foreground }]}>Workout Session</Text>
-            <View style={[styles.timerBadge, { backgroundColor: theme.purple }]}>
+            <View style={[styles.timerBadge, { backgroundColor: theme.cyan }]}>
               <Ionicons name="timer-outline" size={16} color={theme.text.inverse} />
               <Text style={[styles.timerText, { color: theme.text.inverse }]}>{ formatTime(elapsedTime)}</Text>
             </View>
           </View>
           <View style={[styles.progressBarContainer, { backgroundColor: theme.surface.secondary }]}>
-            <View style={[styles.progressBar, { backgroundColor: theme.green, width: `${progress.percentage}%` }]} />
+            <View style={[styles.progressBar, { backgroundColor: theme.cyan, width: `${progress.percentage}%` }]} />
           </View>
           <Text style={[styles.progressText, { color: theme.comment }]}>
-            {progress.completedSets}/{progress.totalSets} sets complete ({progress.percentage}%)
+            {progress.completedSets} of {progress.totalSets} sets completed
           </Text>
         </View>
       )}
@@ -364,7 +364,7 @@ export default function WorkoutSessionScreen() {
 
       {/* Exercise Selection - Only for active workouts */}
       {!isEditing && exercises.length > 0 && (
-        <View style={[styles.exerciseSelectionContainer, { backgroundColor: theme.surface.card }]}>
+        <View style={styles.exerciseSelectionContainer}>
           <Text style={[styles.exerciseSelectionTitle, { color: theme.comment }]}>Select Exercise</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exerciseChips}>
             {exercises.map((exercise) => {
@@ -382,24 +382,24 @@ export default function WorkoutSessionScreen() {
                   key={exercise.id}
                   style={[
                     styles.exerciseChip,
-                    { backgroundColor: theme.surface.card },
+                    { backgroundColor: theme.surface.secondary, borderColor: theme.surface.secondary },
                     isCurrent && { backgroundColor: theme.cyan, borderColor: theme.cyan },
-                    isComplete && { backgroundColor: theme.green },
+                    isComplete && { backgroundColor: theme.green, borderColor: theme.green, opacity: 0.8 },
                   ]}
                   onPress={() => switchToExercise(exercise.id)}
                 >
-                  {isRecommended && !isCurrent && (
-                    <View style={[styles.recommendedBadge, { backgroundColor: theme.surface.card }]}>
-                      <Ionicons name="star" size={12} color={theme.yellow} />
+                  {isRecommended && !isCurrent && !isComplete && (
+                    <View style={[styles.recommendedBadge, { backgroundColor: theme.yellow }]}>
+                      <Ionicons name="star" size={10} color={theme.background} />
                     </View>
                   )}
                   {isComplete && (
-                    <Ionicons name="checkmark-circle" size={16} color={theme.green} style={styles.completeIcon} />
+                    <Ionicons name="checkmark-circle" size={16} color={theme.text.inverse} style={styles.completeIcon} />
                   )}
-                  <Text style={[styles.exerciseChipText, { color: theme.foreground }, isCurrent && { color: theme.text.inverse }]}>
+                  <Text style={[styles.exerciseChipText, { color: theme.foreground }, (isCurrent || isComplete) && { color: theme.text.inverse }]}>
                     {exercise.exercise_name}
                   </Text>
-                  <Text style={[styles.exerciseChipCount, isCurrent && styles.exerciseChipCountActive]}>
+                  <Text style={[styles.exerciseChipCount, { color: theme.comment }, (isCurrent || isComplete) && { color: theme.text.inverse, opacity: 0.8 }]}>
                     {completedCount}/{totalCount}
                   </Text>
                 </TouchableOpacity>
@@ -418,28 +418,32 @@ export default function WorkoutSessionScreen() {
         {/* Show duration input when editing finished workout */}
         {isEditing && workoutEntry && (
           <View style={[styles.durationContainer, { backgroundColor: theme.surface.card }]}>
-            <Text style={[styles.durationLabel, { color: theme.comment }]}>Duration (mins)</Text>
-            <TextInput
-              style={[styles.durationInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Duration"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={workoutEntry.duration.toString()}
-              onChangeText={(value) => {
-                const updatedEntry = { ...workoutEntry, duration: parseInt(value) || 0 };
-                setSession(updatedEntry);
-              }}
-            />
+            <View style={styles.durationField}>
+              <Text style={[styles.durationLabel, { color: theme.comment }]}>Duration (mins)</Text>
+              <TextInput
+                style={[styles.durationInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
+                placeholder="Duration"
+                placeholderTextColor={theme.comment}
+                keyboardType="numeric"
+                value={workoutEntry.duration.toString()}
+                onChangeText={(value) => {
+                  const updatedEntry = { ...workoutEntry, duration: parseInt(value) || 0 };
+                  setSession(updatedEntry);
+                }}
+              />
+            </View>
 
-            <Text style={[styles.durationLabel, { color: theme.foreground, marginTop: spacing.md }]}>Calories Burned</Text>
-            <TextInput
-              style={[styles.durationInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-              placeholder="Calories"
-              placeholderTextColor={theme.comment}
-              keyboardType="numeric"
-              value={caloriesBurned}
-              onChangeText={setCaloriesBurned}
-            />
+            <View style={styles.durationField}>
+              <Text style={[styles.durationLabel, { color: theme.comment }]}>Calories Burned</Text>
+              <TextInput
+                style={[styles.durationInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
+                placeholder="Calories"
+                placeholderTextColor={theme.comment}
+                keyboardType="numeric"
+                value={caloriesBurned}
+                onChangeText={setCaloriesBurned}
+              />
+            </View>
           </View>
         )}
 
@@ -570,10 +574,15 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   progressContainer: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -598,14 +607,14 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   progressBarContainer: {
-    height: 8,
-    borderRadius: borderRadius.sm,
+    height: 6,
+    borderRadius: borderRadius.full,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
   progressBar: {
     height: '100%',
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.full,
   },
   progressText: {
     fontSize: typography.sizes.sm,
@@ -623,10 +632,15 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   restTimerCard: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl * 1.5,
     alignItems: 'center',
-    minWidth: 280,
+    minWidth: 300,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   restTimerTitle: {
     fontSize: typography.sizes.xl,
@@ -653,45 +667,60 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   restButton: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   restButtonText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   durationContainer: {
-    flexDirection: 'column',
     marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    gap: spacing.md,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  durationField: {
+    gap: spacing.xs,
   },
   durationLabel: {
     fontSize: typography.sizes.sm,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-    alignSelf: 'flex-end',
+    fontWeight: typography.weights.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   durationInput: {
-    padding: spacing.sm,
+    padding: spacing.md,
     borderRadius: borderRadius.md,
-    fontSize: typography.sizes.md,
+    fontSize: typography.sizes.lg,
     textAlign: 'center',
-    alignSelf: 'center',
-    width: '80%',
+    fontWeight: typography.weights.medium,
   },
   errorText: {
     fontSize: typography.sizes.md,
     textAlign: 'center',
   },
   exerciseCard: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   exerciseHeader: {
     flexDirection: 'row',
@@ -708,14 +737,14 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   setCard: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   setCardCompleted: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
   setCardCurrent: {
   },
@@ -767,11 +796,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    padding: spacing.sm,
-    borderRadius: borderRadius.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
     textAlign: 'center',
     minWidth: 60,
+    fontWeight: typography.weights.medium,
   },
   inputDisabled: {
     opacity: 0.5,
@@ -785,50 +815,60 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     marginTop: spacing.md,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   completeButtonText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   finishButton: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     marginBottom: spacing.md,
     marginHorizontal: spacing.md,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   finishButtonText: {
-    fontSize: typography.sizes.md,
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
   },
   exerciseSelectionContainer: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
   },
   exerciseSelectionTitle: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
     marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   exerciseChips: {
     flexDirection: 'row',
   },
   exerciseChip: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
     marginRight: spacing.sm,
     borderWidth: 2,
-    borderColor: 'transparent',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    position: 'relative',
   },
   exerciseChipActive: {
   },
@@ -842,17 +882,21 @@ const styles = StyleSheet.create({
   exerciseChipTextActive: {
   },
   exerciseChipCount: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     marginLeft: spacing.xs,
+    fontWeight: typography.weights.medium,
   },
   exerciseChipCountActive: {
   },
   recommendedBadge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    borderRadius: 10,
-    padding: 2,
+    top: -4,
+    right: -4,
+    borderRadius: borderRadius.full,
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   completeIcon: {
     marginRight: spacing.xs,
@@ -864,10 +908,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: spacing.xl,
     width: '85%',
     maxWidth: 400,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   modalTitle: {
     fontSize: typography.sizes.xl,
@@ -881,11 +930,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalInput: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    fontSize: typography.sizes.lg,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    fontSize: typography.sizes.xl,
     textAlign: 'center',
     marginBottom: spacing.lg,
+    fontWeight: typography.weights.medium,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -893,8 +943,8 @@ const styles = StyleSheet.create({
   },
   modalCancelButton: {
     flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
   },
   modalCancelButtonText: {
@@ -903,9 +953,14 @@ const styles = StyleSheet.create({
   },
   modalConfirmButton: {
     flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   modalConfirmButtonText: {
     fontSize: typography.sizes.md,
