@@ -1,9 +1,10 @@
 import DatePickerModal from '@/app/components/DatePickerModal';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { getUserProfile, saveUserProfile } from '@/services/database';
 import { resetDatabase } from '@/services/db';
-import { setOnboardingCompleted } from '@/services/onboardingService';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
+import { setOnboardingCompleted } from '@/services/onboardingService';
+import { borderRadius, spacing, typography, ThemeName } from '@/styles/theme';
 import { MineralFields, VitaminFields } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
@@ -11,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileScreen() {
+  const { theme, themeName, setTheme } = useTheme();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [birthdate, setBirthdate] = useState('');
   const [gender, setGender] = useState<'male' | 'female'>('male');
@@ -163,18 +165,40 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContentContainer}>
-      <TouchableOpacity style={styles.collapsibleHeader} onPress={() => setShowProfileInfo(!showProfileInfo)}>
-        <Text style={styles.title}>Your Profile</Text>
-        <Ionicons name={showProfileInfo ? "chevron-up" : "chevron-down"} size={24} color={draculaTheme.foreground} />
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.scrollContentContainer}>
+      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => {}}>
+        <Text style={[styles.title, { color: theme.foreground }]}>Theme</Text>
+      </TouchableOpacity>
+      
+      <View style={styles.inputGroup}>
+        <Text style={[styles.label, { color: theme.foreground }]}>App Theme</Text>
+        <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
+          <TouchableOpacity
+            style={[styles.segment, themeName === 'dracula' && { backgroundColor: theme.primary }]}
+            onPress={() => setTheme('dracula')}
+          >
+            <Text style={[styles.segmentText, { color: theme.foreground }, themeName === 'dracula' && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>Dark</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.segment, themeName === 'light' && { backgroundColor: theme.primary }]}
+            onPress={() => setTheme('light')}
+          >
+            <Text style={[styles.segmentText, { color: theme.foreground }, themeName === 'light' && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>Light</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => setShowProfileInfo(!showProfileInfo)}>
+        <Text style={[styles.title, { color: theme.foreground }]}>Your Profile</Text>
+        <Ionicons name={showProfileInfo ? "chevron-up" : "chevron-down"} size={24} color={theme.foreground} />
       </TouchableOpacity>
 
       {showProfileInfo && (
         <View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Birthdate</Text>
-            <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={styles.input}>
-              <Text style={styles.datePickerText}>{birthdate ? birthdate : 'Select your birthdate'}</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Birthdate</Text>
+            <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={[styles.input, { backgroundColor: theme.surface.input }]}>
+              <Text style={[styles.datePickerText, { color: theme.foreground }]}>{birthdate ? birthdate : 'Select your birthdate'}</Text>
             </TouchableOpacity>
             <DatePickerModal
               isVisible={isDatePickerVisible}
@@ -185,26 +209,26 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Gender</Text>
-            <View style={styles.segmentedControl}>
+            <Text style={[styles.label, { color: theme.foreground }]}>Gender</Text>
+            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
               {['male', 'female'].map((g) => (
                 <TouchableOpacity
                   key={g}
-                  style={[styles.segment, gender === g && styles.segmentActive]}
+                  style={[styles.segment, gender === g && { backgroundColor: theme.primary }]}
                   onPress={() => setGender(g as 'male' | 'female')}
                 >
-                  <Text style={[styles.segmentText, gender === g && styles.segmentTextActive]}>{g}</Text>
+                  <Text style={[styles.segmentText, { color: theme.foreground }, gender === g && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>{g}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Height (cm)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Height (cm)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter your height"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={height}
               onChangeText={setHeight}
@@ -212,11 +236,11 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Weight (kg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Weight (kg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter your weight"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={weight}
               onChangeText={setWeight}
@@ -224,30 +248,30 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Activity Level</Text>
-            <View style={styles.segmentedControl}>
+            <Text style={[styles.label, { color: theme.foreground }]}>Activity Level</Text>
+            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
               {Object.keys(activityLevels).map((level) => (
                 <TouchableOpacity
                   key={level}
-                  style={[styles.segment, activityLevel === level && styles.segmentActive]}
+                  style={[styles.segment, activityLevel === level && { backgroundColor: theme.primary }]}
                   onPress={() => setActivityLevel(level as ActivityLevel)}
                 >
-                  <Text style={[styles.segmentText, activityLevel === level && styles.segmentTextActive]}>{activityLevels[level as ActivityLevel]}</Text>
+                  <Text style={[styles.segmentText, { color: theme.foreground }, activityLevel === level && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>{activityLevels[level as ActivityLevel]}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Goal</Text>
-            <View style={styles.segmentedControl}>
+            <Text style={[styles.label, { color: theme.foreground }]}>Goal</Text>
+            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
               {Object.keys(goalTypes).map((goal) => (
                 <TouchableOpacity
                   key={goal}
-                  style={[styles.segment, goalType === goal && styles.segmentActive]}
+                  style={[styles.segment, goalType === goal && { backgroundColor: theme.primary }]}
                   onPress={() => setGoalType(goal as GoalType)}
                 >
-                  <Text style={[styles.segmentText, goalType === goal && styles.segmentTextActive]}>{goalTypes[goal as GoalType]}</Text>
+                  <Text style={[styles.segmentText, { color: theme.foreground }, goalType === goal && { color: theme.text.inverse, fontWeight: typography.weights.bold }]}>{goalTypes[goal as GoalType]}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -255,11 +279,11 @@ export default function ProfileScreen() {
 
           {(goalType === 'lose-weight' || goalType === 'gain-weight') && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Target Weight (kg)</Text>
+              <Text style={[styles.label, { color: theme.foreground }]}>Target Weight (kg)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
                 placeholder="Enter your target weight"
-                placeholderTextColor={draculaTheme.comment}
+                placeholderTextColor={theme.comment}
                 keyboardType="numeric"
                 value={targetWeight}
                 onChangeText={setTargetWeight}
@@ -269,173 +293,173 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.collapsibleHeader} onPress={() => setShowVitaminTargets(!showVitaminTargets)}>
-        <Text style={styles.title}>Vitamin Targets</Text>
-        <Ionicons name={showVitaminTargets ? "chevron-up" : "chevron-down"} size={24} color={draculaTheme.foreground} />
+      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => setShowVitaminTargets(!showVitaminTargets)}>
+        <Text style={[styles.title, { color: theme.foreground }]}>Vitamin Targets</Text>
+        <Ionicons name={showVitaminTargets ? "chevron-up" : "chevron-down"} size={24} color={theme.foreground} />
       </TouchableOpacity>
 
       {showVitaminTargets && (
         <View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vitamin A (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin A (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Vitamin A"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.vitaminA?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminA: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vitamin C (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin C (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Vitamin C"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.vitaminC?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminC: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vitamin D (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin D (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Vitamin D"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.vitaminD?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminD: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vitamin B6 (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin B6 (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Vitamin B6"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.vitaminB6?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminB6: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vitamin E (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin E (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Vitamin E"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.vitaminE?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminE: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vitamin K (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin K (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Vitamin K"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.vitaminK?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminK: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Thiamin (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Thiamin (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Thiamin"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.thiamin?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, thiamin: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vitamin B12 (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Vitamin B12 (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Vitamin B12"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.vitaminB12?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, vitaminB12: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Riboflavin (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Riboflavin (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Riboflavin"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.riboflavin?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, riboflavin: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Folate (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Folate (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Folate"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.folate?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, folate: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Niacin (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Niacin (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Niacin"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.niacin?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, niacin: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Choline (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Choline (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Choline"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.choline?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, choline: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pantothenic Acid (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Pantothenic Acid (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Pantothenic Acid"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.pantothenicAcid?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, pantothenicAcid: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Biotin (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Biotin (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Biotin"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.biotin?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, biotin: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Carotenoids (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Carotenoids (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Carotenoids"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={vitaminTargets.carotenoids?.toString() || ''}
               onChangeText={(text) => setVitaminTargets({ ...vitaminTargets, carotenoids: parseFloat(text) || undefined })}
@@ -444,173 +468,173 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.collapsibleHeader} onPress={() => setShowMineralTargets(!showMineralTargets)}>
-        <Text style={styles.title}>Mineral Targets</Text>
-        <Ionicons name={showMineralTargets ? "chevron-up" : "chevron-down"} size={24} color={draculaTheme.foreground} />
+      <TouchableOpacity style={[styles.collapsibleHeader, { backgroundColor: theme.surface.card }]} onPress={() => setShowMineralTargets(!showMineralTargets)}>
+        <Text style={[styles.title, { color: theme.foreground }]}>Mineral Targets</Text>
+        <Ionicons name={showMineralTargets ? "chevron-up" : "chevron-down"} size={24} color={theme.foreground} />
       </TouchableOpacity>
 
       {showMineralTargets && (
         <View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Calcium (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Calcium (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Calcium"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.calcium?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, calcium: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Chloride (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Chloride (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Chloride"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.chloride?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, chloride: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Chromium (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Chromium (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Chromium"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.chromium?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, chromium: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Copper (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Copper (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Copper"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.copper?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, copper: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Fluoride (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Fluoride (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Fluoride"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.fluoride?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, fluoride: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Iodine (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Iodine (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Iodine"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.iodine?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, iodine: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Iron (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Iron (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Iron"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.iron?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, iron: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Magnesium (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Magnesium (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Magnesium"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.magnesium?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, magnesium: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Manganese (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Manganese (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Manganese"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.manganese?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, manganese: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Molybdenum (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Molybdenum (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Molybdenum"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.molybdenum?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, molybdenum: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phosphorus (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Phosphorus (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Phosphorus"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.phosphorus?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, phosphorus: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Potassium (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Potassium (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Potassium"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.potassium?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, potassium: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Selenium (mcg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Selenium (mcg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Selenium"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.selenium?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, selenium: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Sodium (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Sodium (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Sodium"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.sodium?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, sodium: parseFloat(text) || undefined })}
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Zinc (mg)</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Zinc (mg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Enter target Zinc"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={mineralTargets.zinc?.toString() || ''}
               onChangeText={(text) => setMineralTargets({ ...mineralTargets, zinc: parseFloat(text) || undefined })}
@@ -619,16 +643,16 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
-        <Text style={styles.saveButtonText}>Save Profile</Text>
+      <TouchableOpacity style={[styles.saveButton, { backgroundColor: theme.green }]} onPress={handleSaveProfile}>
+        <Text style={[styles.saveButtonText, { color: theme.text.inverse }]}>Save Profile</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.resetButton} onPress={handleResetOnboarding}>
-        <Text style={styles.resetButtonText}>Reset Onboarding</Text>
+      <TouchableOpacity style={[styles.resetButton, { backgroundColor: theme.red }]} onPress={handleResetOnboarding}>
+        <Text style={[styles.resetButtonText, { color: theme.text.inverse }]}>Reset Onboarding</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.resetButton} onPress={handleResetDatabase}>
-        <Text style={styles.resetButtonText}>Reset Database</Text>
+      <TouchableOpacity style={[styles.resetButton, { backgroundColor: theme.red }]} onPress={handleResetDatabase}>
+        <Text style={[styles.resetButtonText, { color: theme.text.inverse }]}>Reset Database</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -653,7 +677,6 @@ const goalTypes: Record<GoalType, string> = {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   scrollContentContainer: {
@@ -661,7 +684,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.sizes.heading,
-    color: draculaTheme.foreground,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.lg,
     textAlign: 'center',
@@ -671,13 +693,10 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
     fontWeight: typography.weights.semibold,
     marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
@@ -686,13 +705,11 @@ const styles = StyleSheet.create({
   },
   datePickerText: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
   },
   segmentedControl: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    backgroundColor: draculaTheme.surface.secondary,
     borderRadius: borderRadius.md,
     padding: spacing.xs,
   },
@@ -706,19 +723,16 @@ const styles = StyleSheet.create({
     margin: '1%',
   },
   segmentActive: {
-    backgroundColor: draculaTheme.primary,
+    // Removed - backgroundColor applied inline
   },
   segmentText: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.foreground,
     textAlign: 'center',
   },
   segmentTextActive: {
-    color: draculaTheme.text.inverse,
-    fontWeight: typography.weights.bold,
+    // Removed - color and fontWeight applied inline
   },
   saveButton: {
-    backgroundColor: draculaTheme.green,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
@@ -726,11 +740,9 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: typography.sizes.lg,
-    color: draculaTheme.text.inverse,
     fontWeight: typography.weights.bold,
   },
   resetButton: {
-    backgroundColor: draculaTheme.red,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
@@ -738,14 +750,12 @@ const styles = StyleSheet.create({
   },
   resetButtonText: {
     fontSize: typography.sizes.lg,
-    color: draculaTheme.text.inverse,
     fontWeight: typography.weights.bold,
   },
   collapsibleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: draculaTheme.surface.card,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginTop: spacing.lg,

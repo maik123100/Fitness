@@ -1,5 +1,6 @@
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { finishWorkoutSession, getActiveWorkoutSession, getExerciseTemplate, getWorkoutEntry, getWorkoutTemplateExercises, updateActiveWorkoutSession, updateWorkoutEntry } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ActiveWorkoutSession, WorkoutEntry, WorkoutTemplateExercise, WorkoutSet } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -9,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function WorkoutSessionScreen() {
   // Separate state for clarity
+  const { theme } = useTheme();
   const [session, setSession] = useState<ActiveWorkoutSession | WorkoutEntry | null>(null);
   const [exercises, setExercises] = useState<(WorkoutTemplateExercise & { exercise_name: string })[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -271,21 +273,21 @@ export default function WorkoutSessionScreen() {
   const progress = calculateProgress();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Workout Progress Overview */}
       {!isEditing && (
-        <View style={[styles.progressContainer, { marginTop: insets.top }]}>
+        <View style={[styles.progressContainer, { backgroundColor: theme.surface.card, marginTop: insets.top }]}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Workout Session</Text>
-            <View style={styles.timerBadge}>
-              <Ionicons name="timer-outline" size={16} color={draculaTheme.text.inverse} />
-              <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
+            <Text style={[styles.progressTitle, { color: theme.foreground }]}>Workout Session</Text>
+            <View style={[styles.timerBadge, { backgroundColor: theme.purple }]}>
+              <Ionicons name="timer-outline" size={16} color={theme.text.inverse} />
+              <Text style={[styles.timerText, { color: theme.text.inverse }]}>{ formatTime(elapsedTime)}</Text>
             </View>
           </View>
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { width: `${progress.percentage}%` }]} />
+          <View style={[styles.progressBarContainer, { backgroundColor: theme.surface.secondary }]}>
+            <View style={[styles.progressBar, { backgroundColor: theme.green, width: `${progress.percentage}%` }]} />
           </View>
-          <Text style={styles.progressText}>
+          <Text style={[styles.progressText, { color: theme.comment }]}>
             {progress.completedSets}/{progress.totalSets} sets complete ({progress.percentage}%)
           </Text>
         </View>
@@ -299,15 +301,15 @@ export default function WorkoutSessionScreen() {
         onRequestClose={() => setShowFinishModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Finish Workout</Text>
-            <Text style={styles.modalDescription}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.foreground }]}>Finish Workout</Text>
+            <Text style={[styles.modalDescription, { color: theme.comment }]}>
               Enter calories burned (optional)
             </Text>
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Calories burned"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={caloriesBurned}
               onChangeText={setCaloriesBurned}
@@ -315,16 +317,16 @@ export default function WorkoutSessionScreen() {
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.modalCancelButton}
+                style={[styles.modalCancelButton, { backgroundColor: theme.surface.secondary }]}
                 onPress={() => setShowFinishModal(false)}
               >
-                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                <Text style={[styles.modalCancelButtonText, { color: theme.foreground }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.modalConfirmButton}
+                style={[styles.modalConfirmButton, { backgroundColor: theme.cyan }]}
                 onPress={confirmFinishWorkout}
               >
-                <Text style={styles.modalConfirmButtonText}>Finish</Text>
+                <Text style={[styles.modalConfirmButtonText, { color: theme.text.inverse }]}>Finish</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -334,26 +336,26 @@ export default function WorkoutSessionScreen() {
       {/* Rest Timer Modal */}
       {isResting && (
         <View style={styles.restTimerOverlay}>
-          <View style={styles.restTimerCard}>
-            <Text style={styles.restTimerTitle}>Rest Timer</Text>
-            <Text style={styles.restTimerValue}>{formatTime(restTimer)}</Text>
+          <View style={[styles.restTimerCard, { backgroundColor: theme.surface.card }]}>
+            <Text style={[styles.restTimerTitle, { color: theme.foreground }]}>Rest Timer</Text>
+            <Text style={[styles.restTimerValue, { color: theme.green }]}>{ formatTime(restTimer)}</Text>
             <View style={styles.restTimerDots}>
               {[...Array(6)].map((_, i) => (
                 <View
                   key={i}
                   style={[
                     styles.restDot,
-                    { backgroundColor: i < Math.ceil((restTimer / 90) * 6) ? draculaTheme.green : draculaTheme.surface.secondary }
+                    { backgroundColor: i < Math.ceil((restTimer / 90) * 6) ? theme.green : theme.surface.secondary }
                   ]}
                 />
               ))}
             </View>
             <View style={styles.restTimerButtons}>
-              <TouchableOpacity style={styles.restButton} onPress={skipRest}>
-                <Text style={styles.restButtonText}>Skip Rest</Text>
+              <TouchableOpacity style={[styles.restButton, { backgroundColor: theme.cyan }]} onPress={skipRest}>
+                <Text style={[styles.restButtonText, { color: theme.text.inverse }]}>Skip Rest</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.restButton} onPress={() => addRestTime(30)}>
-                <Text style={styles.restButtonText}>Add 30s</Text>
+              <TouchableOpacity style={[styles.restButton, { backgroundColor: theme.cyan }]} onPress={() => addRestTime(30)}>
+                <Text style={[styles.restButtonText, { color: theme.text.inverse }]}>Add 30s</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -362,8 +364,8 @@ export default function WorkoutSessionScreen() {
 
       {/* Exercise Selection - Only for active workouts */}
       {!isEditing && exercises.length > 0 && (
-        <View style={styles.exerciseSelectionContainer}>
-          <Text style={styles.exerciseSelectionTitle}>Select Exercise</Text>
+        <View style={[styles.exerciseSelectionContainer, { backgroundColor: theme.surface.card }]}>
+          <Text style={[styles.exerciseSelectionTitle, { color: theme.comment }]}>Select Exercise</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exerciseChips}>
             {exercises.map((exercise) => {
               const exerciseSets = session?.sets.filter(
@@ -380,20 +382,21 @@ export default function WorkoutSessionScreen() {
                   key={exercise.id}
                   style={[
                     styles.exerciseChip,
-                    isCurrent && styles.exerciseChipActive,
-                    isComplete && styles.exerciseChipComplete,
+                    { backgroundColor: theme.surface.card },
+                    isCurrent && { backgroundColor: theme.cyan, borderColor: theme.cyan },
+                    isComplete && { backgroundColor: theme.green },
                   ]}
                   onPress={() => switchToExercise(exercise.id)}
                 >
                   {isRecommended && !isCurrent && (
-                    <View style={styles.recommendedBadge}>
-                      <Ionicons name="star" size={12} color={draculaTheme.yellow} />
+                    <View style={[styles.recommendedBadge, { backgroundColor: theme.surface.card }]}>
+                      <Ionicons name="star" size={12} color={theme.yellow} />
                     </View>
                   )}
                   {isComplete && (
-                    <Ionicons name="checkmark-circle" size={16} color={draculaTheme.green} style={styles.completeIcon} />
+                    <Ionicons name="checkmark-circle" size={16} color={theme.green} style={styles.completeIcon} />
                   )}
-                  <Text style={[styles.exerciseChipText, isCurrent && styles.exerciseChipTextActive]}>
+                  <Text style={[styles.exerciseChipText, { color: theme.foreground }, isCurrent && { color: theme.text.inverse }]}>
                     {exercise.exercise_name}
                   </Text>
                   <Text style={[styles.exerciseChipCount, isCurrent && styles.exerciseChipCountActive]}>
@@ -414,12 +417,12 @@ export default function WorkoutSessionScreen() {
       >
         {/* Show duration input when editing finished workout */}
         {isEditing && workoutEntry && (
-          <View style={styles.durationContainer}>
-            <Text style={styles.durationLabel}>Duration (mins)</Text>
+          <View style={[styles.durationContainer, { backgroundColor: theme.surface.card }]}>
+            <Text style={[styles.durationLabel, { color: theme.comment }]}>Duration (mins)</Text>
             <TextInput
-              style={styles.durationInput}
+              style={[styles.durationInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Duration"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={workoutEntry.duration.toString()}
               onChangeText={(value) => {
@@ -428,11 +431,11 @@ export default function WorkoutSessionScreen() {
               }}
             />
 
-            <Text style={[styles.durationLabel, { marginTop: spacing.md }]}>Calories Burned</Text>
+            <Text style={[styles.durationLabel, { color: theme.foreground, marginTop: spacing.md }]}>Calories Burned</Text>
             <TextInput
-              style={styles.durationInput}
+              style={[styles.durationInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
               placeholder="Calories"
-              placeholderTextColor={draculaTheme.comment}
+              placeholderTextColor={theme.comment}
               keyboardType="numeric"
               value={caloriesBurned}
               onChangeText={setCaloriesBurned}
@@ -453,10 +456,10 @@ export default function WorkoutSessionScreen() {
             const totalSets = exerciseSets.length;
 
             return (
-              <View key={exercise.id} style={styles.exerciseCard}>
+              <View key={exercise.id} style={[styles.exerciseCard, { backgroundColor: theme.surface.card }]}>
                 <View style={styles.exerciseHeader}>
-                  <Text style={styles.exerciseTitle}>{exercise.exercise_name}</Text>
-                  <Text style={styles.exerciseProgress}>{completedSets}/{totalSets}</Text>
+                  <Text style={[styles.exerciseTitle, { color: theme.foreground }]}>{exercise.exercise_name}</Text>
+                  <Text style={[styles.exerciseProgress, { color: theme.cyan }]}>{completedSets}/{totalSets}</Text>
                 </View>
 
                 {/* Render each set with improved UI */}
@@ -469,54 +472,55 @@ export default function WorkoutSessionScreen() {
                       key={set.id}
                       style={[
                         styles.setCard,
-                        set.completed && styles.setCardCompleted,
-                        isCurrentSet && styles.setCardCurrent,
+                        { backgroundColor: theme.surface.secondary },
+                        set.completed && { ...styles.setCardCompleted, backgroundColor: theme.surface.input },
+                        isCurrentSet && { borderColor: theme.cyan, backgroundColor: theme.surface.input },
                       ]}
                     >
                       <View style={styles.setHeader}>
                         <View style={styles.setNumberContainer}>
                           {set.completed ? (
-                            <Ionicons name="checkmark-circle" size={24} color={draculaTheme.green} />
+                            <Ionicons name="checkmark-circle" size={24} color={theme.green} />
                           ) : isCurrentSet ? (
-                            <Ionicons name="play-circle" size={24} color={draculaTheme.cyan} />
+                            <Ionicons name="play-circle" size={24} color={theme.cyan} />
                           ) : (
-                            <Ionicons name="ellipse-outline" size={24} color={draculaTheme.comment} />
+                            <Ionicons name="ellipse-outline" size={24} color={theme.comment} />
                           )}
-                          <Text style={[styles.setNumber, isCurrentSet && styles.setNumberCurrent]}>
+                          <Text style={[styles.setNumber, { color: theme.foreground }, isCurrentSet && { color: theme.cyan }]}>
                             Set {index + 1}
                           </Text>
                         </View>
-                        {isCurrentSet && <Text style={styles.currentLabel}>CURRENT</Text>}
+                        {isCurrentSet && <Text style={[styles.currentLabel, { color: theme.cyan }]}>CURRENT</Text>}
                       </View>
 
                       <View style={styles.setContent}>
                         {/* Target */}
                         <View style={styles.targetSection}>
-                          <Text style={styles.sectionLabel}>Target</Text>
-                          <Text style={styles.targetText}>
+                          <Text style={[styles.sectionLabel, { color: theme.comment }]}>Target</Text>
+                          <Text style={[styles.targetText, { color: theme.foreground }]}>
                             {set.targetWeight} kg × {set.targetReps} reps
                           </Text>
                         </View>
 
                         {/* Actual Input */}
                         <View style={styles.actualSection}>
-                          <Text style={styles.sectionLabel}>Actual</Text>
+                          <Text style={[styles.sectionLabel, { color: theme.comment }]}>Actual</Text>
                           <View style={styles.inputRow}>
                             <TextInput
-                              style={[styles.input, isPendingSet && styles.inputDisabled]}
+                              style={[styles.input, { backgroundColor: theme.surface.card, color: theme.foreground }, isPendingSet && styles.inputDisabled]}
                               placeholder={`${set.targetWeight}`}
-                              placeholderTextColor={draculaTheme.comment}
+                              placeholderTextColor={theme.comment}
                               keyboardType="numeric"
                               value={set.weight.toString()}
                               onChangeText={(value) => handleSetUpdate(set.id, 'weight', parseFloat(value) || 0)}
                               editable={!isPendingSet}
                             />
-                            <Text style={styles.inputUnit}>kg</Text>
-                            <Text style={styles.inputSeparator}>×</Text>
+                            <Text style={[styles.inputUnit, { color: theme.comment }]}>kg</Text>
+                            <Text style={[styles.inputSeparator, { color: theme.comment }]}>×</Text>
                             <TextInput
-                              style={[styles.input, isPendingSet && styles.inputDisabled]}
+                              style={[styles.input, { backgroundColor: theme.surface.card, color: theme.foreground }, isPendingSet && styles.inputDisabled]}
                               placeholder={`${set.targetReps}`}
-                              placeholderTextColor={draculaTheme.comment}
+                              placeholderTextColor={theme.comment}
                               keyboardType="numeric"
                               value={set.reps.toString()}
                               onChangeText={(value) => handleSetUpdate(set.id, 'reps', parseInt(value) || 0)}
@@ -530,10 +534,10 @@ export default function WorkoutSessionScreen() {
                       {/* Complete Set Button */}
                       {isCurrentSet && !set.completed && (
                         <TouchableOpacity
-                          style={styles.completeButton}
+                          style={[styles.completeButton, { backgroundColor: theme.green }]}
                           onPress={() => handleCompleteSet(set.id)}
                         >
-                          <Text style={styles.completeButtonText}>Complete Set</Text>
+                          <Text style={[styles.completeButtonText, { color: theme.text.inverse }]}>Complete Set</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -545,8 +549,8 @@ export default function WorkoutSessionScreen() {
       </ScrollView>
 
       {/* Finish/Update button */}
-      <TouchableOpacity style={styles.finishButton} onPress={handleFinishWorkout}>
-        <Text style={styles.finishButtonText}>
+      <TouchableOpacity style={[styles.finishButton, { backgroundColor: theme.cyan }]} onPress={handleFinishWorkout}>
+        <Text style={[styles.finishButtonText, { color: theme.text.inverse }]}>
           {isEditing ? 'Update Workout' : 'Finish Workout'}
         </Text>
       </TouchableOpacity>
@@ -557,7 +561,6 @@ export default function WorkoutSessionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
   },
   contentContainer: {
     flex: 1,
@@ -567,7 +570,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   progressContainer: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginHorizontal: spacing.md,
@@ -582,37 +584,31 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
   },
   timerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: draculaTheme.purple,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
   },
   timerText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
     marginLeft: spacing.xs,
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: draculaTheme.surface.secondary,
     borderRadius: borderRadius.sm,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
   progressBar: {
     height: '100%',
-    backgroundColor: draculaTheme.green,
     borderRadius: borderRadius.sm,
   },
   progressText: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
     textAlign: 'center',
   },
   restTimerOverlay: {
@@ -627,7 +623,6 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   restTimerCard: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     alignItems: 'center',
@@ -636,13 +631,11 @@ const styles = StyleSheet.create({
   restTimerTitle: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.md,
   },
   restTimerValue: {
     fontSize: 48,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.green,
     marginBottom: spacing.md,
   },
   restTimerDots: {
@@ -660,13 +653,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   restButton: {
-    backgroundColor: draculaTheme.purple,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
   },
   restButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -674,22 +665,18 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
   },
   durationLabel: {
-    color: draculaTheme.comment,
     fontSize: typography.sizes.sm,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
     alignSelf: 'flex-end',
   },
   durationInput: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
@@ -698,12 +685,10 @@ const styles = StyleSheet.create({
     width: '80%',
   },
   errorText: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
     textAlign: 'center',
   },
   exerciseCard: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -717,15 +702,12 @@ const styles = StyleSheet.create({
   exerciseTitle: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
   },
   exerciseProgress: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
-    color: draculaTheme.cyan,
   },
   setCard: {
-    backgroundColor: draculaTheme.surface.secondary,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -733,12 +715,9 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   setCardCompleted: {
-    backgroundColor: draculaTheme.surface.input,
     opacity: 0.7,
   },
   setCardCurrent: {
-    borderColor: draculaTheme.cyan,
-    backgroundColor: draculaTheme.surface.input,
   },
   setHeader: {
     flexDirection: 'row',
@@ -754,17 +733,13 @@ const styles = StyleSheet.create({
   setNumber: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
-    color: draculaTheme.foreground,
   },
   setNumberCurrent: {
-    color: draculaTheme.cyan,
     fontWeight: typography.weights.bold,
   },
   currentLabel: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.cyan,
-    backgroundColor: draculaTheme.surface.card,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -780,12 +755,10 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
     fontWeight: typography.weights.semibold,
   },
   targetText: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
   },
   inputRow: {
     flexDirection: 'row',
@@ -793,40 +766,34 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   input: {
-    backgroundColor: draculaTheme.surface.card,
-    color: draculaTheme.foreground,
+    flex: 1,
     padding: spacing.sm,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.sm,
     fontSize: typography.sizes.md,
-    minWidth: 60,
     textAlign: 'center',
+    minWidth: 60,
   },
   inputDisabled: {
     opacity: 0.5,
   },
   inputUnit: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
   },
   inputSeparator: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.comment,
     marginHorizontal: spacing.xs,
   },
   completeButton: {
-    backgroundColor: draculaTheme.green,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     marginTop: spacing.md,
   },
   completeButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   finishButton: {
-    backgroundColor: draculaTheme.cyan,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
@@ -834,12 +801,10 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
   },
   finishButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   exerciseSelectionContainer: {
-    backgroundColor: draculaTheme.surface.card,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,
@@ -849,14 +814,12 @@ const styles = StyleSheet.create({
   exerciseSelectionTitle: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
-    color: draculaTheme.comment,
     marginBottom: spacing.sm,
   },
   exerciseChips: {
     flexDirection: 'row',
   },
   exerciseChip: {
-    backgroundColor: draculaTheme.surface.secondary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
@@ -868,33 +831,26 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   exerciseChipActive: {
-    backgroundColor: draculaTheme.cyan,
-    borderColor: draculaTheme.cyan,
   },
   exerciseChipComplete: {
     opacity: 0.6,
   },
   exerciseChipText: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
     fontWeight: typography.weights.semibold,
   },
   exerciseChipTextActive: {
-    color: draculaTheme.text.inverse,
   },
   exerciseChipCount: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
     marginLeft: spacing.xs,
   },
   exerciseChipCountActive: {
-    color: draculaTheme.text.inverse,
   },
   recommendedBadge: {
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: 10,
     padding: 2,
   },
@@ -908,7 +864,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     width: '85%',
@@ -917,19 +872,15 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   modalDescription: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.comment,
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
   modalInput: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.lg,
@@ -942,25 +893,21 @@ const styles = StyleSheet.create({
   },
   modalCancelButton: {
     flex: 1,
-    backgroundColor: draculaTheme.surface.secondary,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   modalCancelButtonText: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
   },
   modalConfirmButton: {
     flex: 1,
-    backgroundColor: draculaTheme.cyan,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   modalConfirmButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },

@@ -1,5 +1,6 @@
 import { useDate } from '@/app/contexts/DateContext';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { useTheme } from '@/app/contexts/ThemeContext';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -7,6 +8,7 @@ import DatePickerModal from './DatePickerModal';
 
 const DaySelector: React.FC = () => {
   const { selectedDate, setSelectedDate } = useDate();
+  const { theme } = useTheme();
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
 
   const today = new Date();
@@ -59,18 +61,18 @@ const DaySelector: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.surface.card }]}>
       <TouchableOpacity onPress={goToPreviousDay} style={styles.arrowButton}>
-        <Ionicons name="chevron-back" size={24} color={draculaTheme.foreground} />
+        <Ionicons name="chevron-back" size={24} color={theme.foreground} />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => setDatePickerVisible(true)} style={styles.dateDisplayButton}>
-        <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-        <Ionicons name="calendar-outline" size={20} color={draculaTheme.foreground} style={styles.calendarIcon} />
+      <TouchableOpacity onPress={() => setDatePickerVisible(true)} style={[styles.dateDisplayButton, { backgroundColor: theme.surface.input }]}>
+        <Text style={[styles.dateText, { color: theme.foreground }]}>{formatDate(selectedDate)}</Text>
+        <Ionicons name="calendar-outline" size={20} color={theme.foreground} style={styles.calendarIcon} />
       </TouchableOpacity>
 
       <TouchableOpacity onPress={goToNextDay} style={styles.arrowButton}>
-        <Ionicons name="chevron-forward" size={24} color={draculaTheme.foreground} />
+        <Ionicons name="chevron-forward" size={24} color={theme.foreground} />
       </TouchableOpacity>
 
       <DatePickerModal
@@ -88,7 +90,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: draculaTheme.surface.card,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
@@ -103,10 +104,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.sm,
-    backgroundColor: draculaTheme.surface.input,
   },
   dateText: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     marginRight: spacing.sm,

@@ -1,10 +1,11 @@
 import { useSnackbar } from '@/app/components/SnackbarProvider';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import {
   deleteFoodItem,
   getAllFoodItems,
 } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import { FoodItem, MealType } from '@/services/db/schema';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,6 +14,7 @@ import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, 
 
 export default function FoodSearchScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { showSnackbar } = useSnackbar();
   const params = useLocalSearchParams<{ mealType: MealType }>();
   const mealType = params.mealType;
@@ -84,39 +86,39 @@ export default function FoodSearchScreen() {
   };
 
   return (
-    <View style={styles.modalContainer}>
+    <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
       <View style={styles.searchBarContainer}>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
           placeholder="Search for food..."
-          placeholderTextColor={draculaTheme.comment}
+          placeholderTextColor={theme.comment}
           value={query}
           onChangeText={handleSearchQueryChange}
         />
-        <TouchableOpacity style={styles.barcodeScanButton} onPress={openBarcodeScanner}>
-          <Ionicons name="barcode-outline" size={24} color={draculaTheme.text.inverse} />
+        <TouchableOpacity style={[styles.barcodeScanButton, { backgroundColor: theme.primary }]} onPress={openBarcodeScanner}>
+          <Ionicons name="barcode-outline" size={24} color={theme.text.inverse} />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.addNewFoodButton} onPress={() => {
+      <TouchableOpacity style={[styles.addNewFoodButton, { backgroundColor: theme.green }]} onPress={() => {
         router.navigate('/(tabs)/(food)/add-food');
       }}>
-        <Text style={styles.addNewFoodButtonText}>Add New Food</Text>
+        <Text style={[styles.addNewFoodButtonText, { color: theme.text.inverse }]}>Add New Food</Text>
       </TouchableOpacity>
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.searchResultItemRow}>
-            <TouchableOpacity style={styles.searchResultItem} onPress={() => handleAddFood(item)}>
-              <Text style={styles.searchResultName}>{item.name}</Text>
+            <TouchableOpacity style={[styles.searchResultItem, { backgroundColor: theme.surface.card }]} onPress={() => handleAddFood(item)}>
+              <Text style={[styles.searchResultName, { color: theme.foreground }]}>{item.name}</Text>
               <View style={styles.searchResultNutrientRow}>
-                <Text style={styles.searchResultNutrientLabel}>Calories:</Text>
-                <Text style={styles.searchResultNutrientValue}>{item.calories} kcal</Text>
+                <Text style={[styles.searchResultNutrientLabel, { color: theme.comment }]}>Calories:</Text>
+                <Text style={[styles.searchResultNutrientValue, { color: theme.nutrition.calories }]}>{item.calories} kcal</Text>
               </View>
               <View style={styles.searchResultMacrosRow}>
-                <Text style={styles.searchResultMacroText}>Proteins: {item.protein}g</Text>
-                <Text style={styles.searchResultMacroText}>Carbs: {item.carbs}g</Text>
-                <Text style={styles.searchResultMacroText}>Fats: {item.fat}g</Text>
+                <Text style={[styles.searchResultMacroText, { color: theme.comment }]}>Proteins: {item.protein}g</Text>
+                <Text style={[styles.searchResultMacroText, { color: theme.comment }]}>Carbs: {item.carbs}g</Text>
+                <Text style={[styles.searchResultMacroText, { color: theme.comment }]}>Fats: {item.fat}g</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity
@@ -141,19 +143,19 @@ export default function FoodSearchScreen() {
                 );
               }}
             >
-              <Ionicons name="trash" size={24} color={draculaTheme.red} />
+              <Ionicons name="trash" size={24} color={theme.red} />
             </TouchableOpacity>
           </View>
         )}
       />
 
       <Modal visible={cameraModal.visible} animationType="slide" onRequestClose={() => setCameraModal({ visible: false, scanned: false })}>
-        <View style={styles.scannerContainer}>
+        <View style={[styles.scannerContainer, { backgroundColor: theme.background }]}>
           {!permission?.granted && (
             <View style={styles.permissionContainer}>
-              <Text style={styles.permissionText}>We need your permission to show the camera</Text>
-              <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-                <Text style={styles.permissionButtonText}>Grant Permission</Text>
+              <Text style={[styles.permissionText, { color: theme.foreground }]}>We need your permission to show the camera</Text>
+              <TouchableOpacity style={[styles.permissionButton, { backgroundColor: theme.primary }]} onPress={requestPermission}>
+                <Text style={[styles.permissionButtonText, { color: theme.text.inverse }]}>Grant Permission</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -164,12 +166,12 @@ export default function FoodSearchScreen() {
             />
           )}
           {cameraModal.scanned && (
-            <TouchableOpacity style={styles.scanAgainButton} onPress={() => setCameraModal({ visible: true, scanned: false })}>
-              <Text style={styles.scanAgainButtonText}>Tap to Scan Again</Text>
+            <TouchableOpacity style={[styles.scanAgainButton, { backgroundColor: theme.primary }]} onPress={() => setCameraModal({ visible: true, scanned: false })}>
+              <Text style={[styles.scanAgainButtonText, { color: theme.text.inverse }]}>Tap to Scan Again</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.closeButton} onPress={() => setCameraModal({ visible: false, scanned: false })}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <TouchableOpacity style={[styles.closeButton, { backgroundColor: theme.danger }]} onPress={() => setCameraModal({ visible: false, scanned: false })}>
+            <Text style={[styles.closeButtonText, { color: theme.text.inverse }]}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -180,12 +182,9 @@ export default function FoodSearchScreen() {
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   searchInput: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
@@ -198,7 +197,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   barcodeScanButton: {
-    backgroundColor: draculaTheme.cyan,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginLeft: spacing.sm,
@@ -210,7 +208,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
@@ -220,7 +217,6 @@ const styles = StyleSheet.create({
   trashIconBtn: {
     padding: spacing.sm,
     borderRadius: borderRadius.md,
-    backgroundColor: draculaTheme.surface.secondary,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.sm,
@@ -228,7 +224,6 @@ const styles = StyleSheet.create({
   searchResultName: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
   },
   searchResultNutrientRow: {
     flexDirection: 'row',
@@ -238,12 +233,10 @@ const styles = StyleSheet.create({
   },
   searchResultNutrientLabel: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
     fontWeight: typography.weights.semibold,
   },
   searchResultNutrientValue: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.foreground,
   },
   searchResultMacrosRow: {
     flexDirection: 'row',
@@ -254,17 +247,14 @@ const styles = StyleSheet.create({
   },
   searchResultMacroText: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.foreground,
   },
   addNewFoodButton: {
-    backgroundColor: draculaTheme.purple,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     marginBottom: spacing.md,
   },
   addNewFoodButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -272,7 +262,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     justifyContent: 'flex-end',
-    backgroundColor: draculaTheme.background,
   },
   permissionContainer: {
     flex: 1,
@@ -281,18 +270,15 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   permissionText: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.lg,
     textAlign: 'center',
     marginBottom: spacing.md,
   },
   permissionButton: {
-    backgroundColor: draculaTheme.purple,
     padding: spacing.md,
     borderRadius: borderRadius.md,
   },
   permissionButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -300,24 +286,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 40,
     right: 20,
-    backgroundColor: draculaTheme.surface.overlay,
     padding: 10,
     borderRadius: 5,
   },
   closeButtonText: {
-    color: draculaTheme.foreground,
     fontSize: 16,
   },
   scanAgainButton: {
     position: 'absolute',
     bottom: 40,
     alignSelf: 'center',
-    backgroundColor: draculaTheme.surface.overlay,
     padding: 10,
     borderRadius: 5,
   },
   scanAgainButtonText: {
-    color: draculaTheme.foreground,
     fontSize: 16,
   },
 });

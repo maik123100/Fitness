@@ -6,7 +6,8 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { borderRadius, draculaTheme, spacing, typography } from '../styles/theme';
+import { borderRadius, spacing, typography } from '../styles/theme';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from './utils/dateHelpers';
 
 const activityLevels: Record<ActivityLevel, string> = {
@@ -33,6 +34,7 @@ const initialProfile: Partial<UserProfile> = {
 };
 
 export default function OnboardingScreen() {
+  const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
@@ -146,19 +148,19 @@ export default function OnboardingScreen() {
       case 0:
         return (
           <View style={styles.stepContainer}>
-            <Text style={styles.title}>Welcome to Fitness App!</Text>
-            <Text style={styles.subtitle}>Your journey to a healthier you starts here.</Text>
-            <TouchableOpacity style={styles.button} onPress={handleNext}>
-              <Text style={styles.buttonText}>Get Started</Text>
+            <Text style={[styles.title, { color: theme.foreground }]}>Welcome to Fitness App!</Text>
+            <Text style={[styles.subtitle, { color: theme.comment }]}>Your journey to a healthier you starts here.</Text>
+            <TouchableOpacity style={[styles.button, { backgroundColor: theme.cyan }]} onPress={handleNext}>
+              <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Get Started</Text>
             </TouchableOpacity>
           </View>
         );
       case 1:
         return (
           <View style={styles.stepContainer}>
-            <Text style={styles.title}>Your Details</Text>
-            <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={styles.input}>
-              <Text style={styles.datePickerText}>{profile.birthdate ? profile.birthdate : 'Select your birthdate'}</Text>
+            <Text style={[styles.title, { color: theme.foreground }]}>Your Details</Text>
+            <TouchableOpacity onPress={() => setDatePickerVisibility(true)} style={[styles.input, { backgroundColor: theme.surface.input }]}>
+              <Text style={[styles.datePickerText, { color: theme.foreground }]}>{profile.birthdate ? profile.birthdate : 'Select your birthdate'}</Text>
             </TouchableOpacity>
             <DatePickerModal
               isVisible={isDatePickerVisible}
@@ -166,31 +168,31 @@ export default function OnboardingScreen() {
               onSelectDate={(date) => { handleUpdateProfile('birthdate', formatDateToYYYYMMDD(date)) }}
               currentDate={profile.birthdate ? new Date(profile.birthdate) : new Date()}
             />
-            <View style={styles.segmentedControl}>
+            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
               {['male', 'female'].map((g) => (
                 <TouchableOpacity
                   key={g}
-                  style={[styles.segment, profile.gender === g && styles.segmentActive]}
+                  style={[styles.segment, profile.gender === g && [styles.segmentActive, { backgroundColor: theme.primary }]]}
                   onPress={() => handleUpdateProfile('gender', g as 'male' | 'female')}
                 >
-                  <Text style={[styles.segmentText, profile.gender === g && styles.segmentTextActive]}>{g}</Text>
+                  <Text style={[styles.segmentText, { color: theme.foreground }, profile.gender === g && [styles.segmentTextActive, { color: theme.text.inverse }]]}>{g}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={profile.height?.toString()} onChangeText={(text) => {
+            <TextInput style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]} placeholder="Height (cm)" placeholderTextColor={theme.comment} keyboardType="numeric" value={profile.height?.toString()} onChangeText={(text) => {
               handleUpdateProfile('height', text ? parseFloat(text) : undefined)
             }
             } />
-            <TextInput style={styles.input} placeholder="Weight (kg)" keyboardType="numeric" value={profile.weight?.toString()} onChangeText={(text) => {
+            <TextInput style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]} placeholder="Weight (kg)" placeholderTextColor={theme.comment} keyboardType="numeric" value={profile.weight?.toString()} onChangeText={(text) => {
               handleUpdateProfile('weight', text ? parseFloat(text) : undefined)
             }
             } />
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.button} onPress={handlePrev}>
-                <Text style={styles.buttonText}>Back</Text>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.cyan }]} onPress={handlePrev}>
+                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={handleNext}>
-                <Text style={styles.buttonText}>Next</Text>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.cyan }]} onPress={handleNext}>
+                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Next</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -198,24 +200,24 @@ export default function OnboardingScreen() {
       case 2:
         return (
           <View style={styles.stepContainer}>
-            <Text style={styles.title}>Your Activity Level</Text>
-            <View style={styles.segmentedControl}>
+            <Text style={[styles.title, { color: theme.foreground }]}>Your Activity Level</Text>
+            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
               {Object.keys(activityLevels).map((level) => (
                 <TouchableOpacity
                   key={level}
-                  style={[styles.segment, profile.activityLevel === level && styles.segmentActive]}
+                  style={[styles.segment, profile.activityLevel === level && [styles.segmentActive, { backgroundColor: theme.primary }]]}
                   onPress={() => handleUpdateProfile('activityLevel', level as ActivityLevel)}
                 >
-                  <Text style={[styles.segmentText, profile.activityLevel === level && styles.segmentTextActive]}>{activityLevels[level as ActivityLevel]}</Text>
+                  <Text style={[styles.segmentText, { color: theme.foreground }, profile.activityLevel === level && [styles.segmentTextActive, { color: theme.text.inverse }]]}>{activityLevels[level as ActivityLevel]}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.button} onPress={handlePrev}>
-                <Text style={styles.buttonText}>Back</Text>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.cyan }]} onPress={handlePrev}>
+                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={handleNext}>
-                <Text style={styles.buttonText}>Next</Text>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.cyan }]} onPress={handleNext}>
+                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Next</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -223,27 +225,27 @@ export default function OnboardingScreen() {
       case 3:
         return (
           <View style={styles.stepContainer}>
-            <Text style={styles.title}>Your Goal</Text>
-            <View style={styles.segmentedControl}>
+            <Text style={[styles.title, { color: theme.foreground }]}>Your Goal</Text>
+            <View style={[styles.segmentedControl, { backgroundColor: theme.surface.secondary }]}>
               {Object.keys(goalTypes).map((goal) => (
                 <TouchableOpacity
                   key={goal}
-                  style={[styles.segment, profile.goalType === goal && styles.segmentActive]}
+                  style={[styles.segment, profile.goalType === goal && [styles.segmentActive, { backgroundColor: theme.primary }]]}
                   onPress={() => handleUpdateProfile('goalType', goal as GoalType)}
                 >
-                  <Text style={[styles.segmentText, profile.goalType === goal && styles.segmentTextActive]}>{goalTypes[goal as GoalType]}</Text>
+                  <Text style={[styles.segmentText, { color: theme.foreground }, profile.goalType === goal && [styles.segmentTextActive, { color: theme.text.inverse }]]}>{goalTypes[goal as GoalType]}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             {(profile.goalType === 'lose-weight' || profile.goalType === 'gain-weight') && (
-              <TextInput style={styles.input} placeholder="Target Weight (kg)" keyboardType="numeric" value={profile.targetWeight?.toString()} onChangeText={(text) => handleUpdateProfile('targetWeight', parseFloat(text))} />
+              <TextInput style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]} placeholder="Target Weight (kg)" placeholderTextColor={theme.comment} keyboardType="numeric" value={profile.targetWeight?.toString()} onChangeText={(text) => handleUpdateProfile('targetWeight', parseFloat(text))} />
             )}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.button} onPress={handlePrev}>
-                <Text style={styles.buttonText}>Back</Text>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.cyan }]} onPress={handlePrev}>
+                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={handleFinish}>
-                <Text style={styles.buttonText}>Finish</Text>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.cyan }]} onPress={handleFinish}>
+                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Finish</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -254,7 +256,7 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       {renderStep()}
     </View>
   );
@@ -263,7 +265,6 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
@@ -275,19 +276,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: typography.sizes.display,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: typography.sizes.lg,
-    color: draculaTheme.comment,
     marginBottom: spacing.xl,
     textAlign: 'center',
   },
   input: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
@@ -297,17 +294,14 @@ const styles = StyleSheet.create({
   },
   datePickerText: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
   },
   button: {
-    backgroundColor: draculaTheme.cyan,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     marginHorizontal: spacing.sm,
   },
   buttonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
   },
@@ -321,7 +315,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    backgroundColor: draculaTheme.surface.secondary,
     borderRadius: borderRadius.md,
     padding: spacing.xs,
     marginBottom: spacing.md,
@@ -336,15 +329,12 @@ const styles = StyleSheet.create({
     margin: '1%',
   },
   segmentActive: {
-    backgroundColor: draculaTheme.primary,
   },
   segmentText: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.foreground,
     textAlign: 'center',
   },
   segmentTextActive: {
-    color: draculaTheme.text.inverse,
     fontWeight: typography.weights.bold,
   },
 });

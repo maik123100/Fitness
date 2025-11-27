@@ -2,7 +2,7 @@ import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 
-import { draculaTheme } from '@/styles/theme';
+import { useTheme } from '@/app/contexts/ThemeContext';
 
 interface SnackbarContextType {
   showSnackbar: (message: string, duration?: number) => void;
@@ -11,6 +11,7 @@ interface SnackbarContextType {
 const SnackbarContext = createContext<SnackbarContextType | undefined>(undefined);
 
 export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
+  const { theme } = useTheme();
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState('');
   const [duration, setDuration] = useState(3000);
@@ -34,8 +35,8 @@ export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
           visible={visible}
           onDismiss={onDismissSnackbar}
           duration={duration}
-          style={{ backgroundColor: draculaTheme.surface.elevated }}
-          theme={{ colors: { inverseSurface: draculaTheme.text.primary, inverseOnSurface: draculaTheme.text.primary, accent: draculaTheme.primary } }}
+          style={{ backgroundColor: theme.surface.elevated }}
+          theme={{ colors: { inverseSurface: theme.text.primary, inverseOnSurface: theme.text.primary, accent: theme.cyan } }}
           action={{
             label: 'Dismiss',
             onPress: () => {

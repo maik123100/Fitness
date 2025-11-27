@@ -1,5 +1,6 @@
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
@@ -22,6 +23,7 @@ interface DatePickerModalProps {
 }
 
 const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, onSelectDate, currentDate }) => {
+  const { theme } = useTheme();
   const [selected, setSelected] = useState(formatDateToYYYYMMDD(currentDate));
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
@@ -50,11 +52,11 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
           selectedValue={currentMonth}
           style={styles.picker}
           onValueChange={(itemValue) => setCurrentMonth(itemValue)}
-          dropdownIconColor={draculaTheme.text.primary}
+          dropdownIconColor={theme.text.primary}
           itemStyle={styles.pickerItem}
         >
           {monthNames.map((month, index) => (
-            <Picker.Item key={month} label={month} value={index} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
+            <Picker.Item key={month} label={month} value={index} color={theme.text.primary} style={{ color: theme.text.primary, backgroundColor: theme.surface.input }} />
           ))}
         </Picker>
       </View>
@@ -63,11 +65,11 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
           selectedValue={currentYear}
           style={styles.picker}
           onValueChange={(itemValue) => setCurrentYear(itemValue)}
-          dropdownIconColor={draculaTheme.text.primary}
+          dropdownIconColor={theme.text.primary}
           itemStyle={styles.pickerItem}
         >
           {years.map((year) => (
-            <Picker.Item key={year} label={year.toString()} value={year} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
+            <Picker.Item key={year} label={year.toString()} value={year} color={theme.text.primary} style={{ color: theme.text.primary, backgroundColor: theme.surface.input }} />
           ))}
         </Picker>
       </View>
@@ -82,11 +84,11 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
       onRequestClose={onClose}
     >
       <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+        <View style={[styles.modalView, { backgroundColor: theme.surface.card }]}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close-circle" size={24} color={draculaTheme.comment} />
+            <Ionicons name="close-circle" size={24} color={theme.comment} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Select Date</Text>
+          <Text style={[styles.modalTitle, { color: theme.foreground }]}>Select Date</Text>
           <Calendar
             key={`${currentYear}-${currentMonth}`}
             onDayPress={handleDayPress}
@@ -94,8 +96,8 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
               [selected]: {
                 selected: true,
                 disableTouchEvent: true,
-                selectedColor: draculaTheme.cyan,
-                selectedTextColor: draculaTheme.background,
+                selectedColor: theme.cyan,
+                selectedTextColor: theme.background,
               },
             }}
             renderHeader={renderHeader}
@@ -105,18 +107,18 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
               setCurrentYear(date.year);
             }}
             theme={{
-              backgroundColor: draculaTheme.background,
-              calendarBackground: draculaTheme.surface.card,
-              textSectionTitleColor: draculaTheme.foreground,
-              selectedDayBackgroundColor: draculaTheme.cyan,
-              selectedDayTextColor: draculaTheme.background,
-              todayTextColor: draculaTheme.orange,
-              dayTextColor: draculaTheme.foreground,
-              textDisabledColor: draculaTheme.comment,
-              dotColor: draculaTheme.cyan,
-              selectedDotColor: draculaTheme.background,
-              arrowColor: draculaTheme.cyan,
-              monthTextColor: draculaTheme.foreground,
+              backgroundColor: theme.background,
+              calendarBackground: theme.surface.card,
+              textSectionTitleColor: theme.foreground,
+              selectedDayBackgroundColor: theme.cyan,
+              selectedDayTextColor: theme.background,
+              todayTextColor: theme.orange,
+              dayTextColor: theme.foreground,
+              textDisabledColor: theme.comment,
+              dotColor: theme.cyan,
+              selectedDotColor: theme.background,
+              arrowColor: theme.cyan,
+              monthTextColor: theme.foreground,
               textDayFontFamily: typography.fontFamily,
               textMonthFontFamily: typography.fontFamily,
               textDayHeaderFontFamily: typography.fontFamily,
@@ -140,7 +142,6 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: spacing.lg,
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     alignItems: 'center',
@@ -161,7 +162,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.lg,
   },
   headerContainer: {
@@ -173,22 +173,16 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: {
     flex: 1,
-    backgroundColor: draculaTheme.surface.input,
     borderRadius: borderRadius.md,
     marginHorizontal: spacing.xs,
     borderWidth: 1,
-    borderColor: draculaTheme.surface.secondary,
     overflow: 'hidden',
     justifyContent: 'center',
   },
   picker: {
-    color: draculaTheme.text.primary,
-    backgroundColor: draculaTheme.surface.input,
     fontSize: typography.sizes.md,
   },
   pickerItem: {
-    color: draculaTheme.foreground,
-    backgroundColor: draculaTheme.surface.input,
     fontSize: typography.sizes.md,
   },
 });

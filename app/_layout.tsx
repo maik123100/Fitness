@@ -10,6 +10,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SnackbarProvider } from './components/SnackbarProvider';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 export default function RootLayout() {
   const { success, error } = useDatabase();
@@ -60,18 +61,20 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PaperProvider>
-        <SnackbarProvider>
-          <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-            <Stack.Screen name="macroGraphs" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="light" />
-        </SnackbarProvider>
-      </PaperProvider>
+      <ThemeProvider>
+        <PaperProvider>
+          <SnackbarProvider>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="macroGraphs" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style="light" />
+          </SnackbarProvider>
+        </PaperProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

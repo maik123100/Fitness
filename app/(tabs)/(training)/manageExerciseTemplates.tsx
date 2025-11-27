@@ -1,6 +1,7 @@
+import { useTheme } from '@/app/contexts/ThemeContext';
 import SetTargetInputList from '@/app/components/SetTargetInputList';
 import { addExerciseTemplate, deleteExerciseTemplate, getExerciseTemplates, updateExerciseTemplate } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ExerciseTemplate, SetTarget } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from "expo-router";
@@ -27,6 +28,7 @@ interface ListHeaderProps {
   handleFormChange: (field: keyof ManageExerciseTemplatesState['newTemplateForm'], value: string | SetTarget[]) => void;
   handleAddExerciseTemplate: () => void;
   router: ReturnType<typeof useRouter>;
+  theme: any;
   styles: {
     headerContainer: object;
     sectionTitle: object;
@@ -45,6 +47,7 @@ const ListHeader = memo(({
   handleFormChange,
   handleAddExerciseTemplate,
   router,
+  theme,
   styles,
 }: ListHeaderProps) => {
   return (
@@ -56,7 +59,7 @@ const ListHeader = memo(({
         </TouchableOpacity>
       </View>
       <Text style={styles.label}>Exercise Name</Text>
-      <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
+      <TextInput style={[styles.input, styles.exerciseNameInput, { backgroundColor: theme.surface.input, color: theme.foreground }]} placeholder="Enter exercise name" placeholderTextColor={theme.comment} value={newTemplateForm.name} onChangeText={(text) => handleFormChange('name', text)} />
       <Text style={styles.label}>Default Set Targets</Text>
       <SetTargetInputList
         setTargets={newTemplateForm.defaultSetTargets}
@@ -75,6 +78,7 @@ ListHeader.displayName = 'ListHeader';
 
 export default function ManageExerciseTemplates() {
   const router = useRouter();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const [state, setState] = useState<ManageExerciseTemplatesState>({
@@ -169,7 +173,7 @@ export default function ManageExerciseTemplates() {
   }, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}>
       <FlatList
         data={exerciseTemplates}
         keyExtractor={(item) => item.id}
@@ -179,14 +183,24 @@ export default function ManageExerciseTemplates() {
             handleFormChange={handleFormChange}
             handleAddExerciseTemplate={handleAddExerciseTemplate}
             router={router}
-            styles={styles}
+            theme={theme}
+            styles={{
+              ...styles,
+              sectionTitle: [styles.sectionTitle, { color: theme.foreground }],
+              doneButton: [styles.doneButton, { backgroundColor: theme.green }],
+              doneButtonText: [styles.doneButtonText, { color: theme.text.inverse }],
+              label: [styles.label, { color: theme.foreground }],
+              addButton: [styles.addButton, { backgroundColor: theme.cyan }],
+              addButtonText: [styles.addButtonText, { color: theme.text.inverse }],
+              headerContainer: styles.headerContainer,
+            }}
           />
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleEditPress(item)} style={styles.exerciseItem}>
-            <Text style={styles.exerciseText}>{item.name} ({item.defaultSetTargets.length} sets)</Text>
+          <TouchableOpacity onPress={() => handleEditPress(item)} style={[styles.exerciseItem, { backgroundColor: theme.surface.card }]}>
+            <Text style={[styles.exerciseText, { color: theme.foreground }]}>{item.name} ({item.defaultSetTargets.length} sets)</Text>
             <TouchableOpacity onPress={() => handleDeleteExerciseTemplate(item.id)}>
-              <Ionicons name="trash" size={24} color={draculaTheme.danger} />
+              <Ionicons name="trash" size={24} color={theme.red} />
             </TouchableOpacity>
           </TouchableOpacity>
         )}
@@ -198,20 +212,20 @@ export default function ManageExerciseTemplates() {
         visible={editModal.visible}
         onRequestClose={() => setState(prev => ({ ...prev, editModal: { ...prev.editModal, visible: false } }))}>
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Edit Exercise Template</Text>
-            <Text style={styles.label}>Exercise Name</Text>
-            <TextInput style={[styles.input, styles.exerciseNameInput]} placeholder="Enter exercise name" placeholderTextColor={draculaTheme.comment} value={editModal.name} onChangeText={(text) => handleEditModalChange('name', text)} />
-            <Text style={styles.label}>Default Set Targets</Text>
+          <View style={[styles.modalView, { backgroundColor: theme.surface.card }]}>
+            <Text style={[styles.modalText, { color: theme.foreground }]}>Edit Exercise Template</Text>
+            <Text style={[styles.label, { color: theme.foreground }]}>Exercise Name</Text>
+            <TextInput style={[styles.input, styles.exerciseNameInput, { backgroundColor: theme.surface.input, color: theme.foreground }]} placeholder="Enter exercise name" placeholderTextColor={theme.comment} value={editModal.name} onChangeText={(text) => handleEditModalChange('name', text)} />
+            <Text style={[styles.label, { color: theme.foreground }]}>Default Set Targets</Text>
             <SetTargetInputList
               setTargets={editModal.defaultSetTargets}
               onChange={(targets: SetTarget[]) => handleEditModalChange('defaultSetTargets', targets)}
             />
-            <TouchableOpacity style={[styles.button, styles.buttonSave]} onPress={handleUpdateExerciseTemplate}>
-              <Text style={styles.buttonText}>Save Changes</Text>
+            <TouchableOpacity style={[styles.button, { backgroundColor: theme.green }]} onPress={handleUpdateExerciseTemplate}>
+              <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Save Changes</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.buttonCancel]} onPress={() => setState(prev => ({ ...prev, editModal: { ...prev.editModal, visible: false } }))}>
-              <Text style={styles.buttonText}>Cancel</Text>
+            <TouchableOpacity style={[styles.button, { backgroundColor: theme.red }]} onPress={() => setState(prev => ({ ...prev, editModal: { ...prev.editModal, visible: false } }))}>
+              <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -223,7 +237,6 @@ export default function ManageExerciseTemplates() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   headerContainer: {
@@ -233,25 +246,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   doneButton: {
-    backgroundColor: draculaTheme.green,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
   },
   doneButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   sectionTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.md,
   },
   input: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
@@ -264,24 +272,20 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   label: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
     marginBottom: spacing.sm,
   },
   addButton: {
-    backgroundColor: draculaTheme.cyan,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   addButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   exerciseItem: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -290,7 +294,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   exerciseText: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
   },
   centeredView: {
@@ -301,7 +304,6 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: 20,
     padding: 35,
     alignItems: 'center',
@@ -317,7 +319,6 @@ const styles = StyleSheet.create({
   modalText: {
     marginBottom: 15,
     textAlign: 'center',
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.lg,
   },
   button: {
@@ -327,12 +328,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     width: 150,
     alignItems: 'center',
-  },
-  buttonSave: {
-    backgroundColor: draculaTheme.green,
-  },
-  buttonCancel: {
-    backgroundColor: draculaTheme.red,
   },
   buttonText: {
     color: 'white',

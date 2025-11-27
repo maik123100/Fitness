@@ -1,7 +1,8 @@
 
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { getFoodItem, getWorkoutTemplate } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import { FoodEntry } from '@/services/db/schema';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import { WorkoutEntry } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
@@ -13,27 +14,29 @@ function isFoodEntry(item: any): item is FoodEntry {
 }
 
 export default function RecentActivities({ recentActivities }: { recentActivities: (FoodEntry | WorkoutEntry)[] }) {
+  const { theme } = useTheme();
+  
   const renderItem = ({ item }: { item: FoodEntry | WorkoutEntry }) => {
     if (isFoodEntry(item)) {
       const foodItem = getFoodItem(item.foodId);
       return (
-        <View style={styles.activityItem}>
+        <View style={[styles.activityItem, { backgroundColor: theme.surface.card }]}>
           <View style={styles.activityLeft}>
-            <Ionicons name="fast-food" size={20} color={draculaTheme.nutrition.calories} />
-            <Text style={styles.activityText}>{foodItem?.name || 'Food Entry'}</Text>
+            <Ionicons name="fast-food" size={20} color={theme.nutrition.calories} />
+            <Text style={[styles.activityText, { color: theme.foreground }]}>{foodItem?.name || 'Food Entry'}</Text>
           </View>
-          <Text style={styles.eatenCalories}>{Math.round(item.totalCalories)} kcal</Text>
+          <Text style={[styles.eatenCalories, { color: theme.nutrition.calories }]}>{Math.round(item.totalCalories)} kcal</Text>
         </View>
       );
     } else {
       const workoutTemplate = getWorkoutTemplate(item.workoutTemplateId);
       return (
-        <View style={styles.activityItem}>
+        <View style={[styles.activityItem, { backgroundColor: theme.surface.card }]}>
           <View style={styles.activityLeft}>
-            <Ionicons name="barbell" size={20} color={draculaTheme.activity.cardio} />
-            <Text style={styles.activityText}>{workoutTemplate?.name || 'Workout'}</Text>
+            <Ionicons name="barbell" size={20} color={theme.activity.cardio} />
+            <Text style={[styles.activityText, { color: theme.foreground }]}>{workoutTemplate?.name || 'Workout'}</Text>
           </View>
-          <Text style={styles.burnedCalories}>{item.duration} min</Text>
+          <Text style={[styles.burnedCalories, { color: theme.activity.cardio }]}>{item.duration} min</Text>
         </View>
       );
     }
@@ -41,9 +44,9 @@ export default function RecentActivities({ recentActivities }: { recentActivitie
 
   return (
     <View style={styles.activitiesSection}>
-      <Text style={styles.activitiesTitle}>Recent Activities</Text>
+      <Text style={[styles.activitiesTitle, { color: theme.foreground }]}>Recent Activities</Text>
       {recentActivities.length === 0 ? (
-        <Text style={styles.noActivitiesText}>No recent activities to display.</Text>
+        <Text style={[styles.noActivitiesText, { color: theme.comment }]}>No recent activities to display.</Text>
       ) : (
         <View style={styles.activitiesListContainer}>
           {recentActivities.map((item) => <View key={item.id}>{renderItem({ item })}</View>)}
@@ -60,13 +63,11 @@ const styles = StyleSheet.create({
   },
   activitiesTitle: {
     fontSize: typography.sizes.lg,
-    color: draculaTheme.foreground,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.md,
   },
   noActivitiesText: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.comment,
     textAlign: 'center',
     marginTop: spacing.lg,
   },
@@ -80,7 +81,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: draculaTheme.surface.card,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
@@ -93,16 +93,13 @@ const styles = StyleSheet.create({
   },
   activityText: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
   },
   eatenCalories: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.nutrition.calories,
     fontWeight: typography.weights.semibold,
   },
   burnedCalories: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.activity.cardio,
     fontWeight: typography.weights.semibold,
   },
 });

@@ -1,11 +1,8 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-
 import CalorieOverview from '@/app/components/calorieOverview';
 import MakroOverview from '@/app/components/makroOverview';
 import RecentActivities from '@/app/components/recentActivities';
 import { useDate } from '@/app/contexts/DateContext';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import {
   getFoodEntriesForDate,
@@ -14,8 +11,11 @@ import {
   getWorkoutEntries
 } from '@/services/database';
 import { FoodEntry } from '@/services/db/schema';
+import { spacing, typography } from '@/styles/theme';
 import { WorkoutEntry } from '@/types/types';
-import { draculaTheme, spacing, typography } from '../../styles/theme';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 interface DashboardState {
   calorieData: {
@@ -33,6 +33,7 @@ interface DashboardState {
 
 export default function DashboardScreen() {
   const { selectedDate } = useDate();
+  const { theme } = useTheme();
   const [state, setState] = useState<DashboardState>({
     calorieData: { eaten: 0, burned: 0, remaining: 2000, target: 2000 },
     makroData: {
@@ -92,8 +93,8 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Dashboard</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.header, { color: theme.foreground }]}>Dashboard</Text>
       <ScrollView>
         <CalorieOverview {...calorieData} />
         <MakroOverview currentMakro={makroData.current} targetMakro={makroData.target} />
@@ -106,12 +107,10 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   header: {
     fontSize: typography.sizes.heading,
-    color: draculaTheme.foreground,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.md,
   },

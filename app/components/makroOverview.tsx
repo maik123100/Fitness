@@ -1,5 +1,6 @@
 
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { useTheme } from '@/app/contexts/ThemeContext';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import { Dimensions, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { ProgressChart } from 'react-native-chart-kit';
@@ -17,6 +18,8 @@ export type MakroOverviewProps = {
 
 export default function MakroOverview({ targetMakro, currentMakro }: MakroOverviewProps) {
   const router = useRouter();
+  const { theme } = useTheme();
+  
   const data = {
     labels: ['Protein', 'Carbs', 'Fat'],
     data: [
@@ -25,25 +28,35 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
       targetMakro.fat > 0 ? Math.min(currentMakro.fat / targetMakro.fat, 1) : 0,
     ],
     colors: [
-      draculaTheme.nutrition.protein,
-      draculaTheme.nutrition.carbs,
-      draculaTheme.nutrition.fat,
+      theme.nutrition.protein,
+      theme.nutrition.carbs,
+      theme.nutrition.fat,
     ]
   };
 
   const chartConfig = {
-    backgroundGradientFrom: draculaTheme.surface.card,
-    backgroundGradientTo: draculaTheme.surface.card,
+    backgroundGradientFrom: theme.surface.card,
+    backgroundGradientTo: theme.surface.card,
     color: (opacity: number, index?: number) => {
-      const rgbColors = [
-        '255, 121, 198', // Protein: #ff79c6
-        '255, 184, 108', // Carbs: #ffb86c
-        '241, 250, 140', // Fat: #f1fa8c
+      const colors = [
+        theme.nutrition.protein, 
+        theme.nutrition.carbs,
+        theme.nutrition.fat,
       ];
-      const rgb = rgbColors[index || 0];
-      return `rgba(${rgb}, ${opacity})`;
+      const color = colors[index || 0];
+      // Convert hex to rgba
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     },
-    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+    labelColor: (opacity = 1) => {
+      const color = theme.foreground;
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    },
     propsForLabels: {
       fontSize: typography.sizes.sm,
       fontWeight: typography.weights.semibold,
@@ -51,8 +64,8 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
   };
 
   return (
-    <TouchableOpacity onPress={() => router.navigate('/macroGraphs')} style={styles.container}>
-      <Text style={styles.title}>Makro Overview</Text>
+    <TouchableOpacity onPress={() => router.navigate('/macroGraphs')} style={[styles.container, { backgroundColor: theme.surface.card }]}>
+      <Text style={[styles.title, { color: theme.foreground }]}>Makro Overview</Text>
       <ProgressChart
         data={data}
         width={Dimensions.get('window').width - (spacing.md * 2) - (spacing.md * 2)}
@@ -68,13 +81,11 @@ export default function MakroOverview({ targetMakro, currentMakro }: MakroOvervi
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: draculaTheme.surface.card,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginTop: spacing.lg,
   },
   title: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.md,

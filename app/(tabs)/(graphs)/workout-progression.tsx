@@ -1,5 +1,6 @@
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { getExerciseProgression, getExerciseTemplates } from '@/services/database';
-import { draculaTheme, spacing } from '@/styles/theme';
+import { spacing } from '@/styles/theme';
 import { ExerciseTemplate } from '@/types/types';
 import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
@@ -27,6 +28,7 @@ const setColors = [
 ];
 
 export default function WorkoutProgressionScreen() {
+  const { theme } = useTheme();
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [exerciseTemplates, setExerciseTemplates] = useState<ExerciseTemplate[]>([]);
   const [chartData, setChartData] = useState<ChartData[] | null>(null);
@@ -86,10 +88,20 @@ export default function WorkoutProgressionScreen() {
   };
 
   const chartConfig = {
-    backgroundGradientFrom: draculaTheme.surface.card,
-    backgroundGradientTo: draculaTheme.surface.card,
-    color: (opacity = 1) => `rgba(248, 248, 242, ${opacity})`,
-    labelColor: (opacity = 1) => draculaTheme.green,
+    backgroundGradientFrom: theme.surface.card,
+    backgroundGradientTo: theme.surface.card,
+    color: (opacity = 1) => {
+      const r = parseInt(theme.foreground.slice(1, 3), 16);
+      const g = parseInt(theme.foreground.slice(3, 5), 16);
+      const b = parseInt(theme.foreground.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    },
+    labelColor: (opacity = 1) => {
+      const r = parseInt(theme.green.slice(1, 3), 16);
+      const g = parseInt(theme.green.slice(3, 5), 16);
+      const b = parseInt(theme.green.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    },
     fillShadowGradientOpacity: 0.1,
     propsForDots: {
       r: '4',
@@ -97,7 +109,7 @@ export default function WorkoutProgressionScreen() {
     },
     propsForBackgroundLines: {
       strokeDasharray: '',
-      stroke: draculaTheme.surface.secondary,
+      stroke: theme.surface.secondary,
     },
   };
 
@@ -108,29 +120,29 @@ export default function WorkoutProgressionScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Picker
         selectedValue={selectedExercise}
-        style={styles.picker}
-        itemStyle={styles.pickerItem}
-        dropdownIconColor={draculaTheme.text.primary}
+        style={[styles.picker, { backgroundColor: theme.surface.card, color: theme.foreground }]}
+        itemStyle={[styles.pickerItem, { color: theme.foreground, backgroundColor: theme.surface.card }]}
+        dropdownIconColor={theme.text.primary}
         onValueChange={(itemValue) => setSelectedExercise(itemValue)}
       >
         {exerciseTemplates.map(template => (
-          <Picker.Item key={template.id} label={template.name} value={template.id} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.card }} />
+          <Picker.Item key={template.id} label={template.name} value={template.id} color={theme.text.primary} style={{ color: theme.text.primary, backgroundColor: theme.surface.card }} />
         ))}
       </Picker>
 
       <View style={styles.selectorWrapper}>
-        <View style={styles.selectorContainer}>
-          <TouchableOpacity onPress={() => setSelectedData('reps')} style={[styles.selector, selectedData === 'reps' && styles.selected]}>
-            <Text style={styles.selectorText}>Repetitions</Text>
+        <View style={[styles.selectorContainer, { backgroundColor: theme.surface.card }]}>
+          <TouchableOpacity onPress={() => setSelectedData('reps')} style={[styles.selector, selectedData === 'reps' && { backgroundColor: theme.purple }]}>
+            <Text style={[styles.selectorText, { color: theme.foreground }]}>Repetitions</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setSelectedData('weight')} style={[styles.selector, selectedData === 'weight' && styles.selected]}>
-            <Text style={styles.selectorText}>Weight</Text>
+          <TouchableOpacity onPress={() => setSelectedData('weight')} style={[styles.selector, selectedData === 'weight' && { backgroundColor: theme.purple }]}>
+            <Text style={[styles.selectorText, { color: theme.foreground }]}>Weight</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setSelectedData('intensity')} style={[styles.selector, selectedData === 'intensity' && styles.selected]}>
-            <Text style={styles.selectorText}>Intensity</Text>
+          <TouchableOpacity onPress={() => setSelectedData('intensity')} style={[styles.selector, selectedData === 'intensity' && { backgroundColor: theme.purple }]}>
+            <Text style={[styles.selectorText, { color: theme.foreground }]}>Intensity</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -138,10 +150,10 @@ export default function WorkoutProgressionScreen() {
       {chartData ? (
         <ScrollView>
           {chartData.map((data, index) => (
-            <View key={index} style={styles.chartContainer}>
+            <View key={index} style={[styles.chartContainer, { backgroundColor: theme.surface.card }]}>
               <View style={styles.chartHeader}>
-                <Text style={styles.chartTitle}>Set {index + 1}</Text>
-                <Text style={styles.chartUnit}>{getUnit(selectedData)}</Text>
+                <Text style={[styles.chartTitle, { color: theme.foreground }]}>Set {index + 1}</Text>
+                <Text style={[styles.chartUnit, { color: theme.comment }]}>{getUnit(selectedData)}</Text>
               </View>
               <LineChart
                 data={data}
@@ -163,7 +175,7 @@ export default function WorkoutProgressionScreen() {
           ))}
         </ScrollView>
       ) : (
-        <Text style={styles.noDataText}>No data available for the selected exercise.</Text>
+        <Text style={[styles.noDataText, { color: theme.comment }]}>No data available for the selected exercise.</Text>
       )}
     </View>
   );
@@ -172,24 +184,19 @@ export default function WorkoutProgressionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
     paddingTop: spacing.lg,
   },
   picker: {
     height: 50,
     width: '100%',
-    color: draculaTheme.foreground,
-    backgroundColor: draculaTheme.surface.card,
     marginBottom: spacing.lg,
     marginTop: spacing.lg,
   },
   pickerItem: {
-    color: draculaTheme.foreground,
-    backgroundColor: draculaTheme.surface.card,
+    // Colors applied inline
   },
   selectorWrapper: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: 5,
     marginBottom: spacing.lg,
   },
@@ -203,14 +210,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   selected: {
-    backgroundColor: draculaTheme.purple,
+    // Background color applied inline
   },
   selectorText: {
-    color: draculaTheme.foreground,
+    // Color applied inline
   },
   chartContainer: {
     marginBottom: spacing.lg,
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: 16,
     padding: spacing.md,
   },
@@ -221,16 +227,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   chartTitle: {
-    color: draculaTheme.foreground,
     fontSize: 16,
     fontWeight: 'bold',
   },
   chartUnit: {
-    color: draculaTheme.comment,
     fontSize: 12,
   },
   noDataText: {
-    color: draculaTheme.comment,
     textAlign: 'center',
     marginTop: spacing.lg,
   },

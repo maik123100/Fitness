@@ -1,4 +1,5 @@
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { borderRadius, spacing, typography } from '@/styles/theme';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { SetTarget } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
@@ -10,6 +11,7 @@ interface SetTargetInputListProps {
 }
 
 const SetTargetInputList: React.FC<SetTargetInputListProps> = ({ setTargets, onChange }) => {
+  const { theme } = useTheme();
   const initialSameForAll = setTargets.length > 0 && setTargets.every(set => set.reps === setTargets[0].reps && set.weight === setTargets[0].weight);
   const initialSingleReps = initialSameForAll ? setTargets[0].reps.toString() : '10';
   const initialSingleWeight = initialSameForAll ? setTargets[0].weight.toString() : '0';
@@ -85,10 +87,10 @@ const SetTargetInputList: React.FC<SetTargetInputListProps> = ({ setTargets, onC
   return (
     <View style={styles.container}>
       <View style={styles.toggleContainer}>
-        <Text style={styles.toggleLabel}>Same Reps & Weight for all Sets</Text>
+        <Text style={[styles.toggleLabel, { color: theme.foreground }]}>Same Reps & Weight for all Sets</Text>
         <Switch
-          trackColor={{ false: draculaTheme.comment, true: draculaTheme.green }}
-          thumbColor={sameForAll ? draculaTheme.cyan : draculaTheme.foreground}
+          trackColor={{ false: theme.comment, true: theme.green }}
+          thumbColor={sameForAll ? theme.cyan : theme.foreground}
           onValueChange={handleSameForAllToggle}
           value={sameForAll}
         />
@@ -96,33 +98,33 @@ const SetTargetInputList: React.FC<SetTargetInputListProps> = ({ setTargets, onC
 
       {sameForAll ? (
         <View>
-          <Text style={styles.label}>Number of Sets</Text>
+          <Text style={[styles.label, { color: theme.foreground }]}>Number of Sets</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
             placeholder="e.g., 3"
-            placeholderTextColor={draculaTheme.comment}
+            placeholderTextColor={theme.comment}
             keyboardType="numeric"
             value={setAmount}
             onChangeText={handleSetAmountChange}
           />
           <View style={styles.singleInputRow}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputGroupLabel}>Reps</Text>
+              <Text style={[styles.inputGroupLabel, { color: theme.comment }]}>Reps</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
                 placeholder="e.g., 10"
-                placeholderTextColor={draculaTheme.comment}
+                placeholderTextColor={theme.comment}
                 keyboardType="numeric"
                 value={singleReps}
                 onChangeText={handleSingleRepsChange}
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputGroupLabel}>Weight</Text>
+              <Text style={[styles.inputGroupLabel, { color: theme.comment }]}>Reps</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
                 placeholder="e.g., 50"
-                placeholderTextColor={draculaTheme.comment}
+                placeholderTextColor={theme.comment}
                 keyboardType="numeric"
                 value={singleWeight}
                 onChangeText={handleSingleWeightChange}
@@ -134,37 +136,37 @@ const SetTargetInputList: React.FC<SetTargetInputListProps> = ({ setTargets, onC
         <>
           {setTargets.map((set, index) => (
             <View key={index} style={styles.setRow}>
-              <Text style={styles.setLabel}>Set {index + 1}:</Text>
+              <Text style={[styles.setLabel, { color: theme.foreground }]}>Set {index + 1}:</Text>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputGroupLabel}>Reps</Text>
+                <Text style={[styles.inputGroupLabel, { color: theme.comment }]}>Reps</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
                   placeholder="Reps"
-                  placeholderTextColor={draculaTheme.comment}
+                  placeholderTextColor={theme.comment}
                   keyboardType="numeric"
                   value={set.reps.toString()}
                   onChangeText={(text) => updateSet(text, index, 'reps')}
                 />
               </View>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputGroupLabel}>Weight</Text>
+                <Text style={[styles.inputGroupLabel, { color: theme.comment }]}>Weight</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
                   placeholder="Weight"
-                  placeholderTextColor={draculaTheme.comment}
+                  placeholderTextColor={theme.comment}
                   keyboardType="numeric"
                   value={set.weight.toString()}
                   onChangeText={(text) => updateSet(text, index, 'weight')}
                 />
               </View>
               <TouchableOpacity onPress={() => removeSet(index)} style={styles.removeButton}>
-                <Ionicons name="remove-circle" size={24} color={draculaTheme.red} />
+                <Ionicons name="remove-circle" size={24} color={theme.red} />
               </TouchableOpacity>
             </View>
           ))}
-          <TouchableOpacity onPress={addSet} style={styles.addButton}>
-            <Ionicons name="add-circle" size={24} color={draculaTheme.green} />
-            <Text style={styles.addButtonText}>Add Set</Text>
+          <TouchableOpacity onPress={addSet} style={[styles.addButton, { backgroundColor: theme.surface.card }]}>
+            <Ionicons name="add-circle" size={24} color={theme.green} />
+            <Text style={[styles.addButtonText, { color: theme.green }]}>Add Set</Text>
           </TouchableOpacity>
         </>
       )}
@@ -182,14 +184,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   setLabel: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
     marginRight: spacing.sm,
     width: 50, // Fixed width for alignment
   },
   input: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
@@ -202,7 +201,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inputGroupLabel: {
-    color: draculaTheme.comment,
     fontSize: typography.sizes.sm,
     marginBottom: spacing.xs,
   },
@@ -213,13 +211,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: draculaTheme.surface.card,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     marginTop: spacing.sm,
   },
   addButtonText: {
-    color: draculaTheme.green,
     fontSize: typography.sizes.md,
     marginLeft: spacing.sm,
   },
@@ -228,12 +224,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
-    backgroundColor: draculaTheme.surface.card,
     padding: spacing.md,
     borderRadius: borderRadius.md,
   },
   toggleLabel: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -243,7 +237,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
     marginBottom: spacing.sm,
   },

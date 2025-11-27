@@ -1,5 +1,6 @@
 
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { useTheme } from '@/app/contexts/ThemeContext';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -11,33 +12,35 @@ export type CalorieOverviewProps = {
 };
 
 export default function CalorieOverview({ eaten, burned, remaining, target }: CalorieOverviewProps) {
+  const { theme } = useTheme();
+  
   return (
-    <View style={styles.calorieCounter}>
-      <Text style={styles.calorieTitle}>Calorie Counter</Text>
+    <View style={[styles.calorieCounter, { backgroundColor: theme.surface.card }]}>
+      <Text style={[styles.calorieTitle, { color: theme.foreground }]}>Calorie Counter</Text>
       <View style={styles.calorieStats}>
         <View style={styles.calorieBox}>
-          <Ionicons name="flag" size={28} color={draculaTheme.cyan} />
-          <Text style={styles.calorieLabel}>Target</Text>
-          <Text style={[styles.calorieValue, styles.target]}>{target}</Text>
-          <Text style={styles.calorieUnit}>kcal</Text>
+          <Ionicons name="flag" size={28} color={theme.cyan} />
+          <Text style={[styles.calorieLabel, { color: theme.comment }]}>Target</Text>
+          <Text style={[styles.calorieValue, { color: theme.cyan }]}>{target}</Text>
+          <Text style={[styles.calorieUnit, { color: theme.comment }]}>kcal</Text>
         </View>
         <View style={styles.calorieBox}>
-          <Ionicons name="fast-food" size={28} color={draculaTheme.nutrition.calories} />
-          <Text style={styles.calorieLabel}>Eaten</Text>
-          <Text style={[styles.calorieValue, styles.eaten]}>{eaten}</Text>
-          <Text style={styles.calorieUnit}>kcal</Text>
+          <Ionicons name="fast-food" size={28} color={theme.nutrition.calories} />
+          <Text style={[styles.calorieLabel, { color: theme.comment }]}>Eaten</Text>
+          <Text style={[styles.calorieValue, { color: theme.nutrition.calories }]}>{eaten}</Text>
+          <Text style={[styles.calorieUnit, { color: theme.comment }]}>kcal</Text>
         </View>
         <View style={styles.calorieBox}>
-          <Ionicons name="flame" size={28} color={draculaTheme.activity.cardio} />
-          <Text style={styles.calorieLabel}>Burned</Text>
-          <Text style={[styles.calorieValue, styles.burned]}>{burned}</Text>
-          <Text style={styles.calorieUnit}>kcal</Text>
+          <Ionicons name="flame" size={28} color={theme.activity.cardio} />
+          <Text style={[styles.calorieLabel, { color: theme.comment }]}>Burned</Text>
+          <Text style={[styles.calorieValue, { color: theme.activity.cardio }]}>{burned}</Text>
+          <Text style={[styles.calorieUnit, { color: theme.comment }]}>kcal</Text>
         </View>
         <View style={styles.calorieBox}>
-          <Ionicons name="trending-up" size={28} color={draculaTheme.green} />
-          <Text style={styles.calorieLabel}>Remaining</Text>
-          <Text style={[styles.calorieValue, styles.remaining]}>{remaining}</Text>
-          <Text style={styles.calorieUnit}>kcal</Text>
+          <Ionicons name="trending-up" size={28} color={theme.green} />
+          <Text style={[styles.calorieLabel, { color: theme.comment }]}>Remaining</Text>
+          <Text style={[styles.calorieValue, { color: theme.green }]}>{remaining}</Text>
+          <Text style={[styles.calorieUnit, { color: theme.comment }]}>kcal</Text>
         </View>
       </View>
     </View>
@@ -47,12 +50,10 @@ export default function CalorieOverview({ eaten, burned, remaining, target }: Ca
 const styles = StyleSheet.create({
   calorieCounter: {
     marginBottom: spacing.lg,
-    backgroundColor: draculaTheme.surface.card,
     padding: spacing.md,
     borderRadius: borderRadius.md,
   },
   calorieTitle: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     marginBottom: spacing.md,
@@ -66,7 +67,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   calorieLabel: {
-    color: draculaTheme.comment,
     fontSize: typography.sizes.sm,
   },
   calorieValue: {
@@ -74,19 +74,18 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
   },
   calorieUnit: {
-    color: draculaTheme.comment,
     fontSize: typography.sizes.xs,
   },
   eaten: {
-    color: draculaTheme.nutrition.calories,
+    // Removed - color applied inline
   },
   burned: {
-    color: draculaTheme.activity.cardio,
+    // Removed - color applied inline
   },
   target: {
-    color: draculaTheme.cyan,
+    // Removed - color applied inline
   },
   remaining: {
-    color: draculaTheme.green,
+    // Removed - color applied inline
   },
 });

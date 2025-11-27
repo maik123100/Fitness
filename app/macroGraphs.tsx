@@ -1,5 +1,6 @@
 import { getNutritionSummary, getUserProfile } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { borderRadius, spacing, typography } from '@/styles/theme';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { MineralFields, NutritionSummary, VitaminFields } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -11,9 +12,10 @@ interface MacroDisplayProps {
   actual: number;
   target: number;
   unit: string;
+  theme: any;
 }
 
-const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target, unit }) => {
+const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target, unit, theme }) => {
   const percentage = target > 0 ? Math.min(actual / target, 1) : 0;
   const displayActual = actual.toFixed(0);
   const displayTarget = target.toFixed(0);
@@ -21,15 +23,15 @@ const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target, unit }) => 
   return (
     <View style={styles.macroDisplayContainer}>
       <View style={styles.macroTextContainer}>
-        <Text style={styles.macroLabel}>Actual:</Text>
-        <Text style={styles.macroValue}>{displayActual}{unit}</Text>
+        <Text style={[styles.macroLabel, { color: theme.comment }]}>Actual:</Text>
+        <Text style={[styles.macroValue, { color: theme.foreground }]}>{ displayActual}{unit}</Text>
       </View>
       <View style={styles.macroTextContainer}>
-        <Text style={styles.macroLabel}>Target:</Text>
-        <Text style={styles.macroValue}>{displayTarget}{unit}</Text>
+        <Text style={[styles.macroLabel, { color: theme.comment }]}>Target:</Text>
+        <Text style={[styles.macroValue, { color: theme.cyan }]}>{ displayTarget}{unit}</Text>
       </View>
-      <ProgressBar progress={percentage} color={draculaTheme.cyan} style={styles.progressBar} />
-      <Text style={styles.macroSummary}>{(percentage * 100).toFixed(0)}% of target</Text>
+      <ProgressBar progress={percentage} color={theme.cyan} style={styles.progressBar} />
+      <Text style={[styles.macroSummary, { color: theme.comment }]}>{(percentage * 100).toFixed(0)}% of target</Text>
     </View>
   );
 };
@@ -81,6 +83,7 @@ interface MacroGraphsState {
 }
 
 export default function MacroGraphsScreen() {
+  const { theme } = useTheme();
   const [state, setState] = useState<MacroGraphsState>({
     nutritionSummary: null,
     targetMacros: { protein: 0, carbs: 0, fat: 0, fiber: 0 },
@@ -111,47 +114,50 @@ export default function MacroGraphsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: spacing.lg * 2 }}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={{ paddingBottom: spacing.lg * 2 }}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color={draculaTheme.foreground} />
+        <Ionicons name="arrow-back" size={24} color={theme.foreground} />
       </TouchableOpacity>
-      <Text style={styles.header}>Macro Graphs</Text>
+      <Text style={[styles.header, { color: theme.foreground }]}>Macro Graphs</Text>
 
       {['protein', 'carbs', 'fat', 'fiber'].map((macro) => (
-        <View key={macro} style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>{macro.charAt(0).toUpperCase() + macro.slice(1)} Intake</Text>
+        <View key={macro} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{macro.charAt(0).toUpperCase() + macro.slice(1)} Intake</Text>
           {nutritionSummary ? (
             <MacroDisplay
               actual={nutritionSummary[`total${macro.charAt(0).toUpperCase() + macro.slice(1)}` as keyof NutritionSummary] as number}
               target={targetMacros[macro as 'protein' | 'carbs' | 'fat' | 'fiber']}
               unit="g"
+              theme={theme}
             />
           ) : (
-            <Text style={styles.noDataText}>No data for {macro} intake yet.</Text>
+            <Text style={[styles.noDataText, { color: theme.comment }]}>No data for {macro} intake yet.</Text>
           )}
         </View>
       ))}
 
-      <Text style={styles.header}>Vitamins</Text>
+      <Text style={[styles.header, { color: theme.foreground }]}>Vitamins</Text>
       {nutritionSummary && nutritionSummary.totalVitamins && Object.keys(vitaminTargets).map((vitamin) => (
-        <View key={vitamin} style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>{vitamin.charAt(0).toUpperCase() + vitamin.slice(1)} Intake</Text>
+        <View key={vitamin} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{vitamin.charAt(0).toUpperCase() + vitamin.slice(1)} Intake</Text>
           <MacroDisplay
             actual={nutritionSummary.totalVitamins[vitamin as keyof VitaminFields] || 0}
             target={vitaminTargets[vitamin as keyof typeof vitaminTargets].target}
             unit={vitaminTargets[vitamin as keyof typeof vitaminTargets].unit}
+            theme={theme}
           />
         </View>
       ))}
 
-      <Text style={styles.header}>Minerals</Text>
+      <Text style={[styles.header, { color: theme.foreground }]}>Minerals</Text>
       {nutritionSummary && nutritionSummary.totalMinerals && Object.keys(mineralTargets).map((mineral) => (
-        <View key={mineral} style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>{mineral.charAt(0).toUpperCase() + mineral.slice(1)} Intake</Text>
+        <View key={mineral} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{mineral.charAt(0).toUpperCase() + mineral.slice(1)} Intake</Text>
           <MacroDisplay
             actual={nutritionSummary.totalMinerals[mineral as keyof MineralFields] || 0}
             target={mineralTargets[mineral as keyof typeof mineralTargets].target}
             unit={mineralTargets[mineral as keyof typeof mineralTargets].unit}
+            theme={theme}
           />
         </View>
       ))}
@@ -162,19 +168,16 @@ export default function MacroGraphsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
     paddingTop: spacing.lg * 2, // Add breathing room at the top
   },
   header: {
     fontSize: typography.sizes.heading,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
   chartSection: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -182,11 +185,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.md,
   },
   noDataText: {
-    color: draculaTheme.comment,
     textAlign: 'center',
     padding: spacing.lg,
   },
@@ -199,11 +200,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   macroLabel: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
   },
   macroValue: {
-    color: draculaTheme.cyan,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -213,7 +212,6 @@ const styles = StyleSheet.create({
     marginVertical: spacing.sm,
   },
   macroSummary: {
-    color: draculaTheme.comment,
     textAlign: 'right',
     fontSize: typography.sizes.sm,
   },

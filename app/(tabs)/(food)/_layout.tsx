@@ -1,8 +1,10 @@
-import { Stack, usePathname } from 'expo-router';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
+import { Stack, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 
 export default function FoodLayout() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const pathname = usePathname();
 
@@ -12,9 +14,10 @@ export default function FoodLayout() {
     navigation.getParent()?.setOptions({
       tabBarStyle: {
         display: isIndex ? 'flex' : 'none',
+        backgroundColor: theme.background,
       },
     });
-  }, [pathname, navigation]);
+  }, [pathname, navigation, theme]);
 
   return (
     <Stack>

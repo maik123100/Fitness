@@ -1,5 +1,6 @@
 import DaySelector from '@/app/components/DaySelector';
 import { DateProvider } from '@/app/contexts/DateContext';
+import { ThemeProvider, useTheme } from '@/app/contexts/ThemeContext';
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
@@ -49,49 +50,60 @@ const tabs: TabLayoutProps[] = [
     ),
   },
 ]
+
+function TabsContent() {
+  const { theme } = useTheme();
+  
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: theme.primary,
+        headerStyle: {
+          backgroundColor: theme.background,
+        },
+        headerShadowVisible: false,
+        headerTintColor: theme.foreground,
+        tabBarStyle: {
+          backgroundColor: theme.background,
+        },
+        header: () => (
+          <View style={{ backgroundColor: theme.background, paddingTop: 50, paddingHorizontal: 16 }}>
+            <DaySelector />
+          </View>
+        ),
+      }}
+    >
+      {tabs.map(({ name, title, iconElement }) => (
+        <Tabs.Screen
+          key={name}
+          name={name}
+          options={{
+            title,
+            headerTitleAlign: 'center',
+            tabBarIcon: iconElement,
+          }}
+          listeners={
+            name.startsWith('(')
+              ? ({ navigation }) => ({
+                tabPress: (e) => {
+                  e.preventDefault();
+                  navigation.jumpTo(name, { screen: 'index' });
+                },
+              })
+              : undefined
+          }
+        />
+      ))}
+    </Tabs>
+  );
+}
+
 export default function TabLayout() {
   return (
-    <DateProvider>
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: '#ffd33d',
-          headerStyle: {
-            backgroundColor: '#25292e',
-          },
-          headerShadowVisible: false,
-          headerTintColor: '#fff',
-          tabBarStyle: {
-            backgroundColor: '#25292e',
-          },
-          header: () => (
-            <View style={{ backgroundColor: '#25292e', paddingTop: 50, paddingHorizontal: 16 }}>
-              <DaySelector />
-            </View>
-          ),
-        }}
-      >
-        {tabs.map(({ name, title, iconElement }) => (
-          <Tabs.Screen
-            key={name}
-            name={name}
-            options={{
-              title,
-              headerTitleAlign: 'center',
-              tabBarIcon: iconElement,
-            }}
-            listeners={
-              name.startsWith('(')
-                ? ({ navigation }) => ({
-                  tabPress: (e) => {
-                    e.preventDefault();
-                    navigation.jumpTo(name, { screen: 'index' });
-                  },
-                })
-                : undefined
-            }
-          />
-        ))}
-      </Tabs>
-    </DateProvider>
+    <ThemeProvider>
+      <DateProvider>
+        <TabsContent />
+      </DateProvider>
+    </ThemeProvider>
   );
 }

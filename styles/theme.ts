@@ -1,5 +1,89 @@
-// Dracula Theme Colors
-export const draculaTheme = {
+// Theme type definition
+export interface Theme {
+  // Background colors
+  background: string;
+  currentLine: string;
+  foreground: string;
+  comment: string;
+  
+  // Primary colors
+  cyan: string;
+  green: string;
+  orange: string;
+  pink: string;
+  purple: string;
+  red: string;
+  yellow: string;
+  
+  // Semantic colors
+  selection: string;
+  
+  // Custom semantic mappings for fitness app
+  primary: string;
+  secondary: string;
+  success: string;
+  warning: string;
+  danger: string;
+  info: string;
+  
+  // Text colors
+  text: {
+    primary: string;
+    secondary: string;
+    muted: string;
+    inverse: string;
+  };
+  
+  // Surface colors
+  surface: {
+    primary: string;
+    secondary: string;
+    elevated: string;
+    card: string;
+    input: string;
+    overlay: string;
+  };
+  
+  // Nutrition colors (macro-nutrients)
+  nutrition: {
+    protein: string;
+    carbs: string;
+    fat: string;
+    calories: string;
+    fiber: string;
+    sugar: string;
+  };
+  
+  // Activity colors
+  activity: {
+    cardio: string;
+    strength: string;
+    flexibility: string;
+    sports: string;
+    daily: string;
+  };
+  
+  // Status colors
+  status: {
+    over: string;
+    under: string;
+    onTarget: string;
+    excellent: string;
+  };
+  
+  // Chart colors
+  chart: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    quaternary: string;
+    quinary: string;
+    senary: string;
+  };
+}
+
+// Dracula Theme (Dark)
+export const draculaTheme: Theme = {
   // Background colors
   background: '#282a36',
   currentLine: '#44475a',
@@ -80,6 +164,99 @@ export const draculaTheme = {
     quinary: '#50fa7b',
     senary: '#f1fa8c',
   },
+};
+
+// Light Theme
+export const lightTheme: Theme = {
+  // Background colors
+  background: '#ffffff',
+  currentLine: '#e8e8e8',
+  foreground: '#1a1a1a',
+  comment: '#6c7a89',
+  
+  // Primary colors
+  cyan: '#0891b2',
+  green: '#16a34a',
+  orange: '#ea580c',
+  pink: '#db2777',
+  purple: '#9333ea',
+  red: '#dc2626',
+  yellow: '#ca8a04',
+  
+  // Semantic colors
+  selection: '#e8e8e8',
+  
+  // Custom semantic mappings for fitness app
+  primary: '#9333ea',       // Purple for primary actions
+  secondary: '#0891b2',     // Cyan for secondary elements
+  success: '#16a34a',       // Green for positive values
+  warning: '#ca8a04',       // Yellow for warnings
+  danger: '#dc2626',        // Red for negative values/danger
+  info: '#0891b2',          // Cyan for info
+  
+  // Text colors
+  text: {
+    primary: '#1a1a1a',
+    secondary: '#6c7a89',
+    muted: '#9ca3af',
+    inverse: '#ffffff',
+  },
+  
+  // Surface colors
+  surface: {
+    primary: '#ffffff',
+    secondary: '#f3f4f6',
+    elevated: '#e5e7eb',
+    card: '#f9fafb',
+    input: '#f3f4f6',
+    overlay: 'rgba(0, 0, 0, 0.5)',
+  },
+  
+  // Nutrition colors (macro-nutrients)
+  nutrition: {
+    protein: '#db2777',      // Pink for protein
+    carbs: '#ea580c',        // Orange for carbs  
+    fat: '#ca8a04',          // Yellow for fat
+    calories: '#9333ea',     // Purple for calories
+    fiber: '#16a34a',        // Green for fiber
+    sugar: '#dc2626',        // Red for sugar
+  },
+  
+  // Activity colors
+  activity: {
+    cardio: '#db2777',       // Pink for cardio
+    strength: '#0891b2',     // Cyan for strength training
+    flexibility: '#16a34a',   // Green for flexibility/yoga
+    sports: '#ea580c',       // Orange for sports
+    daily: '#9333ea',        // Purple for daily activities
+  },
+  
+  // Status colors
+  status: {
+    over: '#dc2626',         // Red for over target
+    under: '#ca8a04',        // Yellow for under target
+    onTarget: '#16a34a',     // Green for on target
+    excellent: '#9333ea',    // Purple for excellent
+  },
+  
+  // Chart colors
+  chart: {
+    primary: '#9333ea',
+    secondary: '#0891b2',
+    tertiary: '#db2777',
+    quaternary: '#ea580c',
+    quinary: '#16a34a',
+    senary: '#ca8a04',
+  },
+};
+
+// Theme name type
+export type ThemeName = 'dracula' | 'light';
+
+// Available themes
+export const themes: Record<ThemeName, Theme> = {
+  dracula: draculaTheme,
+  light: lightTheme,
 };
 
 // Common spacing values

@@ -1,12 +1,13 @@
 import { useSnackbar } from '@/app/components/SnackbarProvider';
 import { useDate } from '@/app/contexts/DateContext';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import {
   addFoodEntry,
   getFoodItem,
 } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
 import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -14,6 +15,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 
 export default function FoodQuantityScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { showSnackbar } = useSnackbar();
   const params = useLocalSearchParams<{ foodId: string, mealType: MealType }>();
   const foodId = params.foodId;
@@ -83,45 +85,45 @@ export default function FoodQuantityScreen() {
 
   if (!foodItem) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.mealTitle}>Loading...</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.mealTitle, { color: theme.foreground }]}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.modalContainer}>
-      <Text style={styles.mealTitle}>Add {foodItem.name}</Text>
+    <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+      <Text style={[styles.mealTitle, { color: theme.foreground }]}>Add {foodItem.name}</Text>
 
-      <View style={styles.calculatedNutrientsContainer}>
+      <View style={[styles.calculatedNutrientsContainer, { backgroundColor: theme.surface.card }]}>
         <View style={styles.calculatedNutrientRow}>
-          <Text style={styles.calculatedNutrientLabel}>Calories:</Text>
-          <Text style={styles.calculatedNutrientValue}>{((foodItem.calories / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(0)} kcal</Text>
+          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Calories:</Text>
+          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.calories }]}>{((foodItem.calories / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(0)} kcal</Text>
         </View>
         <View style={styles.calculatedNutrientRow}>
-          <Text style={styles.calculatedNutrientLabel}>Protein:</Text>
-          <Text style={styles.calculatedNutrientValue}>{((foodItem.protein / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
+          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Protein:</Text>
+          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.protein }]}>{((foodItem.protein / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
         </View>
         <View style={styles.calculatedNutrientRow}>
-          <Text style={styles.calculatedNutrientLabel}>Carbs:</Text>
-          <Text style={styles.calculatedNutrientValue}>{((foodItem.carbs / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
+          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Carbs:</Text>
+          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.carbs }]}>{((foodItem.carbs / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
         </View>
         <View style={styles.calculatedNutrientRow}>
-          <Text style={styles.calculatedNutrientLabel}>Fat:</Text>
-          <Text style={styles.calculatedNutrientValue}>{((foodItem.fat / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
+          <Text style={[styles.calculatedNutrientLabel, { color: theme.comment }]}>Fat:</Text>
+          <Text style={[styles.calculatedNutrientValue, { color: theme.nutrition.fat }]}>{((foodItem.fat / foodItem.servingSize) * parseFloat(quantity || '0')).toFixed(1)}g</Text>
         </View>
       </View>
 
-      <View style={styles.pickerWrapper}>
+      <View style={[styles.pickerWrapper, { backgroundColor: theme.surface.input }]}>
         <Picker
           selectedValue={selectedMealType}
           onValueChange={(itemValue) => setSelectedMealType(itemValue as MealType)}
           style={styles.picker}
-          dropdownIconColor={draculaTheme.text.primary}
+          dropdownIconColor={theme.text.primary}
           itemStyle={styles.pickerItem}
         >
           {['breakfast', 'lunch', 'dinner', 'snack'].map((meal) => (
-            <Picker.Item label={meal.charAt(0).toUpperCase() + meal.slice(1)} value={meal} key={meal} color={draculaTheme.text.primary} style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }} />
+            <Picker.Item label={meal.charAt(0).toUpperCase() + meal.slice(1)} value={meal} key={meal} color={theme.text.primary} style={{ color: theme.text.primary, backgroundColor: theme.surface.input }} />
           ))}
         </Picker>
       </View>
@@ -130,41 +132,41 @@ export default function FoodQuantityScreen() {
         {[50, 100, 150, 200, 250].map((q) => (
           <TouchableOpacity
             key={q}
-            style={styles.quickQuantityButton}
+            style={[styles.quickQuantityButton, { backgroundColor: theme.surface.card }]}
             onPress={() => setQuantity(String(q))}
           >
-            <Text style={styles.quickQuantityButtonText}>{q} {foodItem.servingUnit || 'g'}</Text>
+            <Text style={[styles.quickQuantityButtonText, { color: theme.foreground }]}>{q} {foodItem.servingUnit || 'g'}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       <View style={styles.quantityInputContainer}>
-        <TouchableOpacity style={styles.quantityStepperButton} onPress={() => handleQuantityChange(-10)}>
-          <Text style={styles.quantityStepperButtonText}>-</Text>
+        <TouchableOpacity style={[styles.quantityStepperButton, { backgroundColor: theme.surface.card }]} onPress={() => handleQuantityChange(-10)}>
+          <Text style={[styles.quantityStepperButtonText, { color: theme.foreground }]}>-</Text>
         </TouchableOpacity>
         <TextInput
-          style={styles.quantityInput}
+          style={[styles.quantityInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
           placeholder={`Quantity in ${foodItem.servingUnit || 'g'}`}
-          placeholderTextColor={draculaTheme.comment}
+          placeholderTextColor={theme.comment}
           keyboardType="numeric"
           value={quantity}
           onChangeText={(text: string) => setQuantity(text)}
         />
-        <TouchableOpacity style={styles.quantityStepperButton} onPress={() => handleQuantityChange(10)}>
-          <Text style={styles.quantityStepperButtonText}>+</Text>
+        <TouchableOpacity style={[styles.quantityStepperButton, { backgroundColor: theme.surface.card }]} onPress={() => handleQuantityChange(10)}>
+          <Text style={[styles.quantityStepperButtonText, { color: theme.foreground }]}>+</Text>
         </TouchableOpacity>
       </View>
       <TouchableOpacity
-        style={styles.addButton}
+        style={[styles.addButton, { backgroundColor: theme.green }]}
         onPress={addFoodEntryToDatabase}
       >
-        <Text style={styles.addButtonText}>Add</Text>
+        <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: draculaTheme.red, marginTop: spacing.sm }]}
+        style={[styles.addButton, { backgroundColor: theme.red, marginTop: spacing.sm }]}
         onPress={() => router.back()}
       >
-        <Text style={styles.addButtonText}>Cancel</Text>
+        <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Cancel</Text>
       </TouchableOpacity>
     </View>
   );
@@ -173,23 +175,18 @@ export default function FoodQuantityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   mealTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.md,
   },
   quantityInput: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
@@ -205,7 +202,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   quantityStepperButton: {
-    backgroundColor: draculaTheme.surface.secondary,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     height: 50,
@@ -214,7 +210,6 @@ const styles = StyleSheet.create({
     width: 50,
   },
   quantityStepperButtonText: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
   },
@@ -222,35 +217,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: draculaTheme.green,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     marginTop: spacing.md,
   },
   addButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
     marginLeft: spacing.sm,
   },
   pickerWrapper: {
-    backgroundColor: draculaTheme.surface.input,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: draculaTheme.surface.secondary,
     overflow: 'hidden',
     justifyContent: 'center',
   },
   picker: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.foreground,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
   },
   pickerItem: {
-    color: draculaTheme.foreground,
-    backgroundColor: draculaTheme.surface.input,
     fontSize: typography.sizes.md,
   },
   quickQuantityButtonsContainer: {
@@ -260,14 +247,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   quickQuantityButton: {
-    backgroundColor: draculaTheme.surface.secondary,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
     margin: spacing.xs,
   },
   quickQuantityButtonText: {
-    color: draculaTheme.foreground,
     fontSize: typography.sizes.md,
   },
   calculatedNutrientsContainer: {
@@ -280,17 +265,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     marginBottom: spacing.sm,
-    backgroundColor: draculaTheme.surface.secondary,
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
   calculatedNutrientLabel: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.comment,
     fontWeight: typography.weights.semibold,
   },
   calculatedNutrientValue: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
   },
 });

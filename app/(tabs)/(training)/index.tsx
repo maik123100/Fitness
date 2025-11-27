@@ -1,7 +1,8 @@
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { useDate } from '@/app/contexts/DateContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import { deleteWorkoutEntry, getActiveWorkoutSession, getWorkoutEntries, getWorkoutTemplate, getWorkoutTemplates, startWorkoutSession } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ActiveWorkoutSession, WorkoutEntry } from '@/types/types';
 import { WorkoutTemplate } from '@/services/db/schema';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ interface TrainingState {
 
 export default function WorkoutScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { selectedDate } = useDate();
   const [state, setState] = useState<TrainingState>({
     templates: [],
@@ -59,9 +61,9 @@ export default function WorkoutScreen() {
     });
     return (
       <View style={styles.rightActionContainer}>
-        <TouchableOpacity onPress={() => router.navigate({ pathname: '/(tabs)/(training)/workoutSession', params: { workoutEntryId: item.id } })} style={[styles.actionButton, styles.editButton]}>
+        <TouchableOpacity onPress={() => router.navigate({ pathname: '/(tabs)/(training)/workoutSession', params: { workoutEntryId: item.id } })} style={[styles.actionButton, styles.editButton, { backgroundColor: theme.green }]}>
           <Animated.View style={{ transform: [{ translateX: trans }] }}>
-            <MaterialCommunityIcons name="pencil" size={24} color={draculaTheme.text.inverse} />
+            <MaterialCommunityIcons name="pencil" size={24} color={theme.text.inverse} />
           </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => {
@@ -71,9 +73,9 @@ export default function WorkoutScreen() {
           loadData();
           console.log('Data reloaded.');
           swipeableRef.current?.close(); // Close the swipeable after deletion
-        }} style={[styles.actionButton, styles.deleteButton]}>
+        }} style={[styles.actionButton, { backgroundColor: theme.red }]}>
           <Animated.View style={{ transform: [{ translateX: trans }] }}>
-            <MaterialCommunityIcons name="delete" size={24} color={draculaTheme.text.inverse} />
+            <MaterialCommunityIcons name="delete" size={24} color={theme.text.inverse} />
           </Animated.View>
         </TouchableOpacity>
       </View>
@@ -81,49 +83,49 @@ export default function WorkoutScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {activeSession && (
         <TouchableOpacity onPress={() => router.navigate('/(tabs)/(training)/workoutSession')}>
-          <View style={styles.activeSessionCard}>
-            <Text style={styles.activeSessionTitle}>Active Workout</Text>
+          <View style={[styles.activeSessionCard, { backgroundColor: theme.surface.card, borderLeftColor: theme.cyan }]}>
+            <Text style={[styles.activeSessionTitle, { color: theme.foreground }]}>Active Workout</Text>
           </View>
         </TouchableOpacity>
       )}
 
-      <Text style={styles.sectionTitle}>Workout Templates</Text>
+      <Text style={[styles.sectionTitle, { color: theme.foreground }]}>Workout Templates</Text>
       <FlatList
         data={templates}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleTemplatePress(item.id)}>
-            <View style={styles.templateCard}>
-              <Text style={styles.templateTitle}>{item.name}</Text>
+            <View style={[styles.templateCard, { backgroundColor: theme.surface.card }]}>
+              <Text style={[styles.templateTitle, { color: theme.foreground }]}>{ item.name}</Text>
             </View>
           </TouchableOpacity>
         )}
       />
 
-      <Text style={styles.sectionTitle}>Completed Workouts</Text>
+      <Text style={[styles.sectionTitle, { color: theme.foreground }]}>Completed Workouts</Text>
       <FlatList
         data={workoutEntries}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <Swipeable ref={swipeableRef} renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}>
-            <View style={styles.completedWorkoutCard}>
-              <Text style={styles.completedWorkoutTitle}>{getWorkoutTemplate(item.workoutTemplateId)?.name}</Text>
-              <Text style={styles.completedWorkoutDetails}>Duration: {item.duration} mins</Text>
-              <Text style={styles.completedWorkoutDetails}>Sets: {item.sets.length}</Text>
+            <View style={[styles.completedWorkoutCard, { backgroundColor: theme.surface.card, borderLeftColor: theme.purple }]}>
+              <Text style={[styles.completedWorkoutTitle, { color: theme.foreground }]}>{ getWorkoutTemplate(item.workoutTemplateId)?.name}</Text>
+              <Text style={[styles.completedWorkoutDetails, { color: theme.comment }]}>Duration: {item.duration} mins</Text>
+              <Text style={[styles.completedWorkoutDetails, { color: theme.comment }]}>Sets: {item.sets.length}</Text>
             </View>
           </Swipeable>
         )}
       />
 
-      <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/createWorkoutTemplate')}>
-        <Text style={styles.createButtonText}>Create New Workout</Text>
+      <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.cyan }]} onPress={() => router.navigate('/(tabs)/(training)/createWorkoutTemplate')}>
+        <Text style={[styles.createButtonText, { color: theme.text.inverse }]}>Create New Workout</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.createButton} onPress={() => router.navigate('/(tabs)/(training)/manageExerciseTemplates')}>
-        <Text style={styles.createButtonText}>Manage Exercise Templates</Text>
+      <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.green }]} onPress={() => router.navigate('/(tabs)/(training)/manageExerciseTemplates')}>
+        <Text style={[styles.createButtonText, { color: theme.text.inverse }]}>Manage Exercise Templates</Text>
       </TouchableOpacity>
     </View>
   );
@@ -132,30 +134,24 @@ export default function WorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   sectionTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
     marginBottom: spacing.md,
   },
   activeSessionCard: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
     borderLeftWidth: 4,
-    borderLeftColor: draculaTheme.cyan,
   },
   activeSessionTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
   },
   templateCard: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -163,34 +159,27 @@ const styles = StyleSheet.create({
   templateTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
   },
   completedWorkoutCard: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderLeftWidth: 4,
-    borderLeftColor: draculaTheme.purple,
   },
   completedWorkoutTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
   },
   completedWorkoutDetails: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
   },
   createButton: {
-    backgroundColor: draculaTheme.cyan,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     marginTop: spacing.lg,
   },
   createButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -199,7 +188,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     marginBottom: spacing.sm,
-
   },
   actionButton: {
     justifyContent: 'center',
@@ -209,10 +197,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   editButton: {
-    backgroundColor: draculaTheme.green,
     marginRight: spacing.sm
-  },
-  deleteButton: {
-    backgroundColor: draculaTheme.red,
   },
 });

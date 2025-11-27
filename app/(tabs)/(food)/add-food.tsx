@@ -1,13 +1,14 @@
+import { useSnackbar } from '@/app/components/SnackbarProvider';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { addFoodItem, getAllFoodItems } from '@/services/database';
-import { borderRadius, draculaTheme, shadows, spacing, typography } from '@/styles/theme';
 import { FoodCategory, FoodItem } from '@/services/db/schema';
+import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import { Picker } from '@react-native-picker/picker';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-import { useSnackbar } from '@/app/components/SnackbarProvider';
 
 const defaultFood: FoodItem = {
   id: Date.now().toString(),
@@ -37,6 +38,7 @@ const defaultFood: FoodItem = {
 
 const AddFood: React.FC = () => {
   const router = useRouter();
+  const { theme } = useTheme();
   const { showSnackbar } = useSnackbar();
   const [food, setFood] = useState<FoodItem>({ ...defaultFood });
   const [permission, requestPermission] = useCameraPermissions();
@@ -171,11 +173,11 @@ const AddFood: React.FC = () => {
 
     return (
       <View key={field.key}>
-        <Text style={styles.label}>{field.label}</Text>
+        <Text style={[styles.label, { color: theme.foreground }]}>{field.label}</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.surface.input, color: theme.foreground }]}
           placeholder={`Enter ${field.label.toLowerCase()}`}
-          placeholderTextColor={draculaTheme.text.secondary}
+          placeholderTextColor={theme.text.secondary}
           value={value?.toString() ?? ''}
           onChangeText={(v) => handleChange(field.key, field.isNumber ? parseFloat(v) || 0 : v)}
           keyboardType={field.isNumber ? 'decimal-pad' : 'default'}
@@ -186,11 +188,11 @@ const AddFood: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container]}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.subtitle}>Add New Food</Text>
+        <Text style={[styles.subtitle, { color: theme.foreground }]}>Add New Food</Text>
 
         {/* General Fields */}
         {generalFields.slice(0, 2).map(renderInputField)}
@@ -199,19 +201,19 @@ const AddFood: React.FC = () => {
         {renderInputField({ label: 'Barcode', key: 'barcode', isNumber: false })}
 
         {/* Barcode Scanner Button */}
-        <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanner(true)}>
-          <Text style={styles.scanButtonText}>Scan Barcode</Text>
+        <TouchableOpacity style={[styles.scanButton, { backgroundColor: theme.cyan }]} onPress={() => setShowScanner(true)}>
+          <Text style={[styles.scanButtonText, { color: theme.text.inverse }]}>Scan Barcode</Text>
         </TouchableOpacity>
 
         {/* Category Picker */}
-        <Text style={styles.label}>Category</Text>
-        <View style={styles.pickerWrapper}>
+        <Text style={[styles.label, { color: theme.foreground }]}>Category</Text>
+        <View style={[styles.pickerWrapper, { backgroundColor: theme.surface.input }]}>
           <Picker
             selectedValue={food.category}
             onValueChange={(itemValue) => handleChange('category', itemValue as FoodCategory)}
             style={styles.picker}
             itemStyle={styles.pickerItem}
-            dropdownIconColor={draculaTheme.text.primary}
+            dropdownIconColor={theme.text.primary}
             mode="dialog"
           >
             {['vegetables', 'fruits', 'grains', 'proteins', 'dairy', 'fats', 'beverages', 'snacks', 'prepared', 'supplements', 'condiments', 'other'].map((cat) => (
@@ -219,8 +221,8 @@ const AddFood: React.FC = () => {
                 label={cat.charAt(0).toUpperCase() + cat.slice(1)}
                 value={cat}
                 key={cat}
-                color={draculaTheme.text.primary}
-                style={{ color: draculaTheme.text.primary, backgroundColor: draculaTheme.surface.input }}
+                color={theme.text.primary}
+                style={{ color: theme.text.primary, backgroundColor: theme.surface.input }}
               />
             ))}
           </Picker>
@@ -230,24 +232,24 @@ const AddFood: React.FC = () => {
         {generalFields.slice(2).map(renderInputField)}
 
         {/* Macronutrients */}
-        <Text style={styles.subtitle}>Macronutrients</Text>
+        <Text style={[styles.subtitle, { color: theme.foreground }]}>Macronutrients</Text>
         {macroFields.map(renderInputField)}
 
         {/* Vitamins Section */}
         <TouchableOpacity onPress={() => setShowVitamins(!showVitamins)}>
-          <Text style={styles.subtitle}>Vitamins (optional)</Text>
+          <Text style={[styles.subtitle, { color: theme.foreground }]}>Vitamins (optional)</Text>
         </TouchableOpacity>
         {showVitamins && vitaminFields.map(renderInputField)}
 
         {/* Minerals Section */}
         <TouchableOpacity onPress={() => setShowMinerals(!showMinerals)}>
-          <Text style={styles.subtitle}>Minerals (optional)</Text>
+          <Text style={[styles.subtitle, { color: theme.foreground }]}>Minerals (optional)</Text>
         </TouchableOpacity>
         {showMinerals && mineralFields.map(renderInputField)}
 
         {/* Submit Button */}
-        <TouchableOpacity style={styles.addBtn} onPress={handleAddFood}>
-          <Text style={styles.addBtnText}>Add Food</Text>
+        <TouchableOpacity style={[styles.addBtn, { backgroundColor: theme.green }]} onPress={handleAddFood}>
+          <Text style={[styles.addBtnText, { color: theme.text.inverse }]}>Add Food</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -257,7 +259,6 @@ const AddFood: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
   },
   scrollContent: {
     paddingTop: spacing.sm,
@@ -267,57 +268,44 @@ const styles = StyleSheet.create({
   title: {
     fontSize: typography.sizes.title,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.text.primary,
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.text.primary,
     marginTop: spacing.sm,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   label: {
-    color: draculaTheme.text.secondary,
     fontSize: typography.sizes.md,
     marginBottom: spacing.xs,
     marginTop: spacing.sm,
   },
   input: {
-    backgroundColor: draculaTheme.surface.input,
-    color: draculaTheme.text.primary,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     fontSize: typography.sizes.md,
     borderWidth: 1,
-    borderColor: draculaTheme.surface.secondary,
   },
   pickerWrapper: {
-    backgroundColor: draculaTheme.surface.input,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: draculaTheme.surface.secondary,
     overflow: 'hidden',
     justifyContent: 'center',
   },
   picker: {
-    color: draculaTheme.text.primary,
-    backgroundColor: draculaTheme.surface.input,
     fontSize: typography.sizes.md,
     height: 58,
     width: '100%',
   },
   pickerItem: {
-    color: draculaTheme.text.primary,
-    backgroundColor: draculaTheme.surface.input,
     fontSize: typography.sizes.md,
   },
   addBtn: {
-    backgroundColor: draculaTheme.primary,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
@@ -325,7 +313,6 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   addBtnText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
   },
@@ -347,14 +334,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   scanButton: {
-    backgroundColor: draculaTheme.cyan,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   scanButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },

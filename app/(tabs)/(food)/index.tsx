@@ -1,5 +1,6 @@
 import { useSnackbar } from '@/app/components/SnackbarProvider';
 import { useDate } from '@/app/contexts/DateContext';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
 import {
   deleteFoodEntry,
@@ -7,12 +8,8 @@ import {
   getFoodEntriesForDate,
   getFoodItem,
 } from '@/services/database';
-import { borderRadius, draculaTheme, spacing, typography } from '@/styles/theme';
-import {
-  FoodEntry,
-  FoodItem,
-  MealType,
-} from '@/services/db/schema';
+import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
+import { borderRadius, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -31,6 +28,7 @@ type FoodDiaryState = {
 
 export default function FoodDiaryScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { showSnackbar } = useSnackbar();
   const [permission, requestPermission] = useCameraPermissions();
   const { selectedDate } = useDate();
@@ -120,12 +118,12 @@ export default function FoodDiaryScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.deleteAction}
+        style={[styles.deleteAction, { backgroundColor: theme.red }]}
         onPress={() => handleDeleteFood(item.id)}
       >
         <Animated.View style={{ transform: [{ translateX: trans }] }}>
-          <Ionicons name="trash" size={24} color={draculaTheme.text.inverse} />
-          <Text style={styles.deleteActionText}>Delete</Text>
+          <Ionicons name="trash" size={24} color={theme.text.inverse} />
+          <Text style={[styles.deleteActionText, { color: theme.text.inverse }]}>Delete</Text>
         </Animated.View>
       </TouchableOpacity>
     );
@@ -152,7 +150,7 @@ export default function FoodDiaryScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       {Object.keys(foodEntries).map((mealType) => {
         const meal = mealType as MealType;
         const mealTotals = calculateMealTotals(meal);
@@ -162,26 +160,26 @@ export default function FoodDiaryScreen() {
           <View key={meal} style={styles.mealSection}>
             {/* Meal Header - Collapsible */}
             <TouchableOpacity
-              style={styles.mealHeader}
+              style={[styles.mealHeader, { backgroundColor: theme.surface.card }]}
               onPress={() => toggleMealExpanded(meal)}
             >
               <View style={styles.mealHeaderLeft}>
                 <Ionicons
                   name={mealIcons[meal] as any}
                   size={24}
-                  color={draculaTheme.cyan}
+                  color={theme.cyan}
                   style={styles.mealIcon}
                 />
-                <Text style={styles.mealTitle}>
+                <Text style={[styles.mealTitle, { color: theme.foreground }]}>
                   {meal.charAt(0).toUpperCase() + meal.slice(1)}
                 </Text>
               </View>
               <View style={styles.mealHeaderRight}>
-                <Text style={styles.mealCalories}>{Math.round(mealTotals.calories)} kcal</Text>
+                <Text style={[styles.mealCalories, { color: theme.nutrition.calories }]}>{Math.round(mealTotals.calories)} kcal</Text>
                 <Ionicons
                   name={isExpanded ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color={draculaTheme.foreground}
+                  color={theme.foreground}
                 />
               </View>
             </TouchableOpacity>
@@ -197,28 +195,28 @@ export default function FoodDiaryScreen() {
                       renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
                       overshootRight={false}
                     >
-                      <View style={styles.foodItem}>
+                      <View style={[styles.foodItem, { backgroundColor: theme.surface.card }]}>
                         <View style={styles.foodItemLeft}>
-                          <Text style={styles.foodName}>{foodItem?.name}</Text>
+                          <Text style={[styles.foodName, { color: theme.foreground }]}>{foodItem?.name}</Text>
                           <View style={styles.foodDetails}>
-                            <Text style={styles.foodServing}>{item.quantity} {item.unit}</Text>
-                            <Text style={styles.foodMacro}>P: {item.totalProtein.toFixed(1)}g</Text>
-                            <Text style={styles.foodMacro}>C: {item.totalCarbs.toFixed(1)}g</Text>
-                            <Text style={styles.foodMacro}>F: {item.totalFat.toFixed(1)}g</Text>
+                            <Text style={[styles.foodServing, { color: theme.comment }]}>{item.quantity} {item.unit}</Text>
+                            <Text style={[styles.foodMacro, { color: theme.nutrition.protein }]}>P: {item.totalProtein.toFixed(1)}g</Text>
+                            <Text style={[styles.foodMacro, { color: theme.nutrition.carbs }]}>C: {item.totalCarbs.toFixed(1)}g</Text>
+                            <Text style={[styles.foodMacro, { color: theme.nutrition.fat }]}>F: {item.totalFat.toFixed(1)}g</Text>
                           </View>
                         </View>
-                        <Text style={styles.foodCalories}>{item.totalCalories.toFixed(0)} kcal</Text>
+                        <Text style={[styles.foodCalories, { color: theme.nutrition.calories }]}>{item.totalCalories.toFixed(0)} kcal</Text>
                       </View>
                     </Swipeable>
                   );
                 })}
 
                 <TouchableOpacity
-                  style={styles.addButton}
+                  style={[styles.addButton, { backgroundColor: theme.primary }]}
                   onPress={() => openSearchScreen(meal)}
                 >
-                  <Ionicons name="add" size={20} color={draculaTheme.text.inverse} />
-                  <Text style={styles.addButtonText}>Add Food to {meal.charAt(0).toUpperCase() + meal.slice(1)}</Text>
+                  <Ionicons name="add" size={20} color={theme.text.inverse} />
+                  <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add Food to {meal.charAt(0).toUpperCase() + meal.slice(1)}</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -227,12 +225,12 @@ export default function FoodDiaryScreen() {
       })}
 
       <Modal visible={cameraModal.visible} animationType="slide" onRequestClose={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}>
-        <View style={styles.scannerContainer}>
+        <View style={[styles.scannerContainer, { backgroundColor: theme.background }]}>
           {!permission?.granted && (
             <View style={styles.permissionContainer}>
-              <Text style={styles.permissionText}>We need your permission to show the camera</Text>
-              <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-                <Text style={styles.permissionButtonText}>Grant Permission</Text>
+              <Text style={[styles.permissionText, { color: theme.foreground }]}>We need your permission to show the camera</Text>
+              <TouchableOpacity style={[styles.permissionButton, { backgroundColor: theme.primary }]} onPress={requestPermission}>
+                <Text style={[styles.permissionButtonText, { color: theme.text.inverse }]}>Grant Permission</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -243,12 +241,12 @@ export default function FoodDiaryScreen() {
             />
           )}
           {cameraModal.scanned && (
-            <TouchableOpacity style={styles.scanAgainButton} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, scanned: false } }))}>
-              <Text style={styles.scanAgainButtonText}>Tap to Scan Again</Text>
+            <TouchableOpacity style={[styles.scanAgainButton, { backgroundColor: theme.primary }]} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, scanned: false } }))}>
+              <Text style={[styles.scanAgainButtonText, { color: theme.text.inverse }]}>Tap to Scan Again</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.closeButton} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <TouchableOpacity style={[styles.closeButton, { backgroundColor: theme.danger }]} onPress={() => setState(prev => ({ ...prev, cameraModal: { ...prev.cameraModal, visible: false } }))}>
+            <Text style={[styles.closeButtonText, { color: theme.text.inverse }]}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -259,11 +257,9 @@ export default function FoodDiaryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: draculaTheme.background,
     padding: spacing.md,
   },
   mealSection: {
-    backgroundColor: draculaTheme.surface.card,
     borderRadius: borderRadius.md,
     marginBottom: spacing.lg,
     overflow: 'hidden',
@@ -274,7 +270,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: draculaTheme.surface.secondary,
   },
   mealHeaderLeft: {
     flexDirection: 'row',
@@ -291,12 +286,10 @@ const styles = StyleSheet.create({
   mealTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.foreground,
   },
   mealCalories: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: draculaTheme.nutrition.calories,
   },
   foodItem: {
     flexDirection: 'row',
@@ -305,7 +298,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: draculaTheme.surface.secondary,
   },
   foodItemLeft: {
     flex: 1,
@@ -313,7 +305,6 @@ const styles = StyleSheet.create({
   },
   foodName: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.foreground,
     fontWeight: typography.weights.semibold,
   },
   foodDetails: {
@@ -323,11 +314,9 @@ const styles = StyleSheet.create({
   },
   foodServing: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
   },
   foodCalories: {
     fontSize: typography.sizes.md,
-    color: draculaTheme.nutrition.calories,
     fontWeight: typography.weights.semibold,
   },
   foodNutrients: {
@@ -336,19 +325,16 @@ const styles = StyleSheet.create({
   },
   foodMacro: {
     fontSize: typography.sizes.sm,
-    color: draculaTheme.comment,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: draculaTheme.green,
     padding: spacing.sm,
     margin: spacing.md,
     borderRadius: borderRadius.md,
   },
   addButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
     marginLeft: spacing.sm,
@@ -366,18 +352,15 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   permissionText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.lg,
     textAlign: 'center',
     marginBottom: spacing.md,
   },
   permissionButton: {
-    backgroundColor: draculaTheme.purple,
     padding: spacing.md,
     borderRadius: borderRadius.md,
   },
   permissionButtonText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -385,35 +368,29 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 40,
     right: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     padding: 10,
     borderRadius: 5,
   },
   closeButtonText: {
-    color: 'white',
     fontSize: 16,
   },
   scanAgainButton: {
     position: 'absolute',
     bottom: 40,
     alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
     padding: 10,
     borderRadius: 5,
   },
   scanAgainButtonText: {
-    color: 'white',
     fontSize: 16,
   },
   deleteAction: {
-    backgroundColor: draculaTheme.red,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
     height: '100%',
   },
   deleteActionText: {
-    color: draculaTheme.text.inverse,
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
     marginTop: spacing.xs,
