@@ -287,6 +287,10 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: typography.sizes.lg,
   },
+  mealTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+  },
   header: {
     marginBottom: spacing.xl,
     paddingTop: spacing.md,
