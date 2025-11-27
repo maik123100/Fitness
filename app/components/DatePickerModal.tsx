@@ -45,34 +45,56 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
   const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
   const renderHeader = () => (
     <View style={styles.headerContainer}>
+      <TouchableOpacity onPress={handlePrevMonth} style={styles.arrowButton}>
+        <Ionicons name="chevron-back" size={24} color={theme.text.primary} />
+      </TouchableOpacity>
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={currentMonth}
-          style={styles.picker}
+          style={[styles.picker, { color: theme.text.primary }]}
           onValueChange={(itemValue) => setCurrentMonth(itemValue)}
           dropdownIconColor={theme.text.primary}
-          itemStyle={styles.pickerItem}
         >
           {monthNames.map((month, index) => (
-            <Picker.Item key={month} label={month} value={index} color={theme.text.primary} style={{ color: theme.text.primary, backgroundColor: theme.surface.input }} />
+            <Picker.Item key={month} label={month} value={index} />
           ))}
         </Picker>
       </View>
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={currentYear}
-          style={styles.picker}
+          style={[styles.picker, { color: theme.text.primary }]}
           onValueChange={(itemValue) => setCurrentYear(itemValue)}
           dropdownIconColor={theme.text.primary}
-          itemStyle={styles.pickerItem}
         >
           {years.map((year) => (
-            <Picker.Item key={year} label={year.toString()} value={year} color={theme.text.primary} style={{ color: theme.text.primary, backgroundColor: theme.surface.input }} />
+            <Picker.Item key={year} label={year.toString()} value={year} />
           ))}
         </Picker>
       </View>
+      <TouchableOpacity onPress={handleNextMonth} style={styles.arrowButton}>
+        <Ionicons name="chevron-forward" size={24} color={theme.text.primary} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -85,48 +107,52 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({ isVisible, onClose, o
     >
       <View style={styles.centeredView}>
         <View style={[styles.modalView, { backgroundColor: theme.surface.card }]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close-circle" size={24} color={theme.comment} />
-          </TouchableOpacity>
-          <Text style={[styles.modalTitle, { color: theme.foreground }]}>Select Date</Text>
-          <Calendar
-            key={`${currentYear}-${currentMonth}`}
-            onDayPress={handleDayPress}
-            markedDates={{
-              [selected]: {
-                selected: true,
-                disableTouchEvent: true,
-                selectedColor: theme.cyan,
-                selectedTextColor: theme.background,
-              },
-            }}
-            renderHeader={renderHeader}
-            current={`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`}
-            onMonthChange={(date) => {
-              setCurrentMonth(date.month - 1);
-              setCurrentYear(date.year);
-            }}
-            theme={{
-              backgroundColor: theme.background,
-              calendarBackground: theme.surface.card,
-              textSectionTitleColor: theme.foreground,
-              selectedDayBackgroundColor: theme.cyan,
-              selectedDayTextColor: theme.background,
-              todayTextColor: theme.orange,
-              dayTextColor: theme.foreground,
-              textDisabledColor: theme.comment,
-              dotColor: theme.cyan,
-              selectedDotColor: theme.background,
-              arrowColor: theme.cyan,
-              monthTextColor: theme.foreground,
-              textDayFontFamily: typography.fontFamily,
-              textMonthFontFamily: typography.fontFamily,
-              textDayHeaderFontFamily: typography.fontFamily,
-              textDayFontSize: typography.sizes.md,
-              textMonthFontSize: typography.sizes.lg,
-              textDayHeaderFontSize: typography.sizes.sm,
-            }}
-          />
+          <View style={styles.header}>
+            <Text style={[styles.modalTitle, { color: theme.foreground }]}>Select Date</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color={theme.text.secondary} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.calendarContainer}>
+            <Calendar
+              key={`${currentYear}-${currentMonth}`}
+              onDayPress={handleDayPress}
+              markedDates={{
+                [selected]: {
+                  selected: true,
+                  disableTouchEvent: true,
+                  selectedColor: theme.cyan,
+                  selectedTextColor: theme.background,
+                },
+              }}
+              renderHeader={renderHeader}
+              current={`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`}
+              onMonthChange={(date) => {
+                setCurrentMonth(date.month - 1);
+                setCurrentYear(date.year);
+              }}
+              hideArrows={true}
+              theme={{
+                backgroundColor: theme.background,
+                calendarBackground: theme.surface.card,
+                textSectionTitleColor: theme.foreground,
+                selectedDayBackgroundColor: theme.cyan,
+                selectedDayTextColor: theme.background,
+                todayTextColor: theme.orange,
+                dayTextColor: theme.foreground,
+                textDisabledColor: theme.comment,
+                dotColor: theme.cyan,
+                selectedDotColor: theme.background,
+                monthTextColor: theme.foreground,
+                textDayFontFamily: typography.fontFamily,
+                textMonthFontFamily: typography.fontFamily,
+                textDayHeaderFontFamily: typography.fontFamily,
+                textDayFontSize: typography.sizes.md,
+                textMonthFontSize: typography.sizes.lg,
+                textDayHeaderFontSize: typography.sizes.sm,
+              }}
+            />
+          </View>
         </View>
       </View>
     </Modal>
@@ -138,52 +164,61 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   modalView: {
     margin: spacing.lg,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    alignItems: 'center',
+    borderRadius: borderRadius.xl,
+    padding: spacing.md,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
     width: '90%',
+    maxWidth: 400,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   closeButton: {
-    alignSelf: 'flex-end',
-    marginBottom: spacing.md,
+    padding: spacing.xs,
+    borderRadius: borderRadius.full,
   },
   modalTitle: {
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.lg,
+    fontWeight: typography.weights.semibold,
+  },
+  calendarContainer: {
+    width: '100%',
+    overflow: 'hidden',
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     width: '100%',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xs,
     marginBottom: spacing.md,
+  },
+  arrowButton: {
+    padding: spacing.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pickerWrapper: {
     flex: 1,
-    borderRadius: borderRadius.md,
-    marginHorizontal: spacing.xs,
-    borderWidth: 1,
-    overflow: 'hidden',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   picker: {
-    fontSize: typography.sizes.md,
-  },
-  pickerItem: {
-    fontSize: typography.sizes.md,
+    width: '100%',
   },
 });
 

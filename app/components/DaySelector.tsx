@@ -90,20 +90,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   arrowButton: {
-    padding: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.full,
   },
   dateDisplayButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    flex: 1,
+    marginHorizontal: spacing.sm,
+    justifyContent: 'center',
   },
   dateText: {
     fontSize: typography.sizes.lg,
@@ -111,7 +120,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   calendarIcon: {
-    // Add any specific styling for the calendar icon if needed
+    marginLeft: spacing.xs,
   },
 });
 
