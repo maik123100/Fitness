@@ -6,6 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import React, { JSX } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TabLayoutProps = {
   name: string;
@@ -53,7 +54,8 @@ const tabs: TabLayoutProps[] = [
 
 function TabsContent() {
   const { theme } = useTheme();
-  
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -63,21 +65,15 @@ function TabsContent() {
           backgroundColor: theme.surface.card,
           borderTopWidth: 1,
           borderTopColor: theme.surface.elevated,
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 8,
-          elevation: 8,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
-          marginTop: 4,
         },
         headerStyle: {
           backgroundColor: theme.background,
           elevation: 0,
         },
-        headerShadowVisible: false,
         headerTintColor: theme.foreground,
         header: () => (
           <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
