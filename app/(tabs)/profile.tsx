@@ -4,13 +4,21 @@ import { getUserProfile, saveUserProfile } from '@/services/database';
 import { resetDatabase } from '@/services/db';
 import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
 import { setOnboardingCompleted } from '@/services/onboardingService';
+import { 
+  getNotificationSettings, 
+  toggleNotification, 
+  updateNotificationTime, 
+  testNotification,
+  MealTypeMain 
+} from '@/services/notificationService';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import { MineralFields, VitaminFields } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View, Pressable, Switch, Platform, TouchableOpacity, Modal } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Picker } from '@react-native-picker/picker';
 
 export default function ProfileScreen() {
   const { theme, themeName, setTheme } = useTheme();
@@ -29,10 +37,20 @@ export default function ProfileScreen() {
   const [showMineralTargets, setShowMineralTargets] = useState(false);
   const [showProfileInfo, setShowProfileInfo] = useState(false);
   const [showAppearance, setShowAppearance] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState({
+    breakfast: { enabled: true, hour: 6, minute: 0 },
+    lunch: { enabled: true, hour: 12, minute: 0 },
+    dinner: { enabled: true, hour: 19, minute: 0 },
+  });
+  const [showTimePicker, setShowTimePicker] = useState<MealTypeMain | null>(null);
+  const [selectedHour, setSelectedHour] = useState(0);
+  const [selectedMinute, setSelectedMinute] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
     loadProfile();
+    loadNotificationSettings();
   }, []);
 
   const loadProfile = () => {
@@ -47,6 +65,72 @@ export default function ProfileScreen() {
       setGoalType(userProfile.goalType as GoalType);
       setTargetWeight(userProfile.targetWeight?.toString() || '');
     }
+  };
+
+  const loadNotificationSettings = async () => {
+    try {
+      const settings = await getNotificationSettings();
+      setNotificationSettings({
+        breakfast: { enabled: settings.breakfast.enabled, hour: settings.breakfast.hour, minute: settings.breakfast.minute },
+        lunch: { enabled: settings.lunch.enabled, hour: settings.lunch.hour, minute: settings.lunch.minute },
+        dinner: { enabled: settings.dinner.enabled, hour: settings.dinner.hour, minute: settings.dinner.minute },
+      });
+    } catch (error) {
+      console.error('Error loading notification settings:', error);
+    }
+  };
+
+  const handleToggleNotification = async (mealType: MealTypeMain, enabled: boolean) => {
+    try {
+      await toggleNotification(mealType, enabled);
+      setNotificationSettings(prev => ({
+        ...prev,
+        [mealType]: { ...prev[mealType], enabled }
+      }));
+    } catch (error) {
+      console.error(`Error toggling ${mealType} notification:`, error);
+      Alert.alert('Error', 'Failed to update notification settings');
+    }
+  };
+
+  const openTimePicker = (mealType: MealTypeMain) => {
+    const meal = notificationSettings[mealType];
+    setSelectedHour(meal.hour);
+    setSelectedMinute(meal.minute);
+    setShowTimePicker(mealType);
+  };
+
+  const handleTimeSave = async () => {
+    if (!showTimePicker) return;
+
+    try {
+      await updateNotificationTime(showTimePicker, selectedHour, selectedMinute);
+      setNotificationSettings(prev => ({
+        ...prev,
+        [showTimePicker]: { ...prev[showTimePicker], hour: selectedHour, minute: selectedMinute }
+      }));
+      setShowTimePicker(null);
+    } catch (error) {
+      console.error(`Error updating ${showTimePicker} time:`, error);
+      Alert.alert('Error', 'Failed to update notification time');
+    }
+  };
+
+  const handleTestNotification = async (mealType: MealTypeMain) => {
+    try {
+      await testNotification(mealType);
+      Alert.alert('Test Notification', `A test notification for ${mealType} will appear in 5 seconds`);
+    } catch (error) {
+      console.error(`Error sending test notification:`, error);
+      Alert.alert('Error', 'Failed to send test notification');
+    }
+  };
+
+  const formatTime = (hour: number, minute: number): string => {
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    const displayMinute = minute.toString().padStart(2, '0');
+    return `${displayHour}:${displayMinute} ${ampm}`;
   };
 
   const handleSaveProfile = () => {
@@ -321,6 +405,127 @@ export default function ProfileScreen() {
         </View>
       </CollapsibleSection>
 
+      {/* Notifications Section */}
+      <CollapsibleSection 
+        title="Notifications" 
+        isExpanded={showNotifications} 
+        onToggle={() => setShowNotifications(!showNotifications)}
+        icon="notifications-outline"
+      >
+        <View style={styles.notificationSection}>
+          {/* Breakfast Notification */}
+          <View style={[styles.notificationMeal, { backgroundColor: theme.surface.input }]}>
+            <View style={styles.notificationHeader}>
+              <View style={styles.notificationTitleRow}>
+                <Ionicons name="sunny-outline" size={20} color={theme.orange} />
+                <Text style={[styles.notificationMealTitle, { color: theme.foreground }]}>Breakfast</Text>
+              </View>
+              <Switch
+                value={notificationSettings.breakfast.enabled}
+                onValueChange={(value) => handleToggleNotification('breakfast', value)}
+                trackColor={{ false: theme.surface.secondary, true: theme.cyan }}
+                thumbColor={notificationSettings.breakfast.enabled ? theme.text.inverse : theme.comment}
+              />
+            </View>
+            
+            {notificationSettings.breakfast.enabled && (
+              <View style={styles.notificationDetails}>
+                <TouchableOpacity
+                  style={[styles.timeButton, { backgroundColor: theme.surface.secondary }]}
+                  onPress={() => openTimePicker('breakfast')}
+                >
+                  <Ionicons name="time-outline" size={18} color={theme.cyan} />
+                  <Text style={[styles.timeText, { color: theme.foreground }]}>
+                    {formatTime(notificationSettings.breakfast.hour, notificationSettings.breakfast.minute)}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.testButton, { backgroundColor: theme.purple }]}
+                  onPress={() => handleTestNotification('breakfast')}
+                >
+                  <Ionicons name="flask-outline" size={16} color={theme.text.inverse} />
+                  <Text style={[styles.testButtonText, { color: theme.text.inverse }]}>Test</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Lunch Notification */}
+          <View style={[styles.notificationMeal, { backgroundColor: theme.surface.input }]}>
+            <View style={styles.notificationHeader}>
+              <View style={styles.notificationTitleRow}>
+                <Ionicons name="partly-sunny-outline" size={20} color={theme.yellow} />
+                <Text style={[styles.notificationMealTitle, { color: theme.foreground }]}>Lunch</Text>
+              </View>
+              <Switch
+                value={notificationSettings.lunch.enabled}
+                onValueChange={(value) => handleToggleNotification('lunch', value)}
+                trackColor={{ false: theme.surface.secondary, true: theme.cyan }}
+                thumbColor={notificationSettings.lunch.enabled ? theme.text.inverse : theme.comment}
+              />
+            </View>
+            
+            {notificationSettings.lunch.enabled && (
+              <View style={styles.notificationDetails}>
+                <TouchableOpacity
+                  style={[styles.timeButton, { backgroundColor: theme.surface.secondary }]}
+                  onPress={() => openTimePicker('lunch')}
+                >
+                  <Ionicons name="time-outline" size={18} color={theme.cyan} />
+                  <Text style={[styles.timeText, { color: theme.foreground }]}>
+                    {formatTime(notificationSettings.lunch.hour, notificationSettings.lunch.minute)}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.testButton, { backgroundColor: theme.purple }]}
+                  onPress={() => handleTestNotification('lunch')}
+                >
+                  <Ionicons name="flask-outline" size={16} color={theme.text.inverse} />
+                  <Text style={[styles.testButtonText, { color: theme.text.inverse }]}>Test</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Dinner Notification */}
+          <View style={[styles.notificationMeal, { backgroundColor: theme.surface.input }]}>
+            <View style={styles.notificationHeader}>
+              <View style={styles.notificationTitleRow}>
+                <Ionicons name="moon-outline" size={20} color={theme.purple} />
+                <Text style={[styles.notificationMealTitle, { color: theme.foreground }]}>Dinner</Text>
+              </View>
+              <Switch
+                value={notificationSettings.dinner.enabled}
+                onValueChange={(value) => handleToggleNotification('dinner', value)}
+                trackColor={{ false: theme.surface.secondary, true: theme.cyan }}
+                thumbColor={notificationSettings.dinner.enabled ? theme.text.inverse : theme.comment}
+              />
+            </View>
+            
+            {notificationSettings.dinner.enabled && (
+              <View style={styles.notificationDetails}>
+                <TouchableOpacity
+                  style={[styles.timeButton, { backgroundColor: theme.surface.secondary }]}
+                  onPress={() => openTimePicker('dinner')}
+                >
+                  <Ionicons name="time-outline" size={18} color={theme.cyan} />
+                  <Text style={[styles.timeText, { color: theme.foreground }]}>
+                    {formatTime(notificationSettings.dinner.hour, notificationSettings.dinner.minute)}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.testButton, { backgroundColor: theme.purple }]}
+                  onPress={() => handleTestNotification('dinner')}
+                >
+                  <Ionicons name="flask-outline" size={16} color={theme.text.inverse} />
+                  <Text style={[styles.testButtonText, { color: theme.text.inverse }]}>Test</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </CollapsibleSection>
+
       {/* Profile Info Section */}
       <CollapsibleSection 
         title="Your Profile" 
@@ -556,6 +761,78 @@ export default function ProfileScreen() {
           <Text style={[styles.dangerButtonText, { color: theme.danger }]}>Reset Database</Text>
         </Pressable>
       </View>
+
+      {/* Time Picker Modal */}
+      <Modal
+        visible={showTimePicker !== null}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowTimePicker(null)}
+      >
+        <View style={styles.timePickerOverlay}>
+          <View style={[styles.timePickerModal, { backgroundColor: theme.surface.card }]}>
+            <View style={styles.timePickerHeader}>
+              <Text style={[styles.timePickerTitle, { color: theme.foreground }]}>
+                Set {showTimePicker && showTimePicker.charAt(0).toUpperCase() + showTimePicker.slice(1)} Time
+              </Text>
+              <TouchableOpacity onPress={() => setShowTimePicker(null)}>
+                <Ionicons name="close" size={24} color={theme.comment} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.timePickerContent}>
+              <View style={styles.pickerRow}>
+                <View style={styles.pickerColumn}>
+                  <Text style={[styles.pickerLabel, { color: theme.comment }]}>Hour</Text>
+                  <Picker
+                    selectedValue={selectedHour}
+                    onValueChange={(value) => setSelectedHour(value)}
+                    style={[styles.picker, { color: theme.foreground }]}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
+                    ))}
+                  </Picker>
+                </View>
+
+                <Text style={[styles.timeSeparator, { color: theme.foreground }]}>:</Text>
+
+                <View style={styles.pickerColumn}>
+                  <Text style={[styles.pickerLabel, { color: theme.comment }]}>Minute</Text>
+                  <Picker
+                    selectedValue={selectedMinute}
+                    onValueChange={(value) => setSelectedMinute(value)}
+                    style={[styles.picker, { color: theme.foreground }]}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <Picker.Item key={i} label={i.toString().padStart(2, '0')} value={i} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <Text style={[styles.timePreview, { color: theme.cyan }]}>
+                {formatTime(selectedHour, selectedMinute)}
+              </Text>
+            </View>
+
+            <View style={styles.timePickerActions}>
+              <TouchableOpacity
+                style={[styles.timePickerButton, { backgroundColor: theme.surface.secondary }]}
+                onPress={() => setShowTimePicker(null)}
+              >
+                <Text style={[styles.timePickerButtonText, { color: theme.foreground }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.timePickerButton, { backgroundColor: theme.cyan }]}
+                onPress={handleTimeSave}
+              >
+                <Text style={[styles.timePickerButtonText, { color: theme.text.inverse }]}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -829,6 +1106,144 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   dangerButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+
+  // Notification Styles
+  notificationSection: {
+    gap: spacing.md,
+  },
+  notificationMeal: {
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  notificationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  notificationMealTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+  notificationDetails: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  timeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  timeText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+    minWidth: 80,
+  },
+  testButtonText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+  },
+
+  // Time Picker Modal Styles
+  timePickerOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  timePickerModal: {
+    width: '85%',
+    maxWidth: 400,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    ...Platform.select({
+      android: {
+        elevation: 8,
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+    }),
+  },
+  timePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  timePickerTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+  },
+  timePickerContent: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
+  pickerColumn: {
+    alignItems: 'center',
+  },
+  pickerLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    marginBottom: spacing.xs,
+  },
+  picker: {
+    width: 100,
+    height: 150,
+  },
+  timeSeparator: {
+    fontSize: typography.sizes.title,
+    fontWeight: typography.weights.bold,
+    marginTop: spacing.lg,
+  },
+  timePreview: {
+    fontSize: typography.sizes.xxl,
+    fontWeight: typography.weights.bold,
+    marginTop: spacing.lg,
+  },
+  timePickerActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  timePickerButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timePickerButtonText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
   },

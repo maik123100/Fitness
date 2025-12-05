@@ -1,9 +1,9 @@
 import { rawDb, useDatabase } from "@/services/db";
 import { seedMockData, shouldSeedMockData } from '@/services/mockData';
-import { initializeNotifications } from '@/services/notificationService';
+import { initializeNotifications, setupNotificationHandlers } from '@/services/notificationService';
 import { getOnboardingCompleted } from '@/services/onboardingService';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
@@ -15,6 +15,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 export default function RootLayout() {
   const { success, error } = useDatabase();
   const [onboardingLoaded, setOnboardingLoaded] = useState(false);
+  const router = useRouter();
 
   // Enable Drizzle Studio for database debugging
   useDrizzleStudio(rawDb);
@@ -35,6 +36,9 @@ export default function RootLayout() {
 
       // Initialize notifications after onboarding is loaded
       await initializeNotifications();
+      
+      // Set up notification handlers for navigation
+      setupNotificationHandlers(router);
     };
 
     if (success) {

@@ -12,7 +12,7 @@ import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -33,6 +33,7 @@ export default function FoodDiaryScreen() {
   const { showSnackbar } = useSnackbar();
   const [permission, requestPermission] = useCameraPermissions();
   const { selectedDate } = useDate();
+  const { expandMeal } = useLocalSearchParams<{ expandMeal?: string }>();
 
   const [state, setState] = useState<FoodDiaryState>({
     foodEntries: { breakfast: [], lunch: [], dinner: [], snack: [] },
@@ -86,6 +87,19 @@ export default function FoodDiaryScreen() {
   useEffect(() => {
     loadFoodEntries();
   }, [selectedDate]);
+
+  // Handle expandMeal parameter from notification
+  useEffect(() => {
+    if (expandMeal && (expandMeal === 'breakfast' || expandMeal === 'lunch' || expandMeal === 'dinner')) {
+      setState(prev => ({
+        ...prev,
+        expandedMeals: {
+          ...prev.expandedMeals,
+          [expandMeal]: true,
+        },
+      }));
+    }
+  }, [expandMeal]);
 
   const loadFoodEntries = () => {
     const entries = getFoodEntriesForDate(formatDateToYYYYMMDD(selectedDate));
