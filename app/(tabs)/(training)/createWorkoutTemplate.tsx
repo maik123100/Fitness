@@ -1,17 +1,26 @@
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { useSnackbar } from '@/app/components/SnackbarProvider';
-import { addWorkoutTemplate, addWorkoutTemplateExercise, getExerciseTemplates } from '@/services/database';
+import { addWorkoutTemplate, addWorkoutTemplateExercise, getExerciseTemplates, addExerciseTemplate } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ExerciseTemplate, SetTarget } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, Platform } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, Platform, Modal } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface OrderedExercise extends ExerciseTemplate {
   setTargets: SetTarget[];
+}
+
+interface JsonWorkoutInput {
+  name: string;
+  exercises: {
+    name: string;
+    sets: number;
+    setTargets: [number, number][];
+  }[];
 }
 
 export default function CreateWorkoutTemplateScreen() {
@@ -25,6 +34,8 @@ export default function CreateWorkoutTemplateScreen() {
   const [orderedExercises, setOrderedExercises] = useState<OrderedExercise[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [templateName, setTemplateName] = useState('');
+  const [isJsonModalVisible, setIsJsonModalVisible] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
 
   useEffect(() => {
     const exercises = getExerciseTemplates();
@@ -78,6 +89,93 @@ export default function CreateWorkoutTemplateScreen() {
     router.back();
   };
 
+  const handleJsonImport = () => {
+    try {
+      const parsed: JsonWorkoutInput = JSON.parse(jsonInput);
+      
+      if (!parsed.name || typeof parsed.name !== 'string') {
+        showSnackbar('Invalid JSON: "name" field is required', 3000);
+        return;
+      }
+      
+      if (!Array.isArray(parsed.exercises) || parsed.exercises.length === 0) {
+        showSnackbar('Invalid JSON: "exercises" array is required', 3000);
+        return;
+      }
+
+      // Validate and convert exercises
+      const importedExercises: OrderedExercise[] = [];
+      const newExercisesCreated: string[] = [];
+      
+      for (const ex of parsed.exercises) {
+        if (!ex.name || typeof ex.name !== 'string') {
+          showSnackbar('Invalid JSON: Each exercise must have a "name"', 3000);
+          return;
+        }
+        
+        if (!Array.isArray(ex.setTargets) || ex.setTargets.length === 0) {
+          showSnackbar(`Invalid JSON: Exercise "${ex.name}" must have setTargets array`, 3000);
+          return;
+        }
+
+        // Convert tuple format to SetTarget objects
+        const setTargets: SetTarget[] = ex.setTargets.map((target, idx) => {
+          if (!Array.isArray(target) || target.length !== 2) {
+            throw new Error(`Invalid setTarget format at index ${idx} for ${ex.name}`);
+          }
+          return { reps: target[0], weight: target[1] };
+        });
+
+        // Find matching exercise template (case-insensitive)
+        let exerciseTemplate = allExercises.find(
+          e => e.name.toLowerCase() === ex.name.toLowerCase()
+        );
+        
+        // If exercise doesn't exist, create it
+        if (!exerciseTemplate) {
+          const newExerciseId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          const newExercise: ExerciseTemplate = {
+            id: newExerciseId,
+            name: ex.name,
+            defaultSetTargets: setTargets,
+          };
+          
+          // Add to database
+          addExerciseTemplate(newExercise);
+          
+          // Add to local state
+          exerciseTemplate = newExercise;
+          newExercisesCreated.push(ex.name);
+        }
+
+        importedExercises.push({
+          ...exerciseTemplate,
+          setTargets
+        });
+      }
+
+      // Refresh exercise list to include new exercises
+      const updatedExercises = getExerciseTemplates();
+      setAllExercises(updatedExercises);
+
+      // Success - apply the imported data
+      setTemplateName(parsed.name);
+      setOrderedExercises(importedExercises);
+      setStep(2);
+      setIsJsonModalVisible(false);
+      setJsonInput('');
+      
+      if (newExercisesCreated.length > 0) {
+        showSnackbar(`Workout imported! Created ${newExercisesCreated.length} new exercise(s)`, 3000);
+      } else {
+        showSnackbar('Workout imported successfully!', 3000);
+      }
+      
+    } catch (error) {
+      showSnackbar(error instanceof Error ? error.message : 'Invalid JSON format', 3000);
+    }
+  };
+
   const filteredExercises = allExercises.filter(ex =>
     ex.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -115,148 +213,157 @@ export default function CreateWorkoutTemplateScreen() {
       </View>
     );
   };
-  
-  if (step === 1) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header Section */}
-        <View style={[styles.headerSection, { paddingTop: insets.top + spacing.xs }]}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity 
-              onPress={() => router.back()}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={24} color={theme.foreground} />
-            </TouchableOpacity>
-            <View style={styles.headerTextContainer}>
-              <Text style={[styles.header, { color: theme.foreground }]}>Select Exercises</Text>
-              <Text style={[styles.subtitle, { color: theme.comment }]}>
-                Choose exercises for your workout
-              </Text>
-            </View>
-          </View>
-          
-          {/* Progress Indicator */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressSteps}>
-              <View style={[styles.progressStep, { backgroundColor: theme.cyan }]}>
-                <Text style={[styles.progressStepText, { color: theme.text.inverse }]}>1</Text>
-              </View>
-              <View style={[styles.progressLine, { backgroundColor: theme.surface.secondary }]} />
-              <View style={[styles.progressStep, { backgroundColor: theme.surface.secondary }]}>
-                <Text style={[styles.progressStepText, { color: theme.comment }]}>2</Text>
-              </View>
-            </View>
-            <View style={styles.progressLabels}>
-              <Text style={[styles.progressLabel, { color: theme.cyan }]}>Select</Text>
-              <Text style={[styles.progressLabel, { color: theme.comment }]}>Order</Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Search Input */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={theme.comment} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
-            placeholder="Search exercises..."
-            placeholderTextColor={theme.comment}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-              <Ionicons name="close-circle" size={20} color={theme.comment} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Exercise List */}
-        <FlatList
-          data={filteredExercises}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => {
-            const isSelected = selectedExerciseIds.has(item.id);
-            return (
-              <TouchableOpacity
-                style={[
-                  styles.exerciseItem, 
-                  { backgroundColor: theme.surface.card },
-                  isSelected && { 
-                    backgroundColor: theme.surface.secondary, 
-                    borderColor: theme.cyan,
-                    borderWidth: 2
-                  }
-                ]}
-                onPress={() => toggleExerciseSelection(item.id)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.exerciseItemContent}>
-                  <View style={styles.exerciseIconContainer}>
-                    <Ionicons 
-                      name="barbell-outline" 
-                      size={24} 
-                      color={isSelected ? theme.cyan : theme.comment} 
-                    />
-                  </View>
-                  <View style={styles.exerciseInfo}>
-                    <Text style={[styles.exerciseText, { color: theme.foreground }]}>
-                      {item.name}
-                    </Text>
-                    {item.defaultSetTargets.length > 0 && (
-                      <Text style={[styles.exerciseSubtext, { color: theme.comment }]}>
-                        {item.defaultSetTargets.length} set{item.defaultSetTargets.length !== 1 ? 's' : ''}
-                      </Text>
-                    )}
-                  </View>
-                  {isSelected && (
-                    <Ionicons name="checkmark-circle" size={24} color={theme.green} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="search" size={48} color={theme.comment} />
-              <Text style={[styles.emptyText, { color: theme.comment }]}>
-                {searchQuery ? 'No exercises found' : 'No exercises available'}
-              </Text>
-            </View>
-          }
-        />
-
-        {/* Next Button */}
-        <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + spacing.md }]}>
-          <TouchableOpacity
-            style={[
-              styles.primaryButton, 
-              { backgroundColor: selectedExerciseIds.size > 0 ? theme.cyan : theme.surface.secondary },
-            ]}
-            disabled={selectedExerciseIds.size === 0}
-            onPress={handleNextStep}
-            activeOpacity={0.8}
+  const renderStep1 = () => (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Header Section */}
+      <View style={[styles.headerSection, { paddingTop: insets.top + spacing.xs }]}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            style={styles.backButton}
           >
-            <Text style={[
-              styles.buttonText, 
-              { color: selectedExerciseIds.size > 0 ? theme.text.inverse : theme.comment }
-            ]}>
-              Next
-            </Text>
-            <Ionicons 
-              name="arrow-forward" 
-              size={20} 
-              color={selectedExerciseIds.size > 0 ? theme.text.inverse : theme.comment} 
-            />
+            <Ionicons name="arrow-back" size={24} color={theme.foreground} />
           </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <View style={styles.headerTitleRow}>
+              <Text style={[styles.header, { color: theme.foreground }]}>Select Exercises</Text>
+              <TouchableOpacity
+                style={[styles.jsonImportButtonCompact, { backgroundColor: theme.purple }]}
+                onPress={() => setIsJsonModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="code-slash" size={16} color={theme.text.inverse} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.subtitle, { color: theme.comment }]}>
+              Choose exercises for your workout
+            </Text>
+          </View>
+        </View>
+        
+        {/* Progress Indicator */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressSteps}>
+            <View style={[styles.progressStep, { backgroundColor: theme.cyan }]}>
+              <Text style={[styles.progressStepText, { color: theme.text.inverse }]}>1</Text>
+            </View>
+            <View style={[styles.progressLine, { backgroundColor: theme.surface.secondary }]} />
+            <View style={[styles.progressStep, { backgroundColor: theme.surface.secondary }]}>
+              <Text style={[styles.progressStepText, { color: theme.comment }]}>2</Text>
+            </View>
+          </View>
+          <View style={styles.progressLabels}>
+            <Text style={[styles.progressLabel, { color: theme.cyan }]}>Select</Text>
+            <Text style={[styles.progressLabel, { color: theme.comment }]}>Order</Text>
+          </View>
         </View>
       </View>
-    );
-  }
+
+      {/* Search Input */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color={theme.comment} style={styles.searchIcon} />
+        <TextInput
+          style={[styles.searchInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
+          placeholder="Search exercises..."
+          placeholderTextColor={theme.comment}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color={theme.comment} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Exercise List */}
+      <FlatList
+        data={filteredExercises}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => {
+          const isSelected = selectedExerciseIds.has(item.id);
+          return (
+            <TouchableOpacity
+              style={[
+                styles.exerciseItem, 
+                { backgroundColor: theme.surface.card },
+                isSelected && { 
+                  backgroundColor: theme.surface.secondary, 
+                  borderColor: theme.cyan,
+                  borderWidth: 2
+                }
+              ]}
+              onPress={() => toggleExerciseSelection(item.id)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.exerciseItemContent}>
+                <View style={styles.exerciseIconContainer}>
+                  <Ionicons 
+                    name="barbell-outline" 
+                    size={24} 
+                    color={isSelected ? theme.cyan : theme.comment} 
+                  />
+                </View>
+                <View style={styles.exerciseInfo}>
+                  <Text style={[styles.exerciseText, { color: theme.foreground }]}>
+                    {item.name}
+                  </Text>
+                  {item.defaultSetTargets.length > 0 && (
+                    <Text style={[styles.exerciseSubtext, { color: theme.comment }]}>
+                      {item.defaultSetTargets.length} set{item.defaultSetTargets.length !== 1 ? 's' : ''}
+                    </Text>
+                  )}
+                </View>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={24} color={theme.green} />
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search" size={48} color={theme.comment} />
+            <Text style={[styles.emptyText, { color: theme.comment }]}>
+              {searchQuery ? 'No exercises found' : 'No exercises available'}
+            </Text>
+          </View>
+        }
+      />
+
+      {/* Next Button */}
+      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + spacing.md }]}>
+        <TouchableOpacity
+          style={[
+            styles.primaryButton, 
+            { backgroundColor: selectedExerciseIds.size > 0 ? theme.cyan : theme.surface.secondary },
+          ]}
+          disabled={selectedExerciseIds.size === 0}
+          onPress={handleNextStep}
+          activeOpacity={0.8}
+        >
+          <Text style={[
+            styles.buttonText, 
+            { color: selectedExerciseIds.size > 0 ? theme.text.inverse : theme.comment }
+          ]}>
+            Next
+          </Text>
+          <Ionicons 
+            name="arrow-forward" 
+            size={20} 
+            color={selectedExerciseIds.size > 0 ? theme.text.inverse : theme.comment} 
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
+    <>
+      {step === 1 ? renderStep1() : (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header Section */}
       <View style={[styles.headerSection, { paddingTop: insets.top + spacing.xs }]}>
@@ -359,6 +466,96 @@ export default function CreateWorkoutTemplateScreen() {
         </TouchableOpacity>
       </View>
     </View>
+      )}
+
+      {/* JSON Import Modal - Available in both steps */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isJsonModalVisible}
+        onRequestClose={() => setIsJsonModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: theme.surface.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.foreground }]}>Import Workout JSON</Text>
+              <TouchableOpacity onPress={() => setIsJsonModalVisible(false)} style={styles.modalCloseButton}>
+                <Ionicons name="close" size={24} color={theme.comment} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              <Text style={[styles.modalLabel, { color: theme.foreground }]}>JSON Format:</Text>
+              <View style={[styles.jsonFormatBox, { backgroundColor: theme.surface.secondary }]}>
+                <TextInput
+                  style={[styles.jsonFormatText, { color: theme.green, backgroundColor: theme.surface.secondary }]}
+                  value={`{
+  "name": "Workout Name",
+  "exercises": [
+    {
+      "name": "Exercise Name",
+      "sets": 3,
+      "setTargets": [
+        [12, 50],
+        [10, 55],
+        [8, 60]
+      ]
+    }
+  ]
+}`}
+                  multiline
+                  editable={true}
+                  selectTextOnFocus={false}
+                  showSoftInputOnFocus={false}
+                  textAlignVertical="top"
+                  caretHidden={true}
+                />
+              </View>
+              
+              <Text style={[styles.modalDescription, { color: theme.comment }]}>
+                • Each setTarget is a 2-tuple: [reps, weight]{'\n'}
+                • Existing exercises will be reused if names match{'\n'}
+                • New exercises will be created automatically{'\n'}
+                • Sets field is informational (array length matters)
+              </Text>
+              
+              <Text style={[styles.modalLabel, { color: theme.foreground, marginTop: spacing.md }]}>Paste JSON:</Text>
+              <TextInput
+                style={[styles.jsonInput, { backgroundColor: theme.surface.input, color: theme.foreground }]}
+                placeholder='{"name": "My Workout", "exercises": [...]}'
+                placeholderTextColor={theme.comment}
+                value={jsonInput}
+                onChangeText={setJsonInput}
+                multiline
+                textAlignVertical="top"
+              />
+            </ScrollView>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton, { backgroundColor: theme.surface.secondary }]}
+                onPress={() => {
+                  setIsJsonModalVisible(false);
+                  setJsonInput('');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.foreground }]}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalImportButton, { backgroundColor: theme.green }]}
+                onPress={handleJsonImport}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="download-outline" size={20} color={theme.text.inverse} />
+                <Text style={[styles.modalButtonText, { color: theme.text.inverse }]}>Import</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -383,6 +580,11 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: {
     flex: 1,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   header: {
     fontSize: typography.sizes.xl,
@@ -605,6 +807,138 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   secondaryButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+  jsonImportButtonCompact: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: spacing.sm,
+    ...Platform.select({
+      android: {
+        elevation: 1,
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+      },
+    }),
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: spacing.lg,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '85%',
+    borderRadius: borderRadius.xl,
+    ...Platform.select({
+      android: {
+        elevation: 8,
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+    }),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+  },
+  modalCloseButton: {
+    padding: spacing.xs,
+    borderRadius: borderRadius.md,
+  },
+  modalContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    maxHeight: 400,
+  },
+  modalLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    marginBottom: spacing.sm,
+  },
+  jsonFormatBox: {
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+  },
+  jsonFormatText: {
+    fontSize: typography.sizes.sm,
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
+    lineHeight: 18,
+    padding: spacing.md,
+    minHeight: 180,
+  },
+  modalDescription: {
+    fontSize: typography.sizes.sm,
+    lineHeight: 20,
+    marginBottom: spacing.sm,
+  },
+  jsonInput: {
+    minHeight: 120,
+    maxHeight: 180,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    fontSize: typography.sizes.sm,
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
+    lineHeight: 18,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  modalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.xs,
+  },
+  modalCancelButton: {
+    flex: 0.8,
+  },
+  modalImportButton: {
+    flex: 1.2,
+    ...Platform.select({
+      android: {
+        elevation: 2,
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+    }),
+  },
+  modalButtonText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
   },
