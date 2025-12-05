@@ -276,6 +276,7 @@ export const borderRadius = {
   lg: 12,
   xl: 16,
   round: 50,
+  full: 9999,
 };
 
 // Typography
