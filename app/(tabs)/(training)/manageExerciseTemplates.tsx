@@ -1,5 +1,5 @@
 import { useTheme } from '@/app/contexts/ThemeContext';
-import SetTargetInputList from '@/app/components/SetTargetInputList';
+import SetTargetInputList from '@/components/SetTargetInputList';
 import { addExerciseTemplate, deleteExerciseTemplate, getExerciseTemplates, updateExerciseTemplate } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ExerciseTemplate, SetTarget } from '@/types/types';

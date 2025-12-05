@@ -1,4 +1,4 @@
-import DatePickerModal from '@/app/components/DatePickerModal';
+import DatePickerModal from '@/components/DatePickerModal';
 import { saveUserProfile } from '@/services/database';
 import { setOnboardingCompleted } from '@/services/onboardingService';
 import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
@@ -8,7 +8,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, shadows, spacing, typography } from '../styles/theme';
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { formatDateToYYYYMMDD } from './utils/dateHelpers';
+import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const activityLevels: Record<ActivityLevel, string> = {
@@ -158,8 +158,8 @@ export default function OnboardingScreen() {
                 Your journey to a healthier you starts here. Let's set up your profile.
               </Text>
             </View>
-            <Pressable 
-              style={[styles.buttonSingle, { backgroundColor: theme.primary }, shadows.md]} 
+            <Pressable
+              style={[styles.buttonSingle, { backgroundColor: theme.primary }, shadows.md]}
               onPress={handleNext}
               android_ripple={{ color: theme.surface.elevated }}
             >
@@ -182,8 +182,8 @@ export default function OnboardingScreen() {
 
             <View style={styles.formGroup}>
               <Text style={[styles.label, { color: theme.foreground }]}>Birthdate</Text>
-              <Pressable 
-                onPress={() => setDatePickerVisibility(true)} 
+              <Pressable
+                onPress={() => setDatePickerVisibility(true)}
                 style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}
                 android_ripple={{ color: theme.selection }}
               >
@@ -210,20 +210,20 @@ export default function OnboardingScreen() {
                   <Pressable
                     key={g.value}
                     style={[
-                      styles.segment, 
+                      styles.segment,
                       profile.gender === g.value && { backgroundColor: theme.primary }
                     ]}
                     onPress={() => handleUpdateProfile('gender', g.value as 'male' | 'female')}
                     android_ripple={{ color: theme.selection }}
                   >
-                    <Ionicons 
-                      name={g.icon as any} 
-                      size={24} 
-                      color={profile.gender === g.value ? theme.text.inverse : theme.foreground} 
+                    <Ionicons
+                      name={g.icon as any}
+                      size={24}
+                      color={profile.gender === g.value ? theme.text.inverse : theme.foreground}
                     />
                     <Text style={[
-                      styles.segmentText, 
-                      { color: theme.foreground }, 
+                      styles.segmentText,
+                      { color: theme.foreground },
                       profile.gender === g.value && { color: theme.text.inverse, fontWeight: typography.weights.bold }
                     ]}>
                       {g.label}
@@ -238,13 +238,13 @@ export default function OnboardingScreen() {
                 <Text style={[styles.label, { color: theme.foreground }]}>Height (cm)</Text>
                 <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
                   <Ionicons name="resize-outline" size={20} color={theme.comment} style={styles.inputIcon} />
-                  <TextInput 
-                    style={[styles.textInput, { color: theme.foreground }]} 
-                    placeholder="180" 
-                    placeholderTextColor={theme.comment} 
-                    keyboardType="numeric" 
-                    value={profile.height?.toString()} 
-                    onChangeText={(text) => handleUpdateProfile('height', text ? parseFloat(text) : undefined)} 
+                  <TextInput
+                    style={[styles.textInput, { color: theme.foreground }]}
+                    placeholder="180"
+                    placeholderTextColor={theme.comment}
+                    keyboardType="numeric"
+                    value={profile.height?.toString()}
+                    onChangeText={(text) => handleUpdateProfile('height', text ? parseFloat(text) : undefined)}
                   />
                 </View>
               </View>
@@ -252,29 +252,29 @@ export default function OnboardingScreen() {
                 <Text style={[styles.label, { color: theme.foreground }]}>Weight (kg)</Text>
                 <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
                   <Ionicons name="barbell-outline" size={20} color={theme.comment} style={styles.inputIcon} />
-                  <TextInput 
-                    style={[styles.textInput, { color: theme.foreground }]} 
-                    placeholder="75" 
-                    placeholderTextColor={theme.comment} 
-                    keyboardType="numeric" 
-                    value={profile.weight?.toString()} 
-                    onChangeText={(text) => handleUpdateProfile('weight', text ? parseFloat(text) : undefined)} 
+                  <TextInput
+                    style={[styles.textInput, { color: theme.foreground }]}
+                    placeholder="75"
+                    placeholderTextColor={theme.comment}
+                    keyboardType="numeric"
+                    value={profile.weight?.toString()}
+                    onChangeText={(text) => handleUpdateProfile('weight', text ? parseFloat(text) : undefined)}
                   />
                 </View>
               </View>
             </View>
 
             <View style={styles.buttonGroup}>
-              <Pressable 
-                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]} 
+              <Pressable
+                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
                 onPress={handlePrev}
                 android_ripple={{ color: theme.selection }}
               >
                 <Ionicons name="arrow-back" size={20} color={theme.foreground} />
                 <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
               </Pressable>
-              <Pressable 
-                style={[styles.button, { backgroundColor: theme.primary }, shadows.md]} 
+              <Pressable
+                style={[styles.button, { backgroundColor: theme.primary }, shadows.md]}
                 onPress={handleNext}
                 android_ripple={{ color: theme.surface.elevated }}
               >
@@ -331,16 +331,16 @@ export default function OnboardingScreen() {
             </View>
 
             <View style={styles.buttonGroup}>
-              <Pressable 
-                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]} 
+              <Pressable
+                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
                 onPress={handlePrev}
                 android_ripple={{ color: theme.selection }}
               >
                 <Ionicons name="arrow-back" size={20} color={theme.foreground} />
                 <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
               </Pressable>
-              <Pressable 
-                style={[styles.button, { backgroundColor: theme.primary }, shadows.md]} 
+              <Pressable
+                style={[styles.button, { backgroundColor: theme.primary }, shadows.md]}
                 onPress={handleNext}
                 android_ripple={{ color: theme.surface.elevated }}
               >
@@ -401,29 +401,29 @@ export default function OnboardingScreen() {
                 <Text style={[styles.label, { color: theme.foreground }]}>Target Weight (kg)</Text>
                 <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
                   <Ionicons name="flag-outline" size={20} color={theme.comment} style={styles.inputIcon} />
-                  <TextInput 
-                    style={[styles.textInput, { color: theme.foreground }]} 
-                    placeholder="70" 
-                    placeholderTextColor={theme.comment} 
-                    keyboardType="numeric" 
-                    value={profile.targetWeight?.toString()} 
-                    onChangeText={(text) => handleUpdateProfile('targetWeight', parseFloat(text))} 
+                  <TextInput
+                    style={[styles.textInput, { color: theme.foreground }]}
+                    placeholder="70"
+                    placeholderTextColor={theme.comment}
+                    keyboardType="numeric"
+                    value={profile.targetWeight?.toString()}
+                    onChangeText={(text) => handleUpdateProfile('targetWeight', parseFloat(text))}
                   />
                 </View>
               </View>
             )}
 
             <View style={styles.buttonGroup}>
-              <Pressable 
-                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]} 
+              <Pressable
+                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
                 onPress={handlePrev}
                 android_ripple={{ color: theme.selection }}
               >
                 <Ionicons name="arrow-back" size={20} color={theme.foreground} />
                 <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
               </Pressable>
-              <Pressable 
-                style={[styles.button, { backgroundColor: theme.success }, shadows.md]} 
+              <Pressable
+                style={[styles.button, { backgroundColor: theme.success }, shadows.md]}
                 onPress={handleFinish}
                 android_ripple={{ color: theme.surface.elevated }}
               >
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-  
+
   // Form Styles
   formGroup: {
     width: '100%',
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     flex: 1,
   },
-  
+
   // Segmented Control
   segmentedControl: {
     flexDirection: 'row',

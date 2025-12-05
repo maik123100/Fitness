@@ -1,6 +1,6 @@
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { useDate } from '@/app/contexts/DateContext';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import { deleteWorkoutEntry, getActiveWorkoutSession, getWorkoutEntries, getWorkoutTemplate, getWorkoutTemplates, startWorkoutSession } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ActiveWorkoutSession, WorkoutEntry } from '@/types/types';

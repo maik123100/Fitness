@@ -9,8 +9,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
-import { SnackbarProvider } from './components/SnackbarProvider';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { SnackbarProvider } from '@/components/SnackbarProvider';
+import { ThemeProvider } from '@/app/contexts/ThemeContext';
 
 export default function RootLayout() {
   const { success, error } = useDatabase();
@@ -36,7 +36,7 @@ export default function RootLayout() {
 
       // Initialize notifications after onboarding is loaded
       await initializeNotifications();
-      
+
       // Set up notification handlers for navigation
       setupNotificationHandlers(router);
     };

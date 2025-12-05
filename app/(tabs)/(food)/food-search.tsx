@@ -1,4 +1,4 @@
-import { useSnackbar } from '@/app/components/SnackbarProvider';
+import { useSnackbar } from '@/components/SnackbarProvider';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import {
   deleteFoodItem,

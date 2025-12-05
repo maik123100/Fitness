@@ -1,4 +1,4 @@
-import DaySelector from '@/app/components/DaySelector';
+import DaySelector from '@/components/DaySelector';
 import { DateProvider } from '@/app/contexts/DateContext';
 import { ThemeProvider, useTheme } from '@/app/contexts/ThemeContext';
 import { spacing } from '@/styles/theme';

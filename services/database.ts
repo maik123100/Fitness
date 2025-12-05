@@ -1,4 +1,4 @@
-import { formatDateToYYYYMMDD, parseDateFromYYYYMMDD } from '@/app/utils/dateHelpers';
+import { formatDateToYYYYMMDD, parseDateFromYYYYMMDD } from '@/utils/dateHelpers';
 import { db } from '@/services/db';
 import * as schema from '@/services/db/schema';
 import {

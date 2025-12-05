@@ -1,5 +1,5 @@
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import { getCalorieIntakeForPeriod } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import React, { useEffect, useState } from 'react';

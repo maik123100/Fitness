@@ -1,5 +1,5 @@
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { useSnackbar } from '@/app/components/SnackbarProvider';
+import { useSnackbar } from '@/components/SnackbarProvider';
 import { addWorkoutTemplate, addWorkoutTemplateExercise, getExerciseTemplates, addExerciseTemplate } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ExerciseTemplate, SetTarget } from '@/types/types';

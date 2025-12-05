@@ -1,9 +1,9 @@
-import CalorieOverview from '@/app/components/calorieOverview';
-import MakroOverview from '@/app/components/makroOverview';
-import RecentActivities from '@/app/components/recentActivities';
+import CalorieOverview from '@/components/calorieOverview';
+import MakroOverview from '@/components/makroOverview';
+import RecentActivities from '@/components/recentActivities';
 import { useDate } from '@/app/contexts/DateContext';
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   getFoodEntriesForDate,
   getNutritionSummary,

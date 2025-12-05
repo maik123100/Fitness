@@ -1,7 +1,7 @@
-import { useSnackbar } from '@/app/components/SnackbarProvider';
+import { useSnackbar } from '@/components/SnackbarProvider';
 import { useDate } from '@/app/contexts/DateContext';
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   deleteFoodEntry,
   getAllFoodItems,
