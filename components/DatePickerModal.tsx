@@ -1,5 +1,5 @@
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { formatDateToYYYYMMDD } from '@/app/utils/dateHelpers';
+import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
