@@ -352,7 +352,11 @@ export async function testNotification(mealType: MealTypeMain): Promise<void> {
       data: { mealType },
       categoryIdentifier: 'meal-reminder',
     },
-    trigger: { seconds: 5 },
+    trigger: { 
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 5,
+      repeats: false,
+    },
   });
   
   console.log(`Test notification for ${mealType} will fire in 5 seconds`);
