@@ -1,4 +1,5 @@
 import { useSnackbar } from '@/components/SnackbarProvider';
+import { SelectionModal } from '@/components/shared/SelectionModal';
 import { useDate } from '@/app/contexts/DateContext';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
@@ -14,7 +15,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -23,6 +24,14 @@ type FoodDiaryState = {
   cameraModal: {
     visible: boolean;
     scanned: boolean;
+  };
+  addMealModal: {
+    visible: boolean;
+    mealType: MealType;
+  };
+  deleteEntryModal: {
+    visible: boolean;
+    entryId: string | null;
   };
   expandedMeals: Record<MealType, boolean>;
 };
@@ -41,10 +50,18 @@ export default function FoodDiaryScreen() {
       visible: false,
       scanned: false,
     },
+    addMealModal: {
+      visible: false,
+      mealType: 'breakfast',
+    },
+    deleteEntryModal: {
+      visible: false,
+      entryId: null,
+    },
     expandedMeals: { breakfast: false, lunch: false, dinner: false, snack: false },
   });
 
-  const { foodEntries, cameraModal, expandedMeals } = state;
+  const { foodEntries, cameraModal, addMealModal, deleteEntryModal, expandedMeals } = state;
 
   // Meal icons mapping
   const mealIcons: Record<MealType, keyof typeof Ionicons.glyphMap> = {
@@ -118,16 +135,33 @@ export default function FoodDiaryScreen() {
   };
 
   const handleDeleteFood = (id: string) => {
-    Alert.alert('Delete Entry', 'Are you sure you want to delete this food entry?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: () => {
-          deleteFoodEntry(id);
-          loadFoodEntries();
-          showSnackbar('Food entry deleted.', 3000);
-        }
+    setState((prev) => ({
+      ...prev,
+      deleteEntryModal: {
+        visible: true,
+        entryId: id,
       },
-    ]);
+    }));
+  };
+
+  const closeDeleteEntryModal = () => {
+    setState((prev) => ({
+      ...prev,
+      deleteEntryModal: {
+        visible: false,
+        entryId: null,
+      },
+    }));
+  };
+
+  const confirmDeleteFood = () => {
+    if (!deleteEntryModal.entryId) {
+      return;
+    }
+
+    deleteFoodEntry(deleteEntryModal.entryId);
+    loadFoodEntries();
+    showSnackbar('Food entry deleted.', 3000);
   };
 
   // Render swipe actions for delete
@@ -151,8 +185,24 @@ export default function FoodDiaryScreen() {
     );
   };
 
-  const openSearchScreen = (mealType: MealType) => {
-    router.navigate({ pathname: '/(tabs)/(food)/food-search', params: { mealType, date: formatDateToYYYYMMDD(selectedDate) } });
+  const openAddChooser = (mealType: MealType) => {
+    setState((prev) => ({
+      ...prev,
+      addMealModal: {
+        visible: true,
+        mealType,
+      },
+    }));
+  };
+
+  const closeAddMealModal = () => {
+    setState((prev) => ({
+      ...prev,
+      addMealModal: {
+        ...prev.addMealModal,
+        visible: false,
+      },
+    }));
   };
 
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {
@@ -230,8 +280,8 @@ export default function FoodDiaryScreen() {
                 <Text style={[styles.emptyStateText, { color: theme.comment }]}>
                   No food added yet
                 </Text>
-                <Text style={[styles.emptyStateSubtext, { color: theme.comment }]}>
-                  Tap the button below to add food
+               <Text style={[styles.emptyStateSubtext, { color: theme.comment }]}> 
+                  Tap the button below to add a product or meal
                 </Text>
               </View>
             ) : (
@@ -320,11 +370,11 @@ export default function FoodDiaryScreen() {
             {/* Add Food Button */}
             <Pressable
               style={[styles.addButton, { backgroundColor: theme.primary }, shadows.sm]}
-              onPress={() => openSearchScreen(mealType)}
+              onPress={() => openAddChooser(mealType)}
               android_ripple={{ color: theme.surface.elevated }}
             >
               <Ionicons name="add-circle-outline" size={20} color={theme.text.inverse} />
-              <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add Food</Text>
+              <Text style={[styles.addButtonText, { color: theme.text.inverse }]}>Add Meal</Text>
             </Pressable>
           </View>
         )}
@@ -401,6 +451,56 @@ export default function FoodDiaryScreen() {
           )}
         </View>
       </Modal>
+
+      <SelectionModal
+        visible={addMealModal.visible}
+        title="Add to Meal"
+        description="Choose how you want to log this entry."
+        onClose={closeAddMealModal}
+        options={[
+          {
+            key: 'quick-product',
+            title: 'Quick Product',
+            description: 'Search a product and log grams or milliliters.',
+            icon: 'search-outline',
+            accentColor: theme.primary,
+            onPress: () => router.navigate({ pathname: '/(tabs)/(food)/food-search', params: { mealType: addMealModal.mealType, date: formatDateToYYYYMMDD(selectedDate) } }),
+          },
+          {
+            key: 'direct-meal',
+            title: 'Direct Meal',
+            description: 'Log one-off canteen or AI meals by total nutrients.',
+            icon: 'sparkles-outline',
+            accentColor: theme.orange,
+            onPress: () => router.navigate({ pathname: '/(tabs)/(food)/add-direct-meal', params: { mealType: addMealModal.mealType } } as any),
+          },
+          {
+            key: 'saved-meal',
+            title: 'Saved Meal',
+            description: 'Reuse a custom meal template and adjust each item.',
+            icon: 'layers-outline',
+            accentColor: theme.success,
+            onPress: () => router.navigate({ pathname: '/(tabs)/(food)/saved-meals', params: { mealType: addMealModal.mealType } } as any),
+          },
+        ]}
+      />
+
+      <SelectionModal
+        visible={deleteEntryModal.visible}
+        title="Delete Entry"
+        description="Remove this food entry from the selected day. Close the sheet to keep it."
+        onClose={closeDeleteEntryModal}
+        options={[
+          {
+            key: 'delete-entry',
+            title: 'Delete Entry',
+            description: 'This removes the logged item and updates the meal totals.',
+            icon: 'trash-outline',
+            accentColor: theme.danger,
+            onPress: confirmDeleteFood,
+          },
+        ]}
+      />
     </ScrollView>
   );
 }

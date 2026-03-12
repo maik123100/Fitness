@@ -68,6 +68,7 @@ export default function FoodQuantityScreen() {
     const newEntry: FoodEntry = {
       id: Date.now().toString(),
       foodId: foodItem.id,
+      mealLogId: null,
       date: entryDate,
       mealType: selectedMealType,
       quantity: parsedQuantity,

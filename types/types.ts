@@ -134,3 +134,56 @@ export interface ActiveWorkoutSession {
   sets: WorkoutSet[];
 }
 
+export interface SavedMealItemWithFood {
+  id: string;
+  savedMealId: string;
+  foodId: string;
+  quantity: number;
+  unit: string;
+  itemOrder: number;
+  food: Schema.FoodItem | null;
+}
+
+export interface SavedMealWithItems {
+  id: string;
+  name: string;
+  defaultMealType: Schema.MealType;
+  notes: string | null;
+  isFavorite: boolean;
+  createdAt: number;
+  updatedAt: number;
+  items: SavedMealItemWithFood[];
+}
+
+export interface MealLogItemDetail extends VitaminFields, MineralFields {
+  id: string;
+  mealLogId: string;
+  foodEntryId: string | null;
+  foodId: string | null;
+  entryType: Schema.MealLogItemType;
+  title: string;
+  quantity: number;
+  unit: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  totalFiber: number;
+  createdAt: number;
+}
+
+export interface MealLogWithItems {
+  id: string;
+  date: string;
+  mealType: Schema.MealType;
+  title: string;
+  sourceType: Schema.MealLogSourceType;
+  sourceId: string | null;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  totalFiber: number;
+  createdAt: number;
+  items: MealLogItemDetail[];
+}

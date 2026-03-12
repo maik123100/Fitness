@@ -17,6 +17,7 @@ const defaultFood: FoodItem = {
   name: '',
   brand: null,
   barcode: null,
+  sourceType: 'product',
   category: 'other',
   calories: 0,
   protein: 0,
