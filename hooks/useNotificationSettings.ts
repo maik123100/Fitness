@@ -1,12 +1,6 @@
-import {
-  getNotificationSettings,
-  MealTypeMain,
-  testNotification,
-  toggleNotification,
-  updateNotificationTime,
-} from '@/services/notificationService';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface NotificationTime {
   enabled: boolean;
@@ -19,6 +13,38 @@ interface NotificationSettings {
   lunch: NotificationTime;
   dinner: NotificationTime;
 }
+
+const NOTIFICATION_SETTINGS_KEY = '@fitness_app_notification_settings';
+
+const DEFAULT_SETTINGS: NotificationSettings = {
+  breakfast: { enabled: true, hour: 6, minute: 0 },
+  lunch: { enabled: true, hour: 12, minute: 0 },
+  dinner: { enabled: true, hour: 19, minute: 0 },
+};
+
+async function loadSettings(): Promise<NotificationSettings> {
+  try {
+    const stored = await AsyncStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return DEFAULT_SETTINGS;
+  } catch (error) {
+    console.error('Error loading notification settings:', error);
+    return DEFAULT_SETTINGS;
+  }
+}
+
+async function saveSettings(settings: NotificationSettings): Promise<void> {
+  try {
+    await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Error saving notification settings:', error);
+    throw error;
+  }
+}
+
+type MealTypeMain = 'breakfast' | 'lunch' | 'dinner';
 
 export function useNotificationSettings() {
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
@@ -37,12 +63,8 @@ export function useNotificationSettings() {
 
   const loadNotificationSettings = async () => {
     try {
-      const settings = await getNotificationSettings();
-      setNotificationSettings({
-        breakfast: { enabled: settings.breakfast.enabled, hour: settings.breakfast.hour, minute: settings.breakfast.minute },
-        lunch: { enabled: settings.lunch.enabled, hour: settings.lunch.hour, minute: settings.lunch.minute },
-        dinner: { enabled: settings.dinner.enabled, hour: settings.dinner.hour, minute: settings.dinner.minute },
-      });
+      const settings = await loadSettings();
+      setNotificationSettings(settings);
     } catch (error) {
       console.error('Error loading notification settings:', error);
     }
@@ -50,11 +72,12 @@ export function useNotificationSettings() {
 
   const handleToggleNotification = async (mealType: MealTypeMain, enabled: boolean) => {
     try {
-      await toggleNotification(mealType, enabled);
-      setNotificationSettings(prev => ({
-        ...prev,
-        [mealType]: { ...prev[mealType], enabled }
-      }));
+      const newSettings = {
+        ...notificationSettings,
+        [mealType]: { ...notificationSettings[mealType], enabled }
+      };
+      await saveSettings(newSettings);
+      setNotificationSettings(newSettings);
     } catch (error) {
       console.error(`Error toggling ${mealType} notification:`, error);
       Alert.alert('Error', 'Failed to update notification settings');
@@ -72,11 +95,12 @@ export function useNotificationSettings() {
     if (!showTimePicker) return;
 
     try {
-      await updateNotificationTime(showTimePicker, selectedHour, selectedMinute);
-      setNotificationSettings(prev => ({
-        ...prev,
-        [showTimePicker]: { ...prev[showTimePicker], hour: selectedHour, minute: selectedMinute }
-      }));
+      const newSettings = {
+        ...notificationSettings,
+        [showTimePicker]: { ...notificationSettings[showTimePicker], hour: selectedHour, minute: selectedMinute }
+      };
+      await saveSettings(newSettings);
+      setNotificationSettings(newSettings);
       setShowTimePicker(null);
     } catch (error) {
       console.error(`Error updating ${showTimePicker} time:`, error);
@@ -84,14 +108,8 @@ export function useNotificationSettings() {
     }
   };
 
-  const handleTestNotification = async (mealType: MealTypeMain) => {
-    try {
-      await testNotification(mealType);
-      Alert.alert('Test Notification', `A test notification for ${mealType} will appear in 5 seconds`);
-    } catch (error) {
-      console.error(`Error sending test notification:`, error);
-      Alert.alert('Error', 'Failed to send test notification');
-    }
+  const handleTestNotification = async (_mealType: MealTypeMain) => {
+    Alert.alert('Test Notification', 'Test notifications not implemented yet');
   };
 
   return {
