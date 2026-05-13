@@ -24,6 +24,7 @@ export const foodItems = sqliteTable('food_items', {
   name: text('name').notNull(),
   brand: text('brand'),
   barcode: text('barcode'),
+  sourceType: text('source_type').notNull().default('product'),
   category: text('category').notNull(),
   calories: real('calories').notNull(),
   protein: real('protein').notNull(),
@@ -74,6 +75,7 @@ export const foodItems = sqliteTable('food_items', {
 export const foodEntries = sqliteTable('food_entries', {
   id: text('id').primaryKey(),
   foodId: text('food_id').notNull().references(() => foodItems.id),
+  mealLogId: text('meal_log_id').references(() => mealLogs.id),
   date: text('date').notNull(),
   mealType: text('meal_type').notNull(),
   quantity: real('quantity').notNull(),
@@ -87,7 +89,103 @@ export const foodEntries = sqliteTable('food_entries', {
 }, (table) => [
   index('idx_food_entries_date').on(table.date),
   index('idx_food_entries_meal_type').on(table.mealType),
+  index('idx_food_entries_meal_log_id').on(table.mealLogId),
 ]);
+
+export const savedMeals = sqliteTable('saved_meals', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  defaultMealType: text('default_meal_type').notNull(),
+  notes: text('notes'),
+  isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (table) => [
+  index('idx_saved_meals_name').on(table.name),
+  index('idx_saved_meals_default_meal_type').on(table.defaultMealType),
+ ]);
+
+export const savedMealItems = sqliteTable('saved_meal_items', {
+  id: text('id').primaryKey(),
+  savedMealId: text('saved_meal_id').notNull().references(() => savedMeals.id),
+  foodId: text('food_id').notNull().references(() => foodItems.id),
+  quantity: real('quantity').notNull(),
+  unit: text('unit').notNull(),
+  itemOrder: integer('item_order').notNull().default(0),
+}, (table) => [
+  index('idx_saved_meal_items_saved_meal_id').on(table.savedMealId),
+  index('idx_saved_meal_items_food_id').on(table.foodId),
+ ]);
+
+export const mealLogs = sqliteTable('meal_logs', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),
+  mealType: text('meal_type').notNull(),
+  title: text('title').notNull(),
+  sourceType: text('source_type').notNull(),
+  sourceId: text('source_id'),
+  totalCalories: real('total_calories').notNull(),
+  totalProtein: real('total_protein').notNull(),
+  totalCarbs: real('total_carbs').notNull(),
+  totalFat: real('total_fat').notNull(),
+  totalFiber: real('total_fiber').notNull(),
+  createdAt: integer('created_at').notNull(),
+}, (table) => [
+  index('idx_meal_logs_date').on(table.date),
+  index('idx_meal_logs_meal_type').on(table.mealType),
+  index('idx_meal_logs_source_type').on(table.sourceType),
+ ]);
+
+export const mealLogItems = sqliteTable('meal_log_items', {
+  id: text('id').primaryKey(),
+  mealLogId: text('meal_log_id').notNull().references(() => mealLogs.id),
+  foodEntryId: text('food_entry_id').references(() => foodEntries.id),
+  foodId: text('food_id').references(() => foodItems.id),
+  entryType: text('entry_type').notNull(),
+  title: text('title').notNull(),
+  quantity: real('quantity').notNull(),
+  unit: text('unit').notNull(),
+  totalCalories: real('total_calories').notNull(),
+  totalProtein: real('total_protein').notNull(),
+  totalCarbs: real('total_carbs').notNull(),
+  totalFat: real('total_fat').notNull(),
+  totalFiber: real('total_fiber').notNull(),
+  vitaminA: real('vitamin_a').default(0),
+  vitaminC: real('vitamin_c').default(0),
+  vitaminD: real('vitamin_d').default(0),
+  vitaminB6: real('vitamin_b6').default(0),
+  vitaminE: real('vitamin_e').default(0),
+  vitaminK: real('vitamin_k').default(0),
+  thiamin: real('thiamin').default(0),
+  vitaminB12: real('vitamin_b12').default(0),
+  riboflavin: real('riboflavin').default(0),
+  folate: real('folate').default(0),
+  niacin: real('niacin').default(0),
+  choline: real('choline').default(0),
+  pantothenicAcid: real('pantothenic_acid').default(0),
+  biotin: real('biotin').default(0),
+  carotenoids: real('carotenoids').default(0),
+  calcium: real('calcium').default(0),
+  chloride: real('chloride').default(0),
+  chromium: real('chromium').default(0),
+  copper: real('copper').default(0),
+  fluoride: real('fluoride').default(0),
+  iodine: real('iodine').default(0),
+  iron: real('iron').default(0),
+  magnesium: real('magnesium').default(0),
+  manganese: real('manganese').default(0),
+  molybdenum: real('molybdenum').default(0),
+  phosphorus: real('phosphorus').default(0),
+  potassium: real('potassium').default(0),
+  selenium: real('selenium').default(0),
+  sodium: real('sodium').default(0),
+  zinc: real('zinc').default(0),
+  createdAt: integer('created_at').notNull(),
+}, (table) => [
+  index('idx_meal_log_items_meal_log_id').on(table.mealLogId),
+  index('idx_meal_log_items_food_entry_id').on(table.foodEntryId),
+  index('idx_meal_log_items_food_id').on(table.foodId),
+ ]);
 
 // Recipes table
 export const recipes = sqliteTable('recipes', {
@@ -265,6 +363,18 @@ export type NewFoodItem = typeof foodItems.$inferInsert;
 export type FoodEntry = typeof foodEntries.$inferSelect;
 export type NewFoodEntry = typeof foodEntries.$inferInsert;
 
+export type SavedMeal = typeof savedMeals.$inferSelect;
+export type NewSavedMeal = typeof savedMeals.$inferInsert;
+
+export type SavedMealItem = typeof savedMealItems.$inferSelect;
+export type NewSavedMealItem = typeof savedMealItems.$inferInsert;
+
+export type MealLog = typeof mealLogs.$inferSelect;
+export type NewMealLog = typeof mealLogs.$inferInsert;
+
+export type MealLogItem = typeof mealLogItems.$inferSelect;
+export type NewMealLogItem = typeof mealLogItems.$inferInsert;
+
 export type Recipe = typeof recipes.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
 
@@ -313,6 +423,12 @@ export type FoodCategory =
   | 'other';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export type FoodSourceType = 'product' | 'direct';
+
+export type MealLogSourceType = 'quick_product' | 'saved_meal' | 'direct_meal';
+
+export type MealLogItemType = 'product' | 'direct';
 
 export type ExerciseCategory =
   | 'cardio'

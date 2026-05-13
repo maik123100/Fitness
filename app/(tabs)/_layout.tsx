@@ -1,6 +1,7 @@
 import DaySelector from '@/components/DaySelector';
+import { SnackbarProvider } from '@/components/SnackbarProvider';
 import { DateProvider } from '@/app/contexts/DateContext';
-import { ThemeProvider, useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/app/contexts/ThemeContext';
 import { spacing } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
@@ -109,11 +110,11 @@ function TabsContent() {
 
 export default function TabLayout() {
   return (
-    <ThemeProvider>
-      <DateProvider>
+    <DateProvider>
+      <SnackbarProvider>
         <TabsContent />
-      </DateProvider>
-    </ThemeProvider>
+      </SnackbarProvider>
+    </DateProvider>
   );
 }
 

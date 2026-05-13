@@ -1,5 +1,4 @@
 {
-  
   "expo": {
     "name": "Fitness",
     "slug": "fitnessapp",
@@ -13,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/FitnessAppLogo.png",
         "backgroundColor": "#282a36"
@@ -44,7 +44,8 @@
           "color": "#ffffff",
           "sounds": []
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

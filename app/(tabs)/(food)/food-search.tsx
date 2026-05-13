@@ -1,5 +1,6 @@
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { useTheme } from '@/app/contexts/ThemeContext';
+import { SelectionModal } from '@/components/shared/SelectionModal';
 import {
   deleteFoodItem,
   getAllFoodItems,
@@ -23,6 +24,10 @@ export default function FoodSearchScreen() {
   const [results, setResults] = useState<FoodItem[]>([]);
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cameraModal, setCameraModal] = useState({ visible: false, scanned: false });
+  const [deleteFoodModal, setDeleteFoodModal] = useState<{ visible: boolean; item: FoodItem | null }>({
+    visible: false,
+    item: null,
+  });
   const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
@@ -187,25 +192,7 @@ export default function FoodSearchScreen() {
             {/* Delete Button */}
             <Pressable
               style={[styles.deleteButton, { backgroundColor: theme.surface.elevated }]}
-              onPress={() => {
-                Alert.alert(
-                  'Delete Food Item',
-                  `Are you sure you want to delete "${item.name}"? This cannot be undone.`,
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Delete',
-                      style: 'destructive',
-                      onPress: () => {
-                        deleteFoodItem(item);
-                        const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
-                        setResults(allFoods);
-                        showSnackbar('Food item deleted.', 3000);
-                      },
-                    },
-                  ]
-                );
-              }}
+              onPress={() => setDeleteFoodModal({ visible: true, item })}
             >
               <Ionicons name="trash-outline" size={20} color={theme.danger} />
             </Pressable>
@@ -276,6 +263,32 @@ export default function FoodSearchScreen() {
           )}
         </View>
       </Modal>
+
+      <SelectionModal
+        visible={deleteFoodModal.visible}
+        title="Delete Food Item"
+        description={deleteFoodModal.item ? `Remove ${deleteFoodModal.item.name} from your food library. Close the sheet to keep it.` : 'Remove this food item from your food library. Close the sheet to keep it.'}
+        onClose={() => setDeleteFoodModal({ visible: false, item: null })}
+        options={[
+          {
+            key: 'delete-food-item',
+            title: 'Delete Food Item',
+            description: 'This permanently removes the food item and cannot be undone.',
+            icon: 'trash-outline',
+            accentColor: theme.danger,
+            onPress: () => {
+              if (!deleteFoodModal.item) {
+                return;
+              }
+
+              deleteFoodItem(deleteFoodModal.item);
+              const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
+              setResults(allFoods);
+              showSnackbar('Food item deleted.', 3000);
+            },
+          },
+        ]}
+      />
     </View>
   );
 }

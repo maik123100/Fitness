@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
-import { SnackbarProvider } from '@/components/SnackbarProvider';
 import { ThemeProvider } from '@/app/contexts/ThemeContext';
 
 export default function RootLayout() {
@@ -46,28 +45,20 @@ export default function RootLayout() {
     }
   }, [success]);
 
-  if (error) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Database Migration Error: {error.message}</Text>
-      </View>
-    );
-  }
-
-  if (!success || !onboardingLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 10 }}>Loading database...</Text>
-      </View>
-    );
-  }
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <PaperProvider>
-          <SnackbarProvider>
+      {error ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Database Migration Error: {error.message}</Text>
+        </View>
+      ) : !success || !onboardingLoaded ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" />
+          <Text style={{ marginTop: 10 }}>Loading database...</Text>
+        </View>
+      ) : (
+        <ThemeProvider>
+          <PaperProvider>
             <Stack>
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding" options={{ headerShown: false }} />
@@ -76,9 +67,9 @@ export default function RootLayout() {
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="light" />
-          </SnackbarProvider>
-        </PaperProvider>
-      </ThemeProvider>
+          </PaperProvider>
+        </ThemeProvider>
+      )}
     </GestureHandlerRootView>
   );
 }

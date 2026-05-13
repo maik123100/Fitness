@@ -1,5 +1,6 @@
 import { useTheme } from '@/app/contexts/ThemeContext';
 import SetTargetInputList from '@/components/SetTargetInputList';
+import { SelectionModal } from '@/components/shared/SelectionModal';
 import { addExerciseTemplate, deleteExerciseTemplate, getExerciseTemplates, updateExerciseTemplate } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ExerciseTemplate, SetTarget } from '@/types/types';
@@ -21,6 +22,11 @@ interface ManageExerciseTemplatesState {
     name: string;
     defaultSetTargets: SetTarget[];
   };
+  deleteModal: {
+    visible: boolean;
+    templateId: string | null;
+    templateName: string;
+  };
 }
 
 interface ListHeaderProps {
@@ -31,12 +37,17 @@ interface ListHeaderProps {
   theme: any;
   styles: {
     headerContainer: object;
+    headerTitle: object;
+    addSection: object;
+    addSectionHeader: object;
+    formGroup: object;
+    listHeader: object;
+    listHeaderText: object;
     sectionTitle: object;
     doneButton: object;
     doneButtonText: object;
     label: object;
     input: object;
-    exerciseNameInput: object;
     addButton: object;
     addButtonText: object;
   };
@@ -121,9 +132,10 @@ export default function ManageExerciseTemplates() {
     exerciseTemplates: [],
     newTemplateForm: { name: '', defaultSetTargets: [{ reps: 8, weight: 0 }, { reps: 10, weight: 0 }, { reps: 12, weight: 0 }] }, // Default to 3 sets with 8, 10, 12 reps and 0 weight
     editModal: { visible: false, template: null, name: '', defaultSetTargets: [] },
+    deleteModal: { visible: false, templateId: null, templateName: '' },
   });
 
-  const { exerciseTemplates, newTemplateForm, editModal } = state;
+  const { exerciseTemplates, newTemplateForm, editModal, deleteModal } = state;
 
   useEffect(() => {
     loadExerciseTemplates();
@@ -177,15 +189,35 @@ export default function ManageExerciseTemplates() {
   };
 
   const handleDeleteExerciseTemplate = (id: string) => {
-    Alert.alert('Delete Template', 'Are you sure you want to delete this exercise template?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: () => {
-          deleteExerciseTemplate(id);
-          loadExerciseTemplates();
-        }
+    const template = exerciseTemplates.find((item) => item.id === id);
+    setState((prev) => ({
+      ...prev,
+      deleteModal: {
+        visible: true,
+        templateId: id,
+        templateName: template?.name ?? '',
       },
-    ]);
+    }));
+  };
+
+  const closeDeleteModal = () => {
+    setState((prev) => ({
+      ...prev,
+      deleteModal: {
+        visible: false,
+        templateId: null,
+        templateName: '',
+      },
+    }));
+  };
+
+  const confirmDeleteTemplate = () => {
+    if (!deleteModal.templateId) {
+      return;
+    }
+
+    deleteExerciseTemplate(deleteModal.templateId);
+    loadExerciseTemplates();
   };
 
   const handleFormChange = useCallback((field: keyof ManageExerciseTemplatesState['newTemplateForm'], value: string | SetTarget[]) => {
@@ -229,6 +261,7 @@ export default function ManageExerciseTemplates() {
               doneButton: [styles.doneButton, { backgroundColor: theme.green }],
               doneButtonText: [styles.doneButtonText, { color: theme.text.inverse }],
               label: [styles.label, { color: theme.foreground }],
+              input: styles.input,
               addButton: [styles.addButton, { backgroundColor: theme.cyan }],
               addButtonText: [styles.addButtonText, { color: theme.text.inverse }],
               headerContainer: styles.headerContainer,
@@ -350,6 +383,23 @@ export default function ManageExerciseTemplates() {
           </View>
         </View>
       </Modal>
+
+      <SelectionModal
+        visible={deleteModal.visible}
+        title="Delete Template"
+        description={deleteModal.templateName ? `Remove ${deleteModal.templateName} from your exercise templates. Close the sheet to keep it.` : 'Remove this exercise template. Close the sheet to keep it.'}
+        onClose={closeDeleteModal}
+        options={[
+          {
+            key: 'delete-template',
+            title: 'Delete Template',
+            description: 'This removes the template and its default set targets from future workouts.',
+            icon: 'trash-outline',
+            accentColor: theme.danger,
+            onPress: confirmDeleteTemplate,
+          },
+        ]}
+      />
     </View>
   );
 }

@@ -6,32 +6,60 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ProgressBar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface MacroDisplayProps {
   actual: number;
   target: number;
   unit: string;
   theme: any;
+  label: string;
 }
 
-const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target, unit, theme }) => {
-  const percentage = target > 0 ? Math.min(actual / target, 1) : 0;
+const MacroDisplay: React.FC<MacroDisplayProps> = ({ actual, target, unit, theme, label }) => {
+  const ratio = target > 0 ? actual / target : 0;
+  const percentage = target > 0 ? Math.min(ratio, 1) : 0;
+  const isOver = target > 0 && actual > target;
+  const difference = Math.abs(actual - target);
   const displayActual = actual.toFixed(0);
   const displayTarget = target.toFixed(0);
+  const statusText = target <= 0
+    ? 'No target set'
+    : isOver
+      ? `${difference.toFixed(0)}${unit} over`
+      : `${difference.toFixed(0)}${unit} under`;
+  const statusColor = target <= 0 ? theme.comment : isOver ? theme.danger : actual === target ? theme.success : theme.warning;
+
+  const markerLeft = target > 0 ? `${100}%` : '0%';
 
   return (
     <View style={styles.macroDisplayContainer}>
       <View style={styles.macroTextContainer}>
-        <Text style={[styles.macroLabel, { color: theme.comment }]}>Actual:</Text>
-        <Text style={[styles.macroValue, { color: theme.foreground }]}>{ displayActual}{unit}</Text>
+        <Text style={[styles.macroLabel, { color: theme.comment }]}>{label}</Text>
+        <Text style={[styles.macroValue, { color: statusColor }]}>{displayActual}{unit}</Text>
       </View>
       <View style={styles.macroTextContainer}>
-        <Text style={[styles.macroLabel, { color: theme.comment }]}>Target:</Text>
-        <Text style={[styles.macroValue, { color: theme.cyan }]}>{ displayTarget}{unit}</Text>
+        <Text style={[styles.macroLabel, { color: theme.comment }]}>Target</Text>
+        <Text style={[styles.macroValue, { color: theme.foreground }]}>{displayTarget}{unit}</Text>
       </View>
-      <ProgressBar progress={percentage} color={theme.cyan} style={styles.progressBar} />
-      <Text style={[styles.macroSummary, { color: theme.comment }]}>{(percentage * 100).toFixed(0)}% of target</Text>
+      <View style={[styles.targetTrack, { backgroundColor: theme.surface.elevated }]}> 
+        <View
+          style={[
+            styles.targetFill,
+            {
+              width: `${percentage * 100}%`,
+              backgroundColor: statusColor,
+            },
+          ]}
+        />
+        <View style={[styles.targetMarker, { left: markerLeft, backgroundColor: theme.foreground }]} />
+      </View>
+      <View style={styles.macroMetaRow}>
+        <Text style={[styles.macroSummary, { color: statusColor }]}>
+          {target > 0 ? `${(ratio * 100).toFixed(0)}% of target` : 'No target'}
+        </Text>
+        <Text style={[styles.macroSummary, { color: theme.comment }]}>{statusText}</Text>
+      </View>
     </View>
   );
 };
@@ -84,6 +112,7 @@ interface MacroGraphsState {
 
 export default function MacroGraphsScreen() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [state, setState] = useState<MacroGraphsState>({
     nutritionSummary: null,
     targetMacros: { protein: 0, carbs: 0, fat: 0, fiber: 0 },
@@ -114,68 +143,95 @@ export default function MacroGraphsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={{ paddingBottom: spacing.lg * 2 }}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color={theme.foreground} />
-      </TouchableOpacity>
-      <Text style={[styles.header, { color: theme.foreground }]}>Macro Graphs</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}> 
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
+          paddingTop: insets.top + spacing.md,
+          paddingBottom: 0,
+        }}
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never"
+      >
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={theme.foreground} />
+          </TouchableOpacity>
+          <Text style={[styles.header, { color: theme.foreground }]}>Macro Graphs</Text>
+          <View style={styles.backButtonSpacer} />
+        </View>
+        <Text style={[styles.subheader, { color: theme.comment }]}>Compare today&apos;s intake with your targets. Green means on target, yellow means under, red means over.</Text>
 
-      {['protein', 'carbs', 'fat', 'fiber'].map((macro) => (
-        <View key={macro} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{macro.charAt(0).toUpperCase() + macro.slice(1)} Intake</Text>
-          {nutritionSummary ? (
+        {['protein', 'carbs', 'fat', 'fiber'].map((macro) => (
+          <View key={macro} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}> 
+            <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{macro.charAt(0).toUpperCase() + macro.slice(1)} Intake</Text>
+            {nutritionSummary ? (
+              <MacroDisplay
+                actual={nutritionSummary[`total${macro.charAt(0).toUpperCase() + macro.slice(1)}` as keyof NutritionSummary] as number}
+                target={targetMacros[macro as 'protein' | 'carbs' | 'fat' | 'fiber']}
+                unit="g"
+                label="Today"
+                theme={theme}
+              />
+            ) : (
+              <Text style={[styles.noDataText, { color: theme.comment }]}>No data for {macro} intake yet.</Text>
+            )}
+          </View>
+        ))}
+
+        <Text style={[styles.header, { color: theme.foreground }]}>Vitamins</Text>
+        {nutritionSummary && nutritionSummary.totalVitamins && Object.keys(vitaminTargets).map((vitamin) => (
+          <View key={vitamin} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}> 
+            <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{vitamin.charAt(0).toUpperCase() + vitamin.slice(1)} Intake</Text>
             <MacroDisplay
-              actual={nutritionSummary[`total${macro.charAt(0).toUpperCase() + macro.slice(1)}` as keyof NutritionSummary] as number}
-              target={targetMacros[macro as 'protein' | 'carbs' | 'fat' | 'fiber']}
-              unit="g"
+              actual={nutritionSummary.totalVitamins[vitamin as keyof VitaminFields] || 0}
+              target={vitaminTargets[vitamin as keyof typeof vitaminTargets].target}
+              unit={vitaminTargets[vitamin as keyof typeof vitaminTargets].unit}
+              label="Today"
               theme={theme}
             />
-          ) : (
-            <Text style={[styles.noDataText, { color: theme.comment }]}>No data for {macro} intake yet.</Text>
-          )}
-        </View>
-      ))}
+          </View>
+        ))}
 
-      <Text style={[styles.header, { color: theme.foreground }]}>Vitamins</Text>
-      {nutritionSummary && nutritionSummary.totalVitamins && Object.keys(vitaminTargets).map((vitamin) => (
-        <View key={vitamin} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{vitamin.charAt(0).toUpperCase() + vitamin.slice(1)} Intake</Text>
-          <MacroDisplay
-            actual={nutritionSummary.totalVitamins[vitamin as keyof VitaminFields] || 0}
-            target={vitaminTargets[vitamin as keyof typeof vitaminTargets].target}
-            unit={vitaminTargets[vitamin as keyof typeof vitaminTargets].unit}
-            theme={theme}
-          />
-        </View>
-      ))}
+        <Text style={[styles.header, { color: theme.foreground }]}>Minerals</Text>
+        {nutritionSummary && nutritionSummary.totalMinerals && Object.keys(mineralTargets).map((mineral) => (
+          <View key={mineral} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}> 
+            <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{mineral.charAt(0).toUpperCase() + mineral.slice(1)} Intake</Text>
+            <MacroDisplay
+              actual={nutritionSummary.totalMinerals[mineral as keyof MineralFields] || 0}
+              target={mineralTargets[mineral as keyof typeof mineralTargets].target}
+              unit={mineralTargets[mineral as keyof typeof mineralTargets].unit}
+              label="Today"
+              theme={theme}
+            />
+          </View>
+        ))}
+      </ScrollView>
 
-      <Text style={[styles.header, { color: theme.foreground }]}>Minerals</Text>
-      {nutritionSummary && nutritionSummary.totalMinerals && Object.keys(mineralTargets).map((mineral) => (
-        <View key={mineral} style={[styles.chartSection, { backgroundColor: theme.surface.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>{mineral.charAt(0).toUpperCase() + mineral.slice(1)} Intake</Text>
-          <MacroDisplay
-            actual={nutritionSummary.totalMinerals[mineral as keyof MineralFields] || 0}
-            target={mineralTargets[mineral as keyof typeof mineralTargets].target}
-            unit={mineralTargets[mineral as keyof typeof mineralTargets].unit}
-            theme={theme}
-          />
-        </View>
-      ))}
-    </ScrollView>
+      <View pointerEvents="none" style={[styles.topCover, { height: insets.top, backgroundColor: theme.background }]} />
+      <View pointerEvents="none" style={[styles.bottomCover, { height: insets.bottom, backgroundColor: theme.background }]} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: spacing.md,
-    paddingTop: spacing.lg * 2, // Add breathing room at the top
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
     fontSize: typography.sizes.heading,
     fontWeight: typography.weights.bold,
-    marginBottom: spacing.lg,
     textAlign: 'center',
+    flex: 1,
+  },
+  subheader: {
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 20,
   },
   chartSection: {
     borderRadius: borderRadius.md,
@@ -198,6 +254,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.xs,
+    gap: spacing.sm,
+  },
+  macroMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   macroLabel: {
     fontSize: typography.sizes.md,
@@ -212,12 +275,49 @@ const styles = StyleSheet.create({
     marginVertical: spacing.sm,
   },
   macroSummary: {
-    textAlign: 'right',
     fontSize: typography.sizes.sm,
   },
-  backButton: {
+  targetTrack: {
+    position: 'relative',
+    height: 12,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    marginVertical: spacing.sm,
+  },
+  targetFill: {
+    height: '100%',
+    borderRadius: borderRadius.sm,
+  },
+  targetMarker: {
     position: 'absolute',
-    left: spacing.md,
-    zIndex: 1, // Ensure the button is above other content
+    top: 0,
+    bottom: 0,
+    width: 2,
+    marginLeft: -1,
+    opacity: 0.9,
+  },
+  backButton: {
+    padding: spacing.xs,
+  },
+  backButtonSpacer: {
+    width: 32,
+    height: 32,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  topCover: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+  },
+  bottomCover: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
 });

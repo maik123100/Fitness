@@ -1,5 +1,5 @@
 import { db } from '@/services/db';
-import { foodEntries } from '@/services/db/schema';
+import { foodEntries, mealLogs } from '@/services/db/schema';
 import { and, eq } from 'drizzle-orm';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -125,7 +125,15 @@ async function hasFoodTrackedForMeal(date: string, mealType: string): Promise<bo
       ))
       .execute();
 
-    return entries.length > 0;
+    const logs = await db.select()
+      .from(mealLogs)
+      .where(and(
+        eq(mealLogs.date, date),
+        eq(mealLogs.mealType, mealType)
+      ))
+      .execute();
+
+    return entries.length > 0 || logs.length > 0;
   } catch (error) {
     console.error('Error checking food entries:', error);
     return false;

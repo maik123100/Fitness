@@ -7,8 +7,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, Keyboard, KeyboardAvoidingView, Modal, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputSubmitEditingEventData, TouchableOpacity, View } from 'react-native';
 import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 
@@ -17,6 +17,7 @@ const defaultFood: FoodItem = {
   name: '',
   brand: null,
   barcode: null,
+  sourceType: 'product',
   category: 'other',
   calories: 0,
   protein: 0,
@@ -43,6 +44,8 @@ const AddFood: React.FC = () => {
   const { theme } = useTheme();
   const { showSnackbar } = useSnackbar();
   const [food, setFood] = useState<FoodItem>({ ...defaultFood });
+  const scrollViewRef = useRef<ScrollView>(null);
+  const inputPositionsRef = useRef<Record<string, number>>({});
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -101,18 +104,94 @@ const AddFood: React.FC = () => {
     { label: 'Zinc (mg)', key: 'zinc', isNumber: true },
   ];
 
+  const numericFieldKeys = [
+    'calories',
+    'servingSize',
+    ...macroFields.map((field) => field.key),
+    ...vitaminFields.map((field) => field.key),
+    ...mineralFields.map((field) => field.key),
+  ];
+
+  const [numericInputs, setNumericInputs] = useState<Record<string, string>>(() =>
+    numericFieldKeys.reduce<Record<string, string>>((acc, key) => {
+      const value = (defaultFood as Record<string, unknown>)[key];
+      acc[key] = typeof value === 'number' ? value.toString() : '0';
+      return acc;
+    }, {})
+  );
+
   const handleChange = (key: string, value: string | number | boolean) => {
     setFood((prev) => ({ ...prev, [key]: value as any }));
   };
 
+  const parseNumericValue = (value: string): number => {
+    const normalized = value.replace(',', '.').trim();
+
+    if (normalized === '' || normalized === '.') {
+      return 0;
+    }
+
+    const parsed = parseFloat(normalized);
+    if (isNaN(parsed)) {
+      return 0;
+    }
+
+    return Math.max(0, parsed);
+  };
+
+  const handleNumericChange = (key: string, value: string) => {
+    const normalized = value.replace(',', '.');
+
+    if (!/^\d*\.?\d*$/.test(normalized)) {
+      return;
+    }
+
+    setNumericInputs((prev) => ({ ...prev, [key]: normalized }));
+  };
+
+  const scrollToField = (fieldKey: string) => {
+    const fieldY = inputPositionsRef.current[fieldKey];
+
+    if (fieldY === undefined) {
+      return;
+    }
+
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(0, fieldY - spacing.xl),
+        animated: true,
+      });
+    }, 100);
+  };
+
+  const handleInputSubmit = (_event: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
+    Keyboard.dismiss();
+  };
+
   const handleAddFood = async () => {
-    if (!food.name || !food.calories) {
+    Keyboard.dismiss();
+
+    const parsedNumericValues = numericFieldKeys.reduce<Record<string, number>>((acc, key) => {
+      acc[key] = parseNumericValue(numericInputs[key] ?? '0');
+      return acc;
+    }, {});
+
+    const preparedFood: FoodItem = {
+      ...food,
+      ...parsedNumericValues,
+      name: food.name.trim(),
+      servingUnit: (food.servingUnit || '').trim(),
+      brand: food.brand ? food.brand.trim() : null,
+    };
+
+    if (!preparedFood.name || !preparedFood.calories) {
       Alert.alert('Missing fields', 'Please enter at least a name and calories.');
       return;
     }
+
     const now = Date.now();
     const newFood: FoodItem = {
-      ...food,
+      ...preparedFood,
       id: now.toString(),
       createdAt: now,
       updatedAt: now,
@@ -191,19 +270,29 @@ const AddFood: React.FC = () => {
   };
 
   const renderInputField = (field: { label: string; key: string; isNumber: boolean }) => {
-    const value = (food as any)[field.key];
+    const value = field.isNumber ? numericInputs[field.key] ?? '' : ((food as any)[field.key]?.toString() ?? '');
 
     return (
-      <View key={field.key} style={styles.inputGroup}>
+      <View
+        key={field.key}
+        style={styles.inputGroup}
+        onLayout={(event) => {
+          inputPositionsRef.current[field.key] = event.nativeEvent.layout.y;
+        }}
+      >
         <Text style={[styles.label, { color: theme.text.secondary }]}>{field.label}</Text>
         <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
           <TextInput
             style={[styles.textInput, { color: theme.foreground }]}
             placeholder={`Enter ${field.label.toLowerCase()}`}
             placeholderTextColor={theme.comment}
-            value={value?.toString() ?? ''}
-            onChangeText={(v) => handleChange(field.key, field.isNumber ? parseFloat(v) || 0 : v)}
+            value={value}
+            onChangeText={(v) => (field.isNumber ? handleNumericChange(field.key, v) : handleChange(field.key, v))}
             keyboardType={field.isNumber ? 'decimal-pad' : 'default'}
+            returnKeyType="done"
+            blurOnSubmit
+            onFocus={() => scrollToField(field.key)}
+            onSubmitEditing={handleInputSubmit}
           />
         </View>
       </View>
@@ -216,8 +305,11 @@ const AddFood: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView 
+        ref={scrollViewRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -236,7 +328,12 @@ const AddFood: React.FC = () => {
           {/* Barcode field */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.text.secondary }]}>Barcode (optional)</Text>
-            <View style={styles.barcodeRow}>
+            <View
+              style={styles.barcodeRow}
+              onLayout={(event) => {
+                inputPositionsRef.current.barcode = event.nativeEvent.layout.y;
+              }}
+            >
               <View style={[styles.input, styles.barcodeInput, { backgroundColor: theme.surface.input }, shadows.sm]}>
                 <TextInput
                   style={[styles.textInput, { color: theme.foreground }]}
@@ -244,6 +341,10 @@ const AddFood: React.FC = () => {
                   placeholderTextColor={theme.comment}
                   value={food.barcode?.toString() ?? ''}
                   onChangeText={(v) => handleChange('barcode', v)}
+                  returnKeyType="done"
+                  blurOnSubmit
+                  onFocus={() => scrollToField('barcode')}
+                  onSubmitEditing={handleInputSubmit}
                 />
               </View>
               <Pressable
@@ -282,26 +383,44 @@ const AddFood: React.FC = () => {
           <View style={styles.inputRow}>
             <View style={[styles.inputGroup, styles.inputHalf]}>
               <Text style={[styles.label, { color: theme.text.secondary }]}>Serving Size</Text>
-              <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+              <View
+                style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}
+                onLayout={(event) => {
+                  inputPositionsRef.current.servingSize = event.nativeEvent.layout.y;
+                }}
+              >
                 <TextInput
                   style={[styles.textInput, { color: theme.foreground }]}
                   placeholder="100"
                   placeholderTextColor={theme.comment}
-                  value={food.servingSize?.toString() ?? ''}
-                  onChangeText={(v) => handleChange('servingSize', parseFloat(v) || 0)}
+                  value={numericInputs.servingSize ?? ''}
+                  onChangeText={(v) => handleNumericChange('servingSize', v)}
                   keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  blurOnSubmit
+                  onFocus={() => scrollToField('servingSize')}
+                  onSubmitEditing={handleInputSubmit}
                 />
               </View>
             </View>
             <View style={[styles.inputGroup, styles.inputHalf]}>
               <Text style={[styles.label, { color: theme.text.secondary }]}>Unit</Text>
-              <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+              <View
+                style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}
+                onLayout={(event) => {
+                  inputPositionsRef.current.servingUnit = event.nativeEvent.layout.y;
+                }}
+              >
                 <TextInput
                   style={[styles.textInput, { color: theme.foreground }]}
                   placeholder="g"
                   placeholderTextColor={theme.comment}
                   value={food.servingUnit?.toString() ?? ''}
                   onChangeText={(v) => handleChange('servingUnit', v)}
+                  returnKeyType="done"
+                  blurOnSubmit
+                  onFocus={() => scrollToField('servingUnit')}
+                  onSubmitEditing={handleInputSubmit}
                 />
               </View>
             </View>

@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
 interface TrainingState {
   templates: WorkoutTemplate[];
@@ -86,7 +86,8 @@ export default function WorkoutScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.scrollContent}>
+    <GestureHandlerRootView style={styles.flex}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.scrollContent}>
       {/* Active Session Banner */}
       {activeSession && (
         <TouchableOpacity onPress={() => router.navigate('/(tabs)/(training)/workoutSession')} activeOpacity={0.7}>
@@ -208,12 +209,16 @@ export default function WorkoutScreen() {
           </View>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  flex: {
     flex: 1,
   },
   scrollContent: {

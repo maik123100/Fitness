@@ -8,13 +8,22 @@ interface ThemeContextType {
   setTheme: (themeName: ThemeName) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
 const THEME_STORAGE_KEY = '@fitness_app_theme';
+const DEFAULT_THEME_NAME: ThemeName = 'dracula';
+
+const defaultThemeContext: ThemeContextType = {
+  theme: themes[DEFAULT_THEME_NAME],
+  themeName: DEFAULT_THEME_NAME,
+  setTheme: () => {
+    // no-op fallback when provider is not mounted
+  },
+};
+
+const ThemeContext = createContext<ThemeContextType>(defaultThemeContext);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeName, setThemeName] = useState<ThemeName>('dracula');
-  const [theme, setThemeState] = useState<Theme>(themes.dracula);
+  const [themeName, setThemeName] = useState<ThemeName>(DEFAULT_THEME_NAME);
+  const [theme, setThemeState] = useState<Theme>(themes[DEFAULT_THEME_NAME]);
 
   useEffect(() => {
     loadTheme();
@@ -50,9 +59,5 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 };
 
 export const useTheme = (): ThemeContextType => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
+  return useContext(ThemeContext);
 };

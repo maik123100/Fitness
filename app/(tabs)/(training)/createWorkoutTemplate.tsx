@@ -7,6 +7,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, Platform, Modal } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -362,9 +363,10 @@ export default function CreateWorkoutTemplateScreen() {
   );
 
   return (
-    <>
+    <GestureHandlerRootView style={styles.flex}>
+      <>
       {step === 1 ? renderStep1() : (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header Section */}
       <View style={[styles.headerSection, { paddingTop: insets.top + spacing.xs }]}>
         <View style={styles.headerContent}>
@@ -469,14 +471,14 @@ export default function CreateWorkoutTemplateScreen() {
       )}
 
       {/* JSON Import Modal - Available in both steps */}
-      <Modal
+        <Modal
         animationType="slide"
         transparent={true}
         visible={isJsonModalVisible}
         onRequestClose={() => setIsJsonModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: theme.surface.card }]}>
+          <View style={[styles.modalContainer, { backgroundColor: theme.surface.card }]}> 
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.foreground }]}>Import Workout JSON</Text>
               <TouchableOpacity onPress={() => setIsJsonModalVisible(false)} style={styles.modalCloseButton}>
@@ -554,13 +556,17 @@ export default function CreateWorkoutTemplateScreen() {
             </View>
           </View>
         </View>
-      </Modal>
-    </>
+        </Modal>
+      </>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  flex: {
     flex: 1,
   },
   headerSection: {

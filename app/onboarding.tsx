@@ -4,7 +4,7 @@ import { setOnboardingCompleted } from '@/services/onboardingService';
 import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, shadows, spacing, typography } from '../styles/theme';
 import { useTheme } from '@/app/contexts/ThemeContext';
@@ -170,268 +170,298 @@ export default function OnboardingScreen() {
         );
       case 1:
         return (
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.stepContainer} showsVerticalScrollIndicator={false}>
-            <View style={[styles.progressContainer, { backgroundColor: theme.surface.card }]}>
-              <View style={[styles.progressBar, { width: '33%', backgroundColor: theme.primary }]} />
-            </View>
-            <Text style={[styles.stepNumber, { color: theme.comment }]}>Step 1 of 3</Text>
-            <Text style={[styles.title, { color: theme.foreground }]}>Your Details</Text>
-            <Text style={[styles.description, { color: theme.comment }]}>
-              Tell us about yourself so we can calculate your nutritional needs
-            </Text>
+          <KeyboardAvoidingView
+            style={styles.scrollView}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.stepContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={[styles.progressContainer, { backgroundColor: theme.surface.card }]}> 
+                <View style={[styles.progressBar, { width: '33%', backgroundColor: theme.primary }]} />
+              </View>
+              <Text style={[styles.stepNumber, { color: theme.comment }]}>Step 1 of 3</Text>
+              <Text style={[styles.title, { color: theme.foreground }]}>Your Details</Text>
+              <Text style={[styles.description, { color: theme.comment }]}> 
+                Tell us about yourself so we can calculate your nutritional needs
+              </Text>
 
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: theme.foreground }]}>Birthdate</Text>
-              <Pressable
-                onPress={() => setDatePickerVisibility(true)}
-                style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}
-                android_ripple={{ color: theme.selection }}
-              >
-                <Ionicons name="calendar-outline" size={20} color={theme.comment} style={styles.inputIcon} />
-                <Text style={[styles.inputText, { color: profile.birthdate ? theme.foreground : theme.comment }]}>
-                  {profile.birthdate || 'Select your birthdate'}
-                </Text>
-              </Pressable>
-              <DatePickerModal
-                isVisible={isDatePickerVisible}
-                onClose={() => setDatePickerVisibility(false)}
-                onSelectDate={(date) => { handleUpdateProfile('birthdate', formatDateToYYYYMMDD(date)) }}
-                currentDate={profile.birthdate ? new Date(profile.birthdate) : new Date()}
-              />
-            </View>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: theme.foreground }]}>Birthdate</Text>
+                <Pressable
+                  onPress={() => setDatePickerVisibility(true)}
+                  style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}
+                  android_ripple={{ color: theme.selection }}
+                >
+                  <Ionicons name="calendar-outline" size={20} color={theme.comment} style={styles.inputIcon} />
+                  <Text style={[styles.inputText, { color: profile.birthdate ? theme.foreground : theme.comment }]}> 
+                    {profile.birthdate || 'Select your birthdate'}
+                  </Text>
+                </Pressable>
+                <DatePickerModal
+                  isVisible={isDatePickerVisible}
+                  onClose={() => setDatePickerVisibility(false)}
+                  onSelectDate={(date) => { handleUpdateProfile('birthdate', formatDateToYYYYMMDD(date)) }}
+                  currentDate={profile.birthdate ? new Date(profile.birthdate) : new Date()}
+                />
+              </View>
 
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: theme.foreground }]}>Gender</Text>
-              <View style={[styles.segmentedControl, { backgroundColor: theme.surface.input }, shadows.sm]}>
-                {[
-                  { value: 'male', icon: 'male', label: 'Male' },
-                  { value: 'female', icon: 'female', label: 'Female' }
-                ].map((g) => (
-                  <Pressable
-                    key={g.value}
-                    style={[
-                      styles.segment,
-                      profile.gender === g.value && { backgroundColor: theme.primary }
-                    ]}
-                    onPress={() => handleUpdateProfile('gender', g.value as 'male' | 'female')}
-                    android_ripple={{ color: theme.selection }}
-                  >
-                    <Ionicons
-                      name={g.icon as any}
-                      size={24}
-                      color={profile.gender === g.value ? theme.text.inverse : theme.foreground}
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: theme.foreground }]}>Gender</Text>
+                <View style={[styles.segmentedControl, { backgroundColor: theme.surface.input }, shadows.sm]}>
+                  {[
+                    { value: 'male', icon: 'male', label: 'Male' },
+                    { value: 'female', icon: 'female', label: 'Female' }
+                  ].map((g) => (
+                    <Pressable
+                      key={g.value}
+                      style={[
+                        styles.segment,
+                        profile.gender === g.value && { backgroundColor: theme.primary }
+                      ]}
+                      onPress={() => handleUpdateProfile('gender', g.value as 'male' | 'female')}
+                      android_ripple={{ color: theme.selection }}
+                    >
+                      <Ionicons
+                        name={g.icon as any}
+                        size={24}
+                        color={profile.gender === g.value ? theme.text.inverse : theme.foreground}
+                      />
+                      <Text style={[
+                        styles.segmentText,
+                        { color: theme.foreground },
+                        profile.gender === g.value && { color: theme.text.inverse, fontWeight: typography.weights.bold }
+                      ]}>
+                        {g.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formRow}>
+                <View style={[styles.formGroup, styles.formHalf]}>
+                  <Text style={[styles.label, { color: theme.foreground }]}>Height (cm)</Text>
+                  <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+                    <Ionicons name="resize-outline" size={20} color={theme.comment} style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.textInput, { color: theme.foreground }]}
+                      placeholder="180"
+                      placeholderTextColor={theme.comment}
+                      keyboardType="numeric"
+                      value={profile.height?.toString()}
+                      onChangeText={(text) => handleUpdateProfile('height', text ? parseFloat(text) : undefined)}
                     />
-                    <Text style={[
-                      styles.segmentText,
-                      { color: theme.foreground },
-                      profile.gender === g.value && { color: theme.text.inverse, fontWeight: typography.weights.bold }
-                    ]}>
-                      {g.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.formRow}>
-              <View style={[styles.formGroup, styles.formHalf]}>
-                <Text style={[styles.label, { color: theme.foreground }]}>Height (cm)</Text>
-                <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
-                  <Ionicons name="resize-outline" size={20} color={theme.comment} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.textInput, { color: theme.foreground }]}
-                    placeholder="180"
-                    placeholderTextColor={theme.comment}
-                    keyboardType="numeric"
-                    value={profile.height?.toString()}
-                    onChangeText={(text) => handleUpdateProfile('height', text ? parseFloat(text) : undefined)}
-                  />
+                  </View>
+                </View>
+                <View style={[styles.formGroup, styles.formHalf]}>
+                  <Text style={[styles.label, { color: theme.foreground }]}>Weight (kg)</Text>
+                  <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+                    <Ionicons name="barbell-outline" size={20} color={theme.comment} style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.textInput, { color: theme.foreground }]}
+                      placeholder="75"
+                      placeholderTextColor={theme.comment}
+                      keyboardType="numeric"
+                      value={profile.weight?.toString()}
+                      onChangeText={(text) => handleUpdateProfile('weight', text ? parseFloat(text) : undefined)}
+                    />
+                  </View>
                 </View>
               </View>
-              <View style={[styles.formGroup, styles.formHalf]}>
-                <Text style={[styles.label, { color: theme.foreground }]}>Weight (kg)</Text>
-                <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
-                  <Ionicons name="barbell-outline" size={20} color={theme.comment} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.textInput, { color: theme.foreground }]}
-                    placeholder="75"
-                    placeholderTextColor={theme.comment}
-                    keyboardType="numeric"
-                    value={profile.weight?.toString()}
-                    onChangeText={(text) => handleUpdateProfile('weight', text ? parseFloat(text) : undefined)}
-                  />
-                </View>
-              </View>
-            </View>
 
-            <View style={styles.buttonGroup}>
-              <Pressable
-                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
-                onPress={handlePrev}
-                android_ripple={{ color: theme.selection }}
-              >
-                <Ionicons name="arrow-back" size={20} color={theme.foreground} />
-                <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button, { backgroundColor: theme.primary }, shadows.md]}
-                onPress={handleNext}
-                android_ripple={{ color: theme.surface.elevated }}
-              >
-                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Next</Text>
-                <Ionicons name="arrow-forward" size={20} color={theme.text.inverse} />
-              </Pressable>
-            </View>
-          </ScrollView>
+              <View style={styles.buttonGroup}>
+                <Pressable
+                  style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
+                  onPress={handlePrev}
+                  android_ripple={{ color: theme.selection }}
+                >
+                  <Ionicons name="arrow-back" size={20} color={theme.foreground} />
+                  <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.button, { backgroundColor: theme.primary }, shadows.md]}
+                  onPress={handleNext}
+                  android_ripple={{ color: theme.surface.elevated }}
+                >
+                  <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Next</Text>
+                  <Ionicons name="arrow-forward" size={20} color={theme.text.inverse} />
+                </Pressable>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         );
       case 2:
         return (
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.stepContainer} showsVerticalScrollIndicator={false}>
-            <View style={[styles.progressContainer, { backgroundColor: theme.surface.card }]}>
-              <View style={[styles.progressBar, { width: '66%', backgroundColor: theme.primary }]} />
-            </View>
-            <Text style={[styles.stepNumber, { color: theme.comment }]}>Step 2 of 3</Text>
-            <Text style={[styles.title, { color: theme.foreground }]}>Activity Level</Text>
-            <Text style={[styles.description, { color: theme.comment }]}>
-              How active are you on a typical day?
-            </Text>
+          <KeyboardAvoidingView
+            style={styles.scrollView}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.stepContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={[styles.progressContainer, { backgroundColor: theme.surface.card }]}> 
+                <View style={[styles.progressBar, { width: '66%', backgroundColor: theme.primary }]} />
+              </View>
+              <Text style={[styles.stepNumber, { color: theme.comment }]}>Step 2 of 3</Text>
+              <Text style={[styles.title, { color: theme.foreground }]}>Activity Level</Text>
+              <Text style={[styles.description, { color: theme.comment }]}> 
+                How active are you on a typical day?
+              </Text>
 
-            <View style={styles.optionsList}>
-              {Object.entries(activityLevels).map(([level, label]) => (
+              <View style={styles.optionsList}>
+                {Object.entries(activityLevels).map(([level, label]) => (
+                  <Pressable
+                    key={level}
+                    style={[
+                      styles.optionCard,
+                      { backgroundColor: theme.surface.card },
+                      profile.activityLevel === level && { backgroundColor: theme.primary, borderColor: theme.primary },
+                      shadows.sm
+                    ]}
+                    onPress={() => handleUpdateProfile('activityLevel', level as ActivityLevel)}
+                    android_ripple={{ color: theme.selection }}
+                  >
+                    <View style={styles.optionContent}>
+                      <View style={[
+                        styles.radioOuter,
+                        { borderColor: profile.activityLevel === level ? theme.text.inverse : theme.comment }
+                      ]}>
+                        {profile.activityLevel === level && (
+                          <View style={[styles.radioInner, { backgroundColor: theme.text.inverse }]} />
+                        )}
+                      </View>
+                      <Text style={[
+                        styles.optionText,
+                        { color: theme.foreground },
+                        profile.activityLevel === level && { color: theme.text.inverse, fontWeight: typography.weights.bold }
+                      ]}>
+                        {label}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.buttonGroup}>
                 <Pressable
-                  key={level}
-                  style={[
-                    styles.optionCard,
-                    { backgroundColor: theme.surface.card },
-                    profile.activityLevel === level && { backgroundColor: theme.primary, borderColor: theme.primary },
-                    shadows.sm
-                  ]}
-                  onPress={() => handleUpdateProfile('activityLevel', level as ActivityLevel)}
+                  style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
+                  onPress={handlePrev}
                   android_ripple={{ color: theme.selection }}
                 >
-                  <View style={styles.optionContent}>
-                    <View style={[
-                      styles.radioOuter,
-                      { borderColor: profile.activityLevel === level ? theme.text.inverse : theme.comment }
-                    ]}>
-                      {profile.activityLevel === level && (
-                        <View style={[styles.radioInner, { backgroundColor: theme.text.inverse }]} />
-                      )}
-                    </View>
-                    <Text style={[
-                      styles.optionText,
-                      { color: theme.foreground },
-                      profile.activityLevel === level && { color: theme.text.inverse, fontWeight: typography.weights.bold }
-                    ]}>
-                      {label}
-                    </Text>
-                  </View>
+                  <Ionicons name="arrow-back" size={20} color={theme.foreground} />
+                  <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
                 </Pressable>
-              ))}
-            </View>
-
-            <View style={styles.buttonGroup}>
-              <Pressable
-                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
-                onPress={handlePrev}
-                android_ripple={{ color: theme.selection }}
-              >
-                <Ionicons name="arrow-back" size={20} color={theme.foreground} />
-                <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button, { backgroundColor: theme.primary }, shadows.md]}
-                onPress={handleNext}
-                android_ripple={{ color: theme.surface.elevated }}
-              >
-                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Next</Text>
-                <Ionicons name="arrow-forward" size={20} color={theme.text.inverse} />
-              </Pressable>
-            </View>
-          </ScrollView>
+                <Pressable
+                  style={[styles.button, { backgroundColor: theme.primary }, shadows.md]}
+                  onPress={handleNext}
+                  android_ripple={{ color: theme.surface.elevated }}
+                >
+                  <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Next</Text>
+                  <Ionicons name="arrow-forward" size={20} color={theme.text.inverse} />
+                </Pressable>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         );
       case 3:
         return (
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.stepContainer} showsVerticalScrollIndicator={false}>
-            <View style={[styles.progressContainer, { backgroundColor: theme.surface.card }]}>
-              <View style={[styles.progressBar, { width: '100%', backgroundColor: theme.primary }]} />
-            </View>
-            <Text style={[styles.stepNumber, { color: theme.comment }]}>Step 3 of 3</Text>
-            <Text style={[styles.title, { color: theme.foreground }]}>Your Goal</Text>
-            <Text style={[styles.description, { color: theme.comment }]}>
-              What would you like to achieve?
-            </Text>
+          <KeyboardAvoidingView
+            style={styles.scrollView}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.stepContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={[styles.progressContainer, { backgroundColor: theme.surface.card }]}> 
+                <View style={[styles.progressBar, { width: '100%', backgroundColor: theme.primary }]} />
+              </View>
+              <Text style={[styles.stepNumber, { color: theme.comment }]}>Step 3 of 3</Text>
+              <Text style={[styles.title, { color: theme.foreground }]}>Your Goal</Text>
+              <Text style={[styles.description, { color: theme.comment }]}> 
+                What would you like to achieve?
+              </Text>
 
-            <View style={styles.optionsList}>
-              {Object.entries(goalTypes).map(([goal, label]) => (
+              <View style={styles.optionsList}>
+                {Object.entries(goalTypes).map(([goal, label]) => (
+                  <Pressable
+                    key={goal}
+                    style={[
+                      styles.optionCard,
+                      { backgroundColor: theme.surface.card },
+                      profile.goalType === goal && { backgroundColor: theme.primary, borderColor: theme.primary },
+                      shadows.sm
+                    ]}
+                    onPress={() => handleUpdateProfile('goalType', goal as GoalType)}
+                    android_ripple={{ color: theme.selection }}
+                  >
+                    <View style={styles.optionContent}>
+                      <View style={[
+                        styles.radioOuter,
+                        { borderColor: profile.goalType === goal ? theme.text.inverse : theme.comment }
+                      ]}>
+                        {profile.goalType === goal && (
+                          <View style={[styles.radioInner, { backgroundColor: theme.text.inverse }]} />
+                        )}
+                      </View>
+                      <Text style={[
+                        styles.optionText,
+                        { color: theme.foreground },
+                        profile.goalType === goal && { color: theme.text.inverse, fontWeight: typography.weights.bold }
+                      ]}>
+                        {label}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+
+              {(profile.goalType === 'lose-weight' || profile.goalType === 'gain-weight') && (
+                <View style={styles.formGroup}>
+                  <Text style={[styles.label, { color: theme.foreground }]}>Target Weight (kg)</Text>
+                  <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
+                    <Ionicons name="flag-outline" size={20} color={theme.comment} style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.textInput, { color: theme.foreground }]}
+                      placeholder="70"
+                      placeholderTextColor={theme.comment}
+                      keyboardType="numeric"
+                      value={profile.targetWeight?.toString()}
+                      onChangeText={(text) => handleUpdateProfile('targetWeight', parseFloat(text))}
+                    />
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.buttonGroup}>
                 <Pressable
-                  key={goal}
-                  style={[
-                    styles.optionCard,
-                    { backgroundColor: theme.surface.card },
-                    profile.goalType === goal && { backgroundColor: theme.primary, borderColor: theme.primary },
-                    shadows.sm
-                  ]}
-                  onPress={() => handleUpdateProfile('goalType', goal as GoalType)}
+                  style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
+                  onPress={handlePrev}
                   android_ripple={{ color: theme.selection }}
                 >
-                  <View style={styles.optionContent}>
-                    <View style={[
-                      styles.radioOuter,
-                      { borderColor: profile.goalType === goal ? theme.text.inverse : theme.comment }
-                    ]}>
-                      {profile.goalType === goal && (
-                        <View style={[styles.radioInner, { backgroundColor: theme.text.inverse }]} />
-                      )}
-                    </View>
-                    <Text style={[
-                      styles.optionText,
-                      { color: theme.foreground },
-                      profile.goalType === goal && { color: theme.text.inverse, fontWeight: typography.weights.bold }
-                    ]}>
-                      {label}
-                    </Text>
-                  </View>
+                  <Ionicons name="arrow-back" size={20} color={theme.foreground} />
+                  <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
                 </Pressable>
-              ))}
-            </View>
-
-            {(profile.goalType === 'lose-weight' || profile.goalType === 'gain-weight') && (
-              <View style={styles.formGroup}>
-                <Text style={[styles.label, { color: theme.foreground }]}>Target Weight (kg)</Text>
-                <View style={[styles.input, { backgroundColor: theme.surface.input }, shadows.sm]}>
-                  <Ionicons name="flag-outline" size={20} color={theme.comment} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.textInput, { color: theme.foreground }]}
-                    placeholder="70"
-                    placeholderTextColor={theme.comment}
-                    keyboardType="numeric"
-                    value={profile.targetWeight?.toString()}
-                    onChangeText={(text) => handleUpdateProfile('targetWeight', parseFloat(text))}
-                  />
-                </View>
+                <Pressable
+                  style={[styles.button, { backgroundColor: theme.success }, shadows.md]}
+                  onPress={handleFinish}
+                  android_ripple={{ color: theme.surface.elevated }}
+                >
+                  <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Finish</Text>
+                  <Ionicons name="checkmark-circle" size={20} color={theme.text.inverse} />
+                </Pressable>
               </View>
-            )}
-
-            <View style={styles.buttonGroup}>
-              <Pressable
-                style={[styles.buttonSecondary, { backgroundColor: theme.surface.card, borderColor: theme.comment, borderWidth: 2 }]}
-                onPress={handlePrev}
-                android_ripple={{ color: theme.selection }}
-              >
-                <Ionicons name="arrow-back" size={20} color={theme.foreground} />
-                <Text style={[styles.buttonSecondaryText, { color: theme.foreground }]}>Back</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.button, { backgroundColor: theme.success }, shadows.md]}
-                onPress={handleFinish}
-                android_ripple={{ color: theme.surface.elevated }}
-              >
-                <Text style={[styles.buttonText, { color: theme.text.inverse }]}>Finish</Text>
-                <Ionicons name="checkmark-circle" size={20} color={theme.text.inverse} />
-              </Pressable>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          </KeyboardAvoidingView>
         );
       default:
         return null;

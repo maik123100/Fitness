@@ -1,5 +1,6 @@
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { InputField } from '@/components/shared/InputField';
+import { SelectionModal } from '@/components/shared/SelectionModal';
 import { DangerZone } from '@/components/profile/DangerZone';
 import { NotificationSection } from '@/components/profile/NotificationSection';
 import { ProfileInfoSection } from '@/components/profile/ProfileInfoSection';
@@ -15,7 +16,7 @@ import { MineralFields, VitaminFields } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function ProfileScreen() {
   const { theme } = useTheme();
@@ -60,6 +61,7 @@ export default function ProfileScreen() {
   const [showProfileInfo, setShowProfileInfo] = useState(false);
   const [showAppearance, setShowAppearance] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showResetDatabaseModal, setShowResetDatabaseModal] = useState(false);
 
 
 
@@ -69,23 +71,7 @@ export default function ProfileScreen() {
   };
 
   const handleResetDatabase = () => {
-    Alert.alert(
-      'Reset Database',
-      'Are you sure you want to reset the entire database? All your data will be lost.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            resetDatabase();
-            setOnboardingCompleted(false);
-            router.replace('/onboarding');
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    setShowResetDatabaseModal(true);
   };
 
 
@@ -217,6 +203,27 @@ export default function ProfileScreen() {
         onMinuteChange={setSelectedMinute}
         onSave={handleTimeSave}
         onCancel={() => setShowTimePicker(null)}
+      />
+
+      <SelectionModal
+        visible={showResetDatabaseModal}
+        title="Reset Database"
+        description="Erase all saved fitness and nutrition data and restart onboarding. Close the sheet to keep your data."
+        onClose={() => setShowResetDatabaseModal(false)}
+        options={[
+          {
+            key: 'reset-database',
+            title: 'Reset Everything',
+            description: 'This clears the database, removes your progress, and sends you back to onboarding.',
+            icon: 'warning-outline',
+            accentColor: theme.danger,
+            onPress: () => {
+              resetDatabase();
+              setOnboardingCompleted(false);
+              router.replace('/onboarding');
+            },
+          },
+        ]}
       />
     </ScrollView>
   );
