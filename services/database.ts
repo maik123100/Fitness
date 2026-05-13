@@ -925,6 +925,47 @@ export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplate
     }));
 };
 
+const getLastQualifiedSetTargetsForExercise = (
+  workoutTemplateExerciseId: string,
+  baseSetTargets: { reps: number; weight: number }[],
+): { weight: number; reps: number }[] => {
+  const workoutEntries = db
+    .select()
+    .from(schema.workoutEntries)
+    .orderBy(desc(schema.workoutEntries.createdAt))
+    .all();
+
+  const result = baseSetTargets.map((target) => ({
+    weight: target.weight,
+    reps: target.reps,
+  }));
+
+  for (let index = 0; index < baseSetTargets.length; index += 1) {
+    const baseTarget = baseSetTargets[index];
+    const minAcceptedReps = Math.max(0, baseTarget.reps - 3);
+
+    for (const entry of workoutEntries) {
+      const sets = JSON.parse(entry.sets) as Array<{ workoutTemplateExerciseId: string; weight: number; reps: number }>;
+      const relevantSets = sets.filter((set) => set.workoutTemplateExerciseId === workoutTemplateExerciseId);
+      const candidate = relevantSets[index];
+
+      if (
+        candidate &&
+        candidate.reps >= minAcceptedReps &&
+        candidate.weight > baseTarget.weight
+      ) {
+        result[index] = {
+          weight: candidate.weight,
+          reps: candidate.reps,
+        };
+        break;
+      }
+    }
+  }
+
+  return result;
+};
+
 // ============== Active Workout Session Functions ==============
 
 export const startWorkoutSession = (templateId: string, date: string): ActiveWorkoutSession => {
@@ -935,13 +976,16 @@ export const startWorkoutSession = (templateId: string, date: string): ActiveWor
   const sets: any[] = exercises.flatMap(exercise => {
     const exerciseTemplate = getExerciseTemplate(exercise.exerciseTemplateId);
     if (!exerciseTemplate) return [];
+
+    const lastQualifiedTargets = getLastQualifiedSetTargetsForExercise(exercise.id, exercise.setTargets);
+
     return exercise.setTargets.map((target: any, index: number) => ({
       id: `${exercise.id}-${index}`,
       workoutTemplateExerciseId: exercise.id,
       weight: 0,
       reps: 0,
-      targetReps: target.reps,
-      targetWeight: target.weight,
+      targetReps: lastQualifiedTargets[index]?.reps || target.reps,
+      targetWeight: lastQualifiedTargets[index]?.weight || target.weight,
       completed: false,
     }));
   });
