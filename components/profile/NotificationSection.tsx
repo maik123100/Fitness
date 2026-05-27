@@ -30,12 +30,12 @@ export function NotificationSection({
     return `${displayHour}:${displayMinute} ${ampm}`;
   };
 
-  const mealConfig: Array<{
+  const mealConfig: {
     type: MealTypeMain;
     label: string;
     icon: keyof typeof Ionicons.glyphMap;
     iconColor: string;
-  }> = [
+  }[] = [
     { type: 'breakfast', label: 'Breakfast', icon: 'sunny-outline', iconColor: theme.orange },
     { type: 'lunch', label: 'Lunch', icon: 'partly-sunny-outline', iconColor: theme.yellow },
     { type: 'dinner', label: 'Dinner', icon: 'moon-outline', iconColor: theme.purple },

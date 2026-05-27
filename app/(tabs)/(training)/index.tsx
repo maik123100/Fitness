@@ -8,7 +8,7 @@ import { WorkoutTemplate } from '@/services/db/schema';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Animated, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
 interface TrainingState {
@@ -30,18 +30,18 @@ export default function WorkoutScreen() {
 
   const { templates, activeSession, workoutEntries } = state;
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [selectedDate])
-  );
-
-  const loadData = () => {
+  const loadData = useCallback(() => {
     const templatesData = getWorkoutTemplates();
     const activeSessionData = getActiveWorkoutSession();
     const workoutEntriesData = getWorkoutEntries(formatDateToYYYYMMDD(selectedDate));
     setState({ templates: templatesData, activeSession: activeSessionData, workoutEntries: workoutEntriesData });
-  };
+  }, [selectedDate]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleTemplatePress = (templateId: string) => {
     if (activeSession && activeSession.workoutTemplateId !== templateId) {
@@ -169,7 +169,7 @@ export default function WorkoutScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <MaterialCommunityIcons name="check-circle-outline" size={24} color={theme.green} />
-          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>Today's Workouts</Text>
+          <Text style={[styles.sectionTitle, { color: theme.foreground }]}>Today&apos;s Workouts</Text>
         </View>
         
         {workoutEntries.length === 0 ? (

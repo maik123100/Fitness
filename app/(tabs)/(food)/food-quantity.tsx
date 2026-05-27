@@ -11,7 +11,7 @@ import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function FoodQuantityScreen() {
@@ -28,7 +28,7 @@ export default function FoodQuantityScreen() {
   const [quantity, setQuantity] = useState('100');
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
 
-  useEffect(() => {
+  const initializeScreen = useCallback(() => {
     if (foodId) {
       const item = getFoodItem(foodId);
       if (item) {
@@ -41,7 +41,11 @@ export default function FoodQuantityScreen() {
     if (initialMealType) {
       setSelectedMealType(initialMealType);
     }
-  }, [foodId, initialMealType]);
+  }, [foodId, initialMealType, router, showSnackbar]);
+
+  useEffect(() => {
+    initializeScreen();
+  }, [initializeScreen]);
 
   const handleQuantityChange = (changeAmount: number) => {
     const currentQuantity = parseFloat(quantity || '0');

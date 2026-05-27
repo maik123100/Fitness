@@ -2,7 +2,6 @@ import { rawDb, useDatabase } from "@/services/db";
 import { seedMockData, shouldSeedMockData } from '@/services/mockData';
 import { initializeNotifications, setupNotificationHandlers } from '@/services/notificationService';
 import { getOnboardingCompleted } from '@/services/onboardingService';
-import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -15,9 +14,6 @@ export default function RootLayout() {
   const { success, error } = useDatabase();
   const [onboardingLoaded, setOnboardingLoaded] = useState(false);
   const router = useRouter();
-
-  // Enable Drizzle Studio for database debugging
-  useDrizzleStudio(rawDb);
 
   useEffect(() => {
     const loadOnboarding = async () => {
@@ -43,7 +39,7 @@ export default function RootLayout() {
     if (success) {
       loadOnboarding();
     }
-  }, [success]);
+  }, [router, success]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

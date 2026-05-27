@@ -16,7 +16,7 @@ export default function Index() {
     };
 
     checkOnboarding();
-  }, []);
+  }, [router]);
 
   return null;
 }

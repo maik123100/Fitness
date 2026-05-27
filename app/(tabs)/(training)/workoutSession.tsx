@@ -4,7 +4,7 @@ import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ActiveWorkoutSession, WorkoutEntry, WorkoutTemplateExercise, WorkoutSet } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,6 +27,41 @@ export default function WorkoutSessionScreen() {
   const params = useLocalSearchParams();
   const { workoutEntryId } = params;
 
+  const loadActiveSession = useCallback(() => {
+    const activeSession = getActiveWorkoutSession();
+    if (activeSession) {
+      const exercisesWithDetails = loadExercisesForWorkout(activeSession.workoutTemplateId);
+      setSession(activeSession);
+      setExercises(exercisesWithDetails);
+      setIsEditing(false);
+      setElapsedTime(0);
+
+      const firstUncompletedSet = activeSession.sets.find((s: WorkoutSet) => !s.completed);
+      setCurrentSetId(firstUncompletedSet?.id || null);
+
+      if (firstUncompletedSet) {
+        const exerciseForSet = exercisesWithDetails.find(
+          ex => activeSession.sets.some((s: WorkoutSet) => s.id === firstUncompletedSet.id && s.workoutTemplateExerciseId === ex.id)
+        );
+        setCurrentExerciseId(exerciseForSet?.id || exercisesWithDetails[0]?.id || null);
+      } else {
+        setCurrentExerciseId(exercisesWithDetails[0]?.id || null);
+      }
+    }
+  }, []);
+
+  const loadWorkoutEntry = useCallback((id: string) => {
+    const workoutEntry = getWorkoutEntry(id);
+    if (workoutEntry) {
+      const exercisesWithDetails = loadExercisesForWorkout(workoutEntry.workoutTemplateId);
+      setSession(workoutEntry);
+      setExercises(exercisesWithDetails);
+      setIsEditing(true);
+      setCaloriesBurned(workoutEntry.caloriesBurned?.toString() || '0');
+      setCurrentSetId(null);
+    }
+  }, []);
+
   // Load workout on mount
   useEffect(() => {
     if (workoutEntryId) {
@@ -34,7 +69,7 @@ export default function WorkoutSessionScreen() {
     } else {
       loadActiveSession();
     }
-  }, [workoutEntryId]);
+  }, [workoutEntryId, loadActiveSession, loadWorkoutEntry]);
 
   // Timer for active workouts
   useEffect(() => {
@@ -97,45 +132,6 @@ export default function WorkoutSessionScreen() {
         exercise_name: exerciseTemplate?.name || 'Unknown Exercise',
       };
     });
-  };
-
-  // Load active workout session (for ongoing workouts)
-  const loadActiveSession = () => {
-    const activeSession = getActiveWorkoutSession();
-    if (activeSession) {
-      const exercisesWithDetails = loadExercisesForWorkout(activeSession.workoutTemplateId);
-      setSession(activeSession);
-      setExercises(exercisesWithDetails);
-      setIsEditing(false);
-      setElapsedTime(0);
-
-      // Find the first uncompleted set as current
-      const firstUncompletedSet = activeSession.sets.find((s: WorkoutSet) => !s.completed);
-      setCurrentSetId(firstUncompletedSet?.id || null);
-
-      // Set current exercise based on first uncompleted set or first exercise
-      if (firstUncompletedSet) {
-        const exerciseForSet = exercisesWithDetails.find(
-          ex => activeSession.sets.some((s: WorkoutSet) => s.id === firstUncompletedSet.id && s.workoutTemplateExerciseId === ex.id)
-        );
-        setCurrentExerciseId(exerciseForSet?.id || exercisesWithDetails[0]?.id || null);
-      } else {
-        setCurrentExerciseId(exercisesWithDetails[0]?.id || null);
-      }
-    }
-  };
-
-  // Load finished workout entry (for editing completed workouts)
-  const loadWorkoutEntry = (id: string) => {
-    const workoutEntry = getWorkoutEntry(id);
-    if (workoutEntry) {
-      const exercisesWithDetails = loadExercisesForWorkout(workoutEntry.workoutTemplateId);
-      setSession(workoutEntry);
-      setExercises(exercisesWithDetails);
-      setIsEditing(true);
-      setCaloriesBurned(workoutEntry.caloriesBurned?.toString() || '0');
-      setCurrentSetId(null);
-    }
   };
 
   // Update a specific set (weight, reps, or completion status)

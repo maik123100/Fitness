@@ -45,13 +45,7 @@ export default function DashboardScreen() {
 
   const { calorieData, makroData, recentActivities } = state;
 
-  useFocusEffect(
-    useCallback(() => {
-      loadDashboardData();
-    }, [selectedDate])
-  );
-
-  const loadDashboardData = () => {
+  const loadDashboardData = useCallback(() => {
     const userProfile = getUserProfile();
     const formattedDate = formatDateToYYYYMMDD(selectedDate);
     const nutritionSummary = getNutritionSummary(formattedDate);
@@ -90,7 +84,13 @@ export default function DashboardScreen() {
       makroData: newMakroData,
       recentActivities: activities,
     }));
-  };
+  }, [selectedDate]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+    }, [loadDashboardData])
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

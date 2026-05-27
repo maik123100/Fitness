@@ -14,7 +14,7 @@ import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -101,9 +101,18 @@ export default function FoodDiaryScreen() {
     );
   };
 
+  const loadFoodEntries = useCallback(() => {
+    const entries = getFoodEntriesForDate(formatDateToYYYYMMDD(selectedDate));
+    const groupedEntries: Record<MealType, FoodEntry[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
+    entries.forEach(entry => {
+      groupedEntries[entry.mealType as MealType].push(entry);
+    });
+    setState(prev => ({ ...prev, foodEntries: groupedEntries }));
+  }, [selectedDate]);
+
   useEffect(() => {
     loadFoodEntries();
-  }, [selectedDate]);
+  }, [loadFoodEntries]);
 
   // Handle expandMeal parameter from notification
   useEffect(() => {
@@ -117,15 +126,6 @@ export default function FoodDiaryScreen() {
       }));
     }
   }, [expandMeal]);
-
-  const loadFoodEntries = () => {
-    const entries = getFoodEntriesForDate(formatDateToYYYYMMDD(selectedDate));
-    const groupedEntries: Record<MealType, FoodEntry[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
-    entries.forEach(entry => {
-      groupedEntries[entry.mealType as MealType].push(entry);
-    });
-    setState(prev => ({ ...prev, foodEntries: groupedEntries }));
-  };
 
   const handleAddFood = (foodItem: FoodItem, mealType?: MealType) => {
     router.navigate({

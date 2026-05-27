@@ -7,7 +7,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import React, { JSX } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TabLayoutProps = {
   name: string;
@@ -55,7 +54,6 @@ const tabs: TabLayoutProps[] = [
 
 function TabsContent() {
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
 
   return (
     <Tabs

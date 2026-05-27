@@ -154,8 +154,8 @@ export default function OnboardingScreen() {
                 <Ionicons name="fitness" size={64} color={theme.primary} />
               </View>
               <Text style={[styles.title, { color: theme.foreground }]}>Welcome to Fitness App!</Text>
-              <Text style={[styles.subtitle, { color: theme.comment }]}>
-                Your journey to a healthier you starts here. Let's set up your profile.
+              <Text style={[styles.subtitle, { color: theme.comment }]}> 
+                Your journey to a healthier you starts here. Let&apos;s set up your profile.
               </Text>
             </View>
             <Pressable
