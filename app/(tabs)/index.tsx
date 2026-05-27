@@ -5,17 +5,19 @@ import { useDate } from '@/app/contexts/DateContext';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
+  addActivity,
   getFoodEntriesForDate,
   getNutritionSummary,
+  getRecentActivities,
   getUserProfile,
   getWorkoutEntries
 } from '@/services/database';
-import { FoodEntry } from '@/services/db/schema';
+import { Activity, FoodEntry } from '@/services/db/schema';
 import { spacing, typography } from '@/styles/theme';
 import { WorkoutEntry } from '@/types/types';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 interface DashboardState {
   calorieData: {
@@ -29,6 +31,7 @@ interface DashboardState {
     target: { protein: number; carbs: number; fat: number };
   };
   recentActivities: (FoodEntry | WorkoutEntry)[];
+  dbVerificationActivity: Activity | null;
 }
 
 export default function DashboardScreen() {

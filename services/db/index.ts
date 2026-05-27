@@ -2,7 +2,7 @@ import migrations from '@/drizzle/migrations';
 import * as schema from '@/services/db/schema';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-import { deleteDatabaseSync, openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
+import { openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'fitness.db';
 
@@ -40,22 +40,6 @@ const hasOldSchema = (dbInstance: SQLiteDatabase): boolean => {
   }
 };
 
-const hasIncompatibleUserProfileSchema = (dbInstance: SQLiteDatabase): boolean => {
-  if (!hasTable(dbInstance, 'user_profile')) {
-    return false;
-  }
-
-  const requiredColumns = [
-    'birthdate',
-    'activity_level',
-    'goal_type',
-    'created_at',
-    'updated_at',
-  ];
-
-  return requiredColumns.some((columnName) => !hasColumn(dbInstance, 'user_profile', columnName));
-};
-
 const makeCreateStatementsIdempotent = (statement: string): string => {
   if (statement.startsWith('CREATE TABLE ') && !statement.startsWith('CREATE TABLE IF NOT EXISTS ')) {
     return statement.replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ');
@@ -69,11 +53,10 @@ const makeCreateStatementsIdempotent = (statement: string): string => {
 };
 
 const ensureSchemaInitialized = (dbInstance: SQLiteDatabase): void => {
-  if (hasTable(dbInstance, 'user_profile')) {
-    return;
-  }
-
-  console.log('🛠️ Required tables missing. Applying bootstrap migrations...');
+  // Always attempt to apply bootstrap/migration SQL idempotently on startup.
+  // This ensures ALTER TABLE migrations (like adding new columns) are applied
+  // before any runtime code performs writes against the database.
+  console.log('🛠️ Applying bootstrap/migrations (idempotent) on startup...');
 
   const migrationEntries = [...migrations.journal.entries].sort((a, b) => a.idx - b.idx);
 
@@ -110,22 +93,10 @@ const ensureSchemaInitialized = (dbInstance: SQLiteDatabase): void => {
 
 // Initialize database - check for old schema and reset if needed BEFORE any drizzle operations
 const expoDb = (() => {
-  let database = openDatabaseSync(DATABASE_NAME);
+  const database = openDatabaseSync(DATABASE_NAME);
 
-  // If legacy/incompatible schema detected, delete and recreate
-  if (hasOldSchema(database) || hasIncompatibleUserProfileSchema(database)) {
-    console.log('🔄 Legacy or incompatible database schema detected. Resetting database...');
-    try {
-      database.closeSync();
-      deleteDatabaseSync(DATABASE_NAME);
-      console.log('✅ Legacy database deleted');
-      // Reopen with fresh database
-      database = openDatabaseSync(DATABASE_NAME);
-      console.log('✅ New database created');
-    } catch (error) {
-      console.error('❌ Error resetting database:', error);
-      throw error;
-    }
+  if (hasOldSchema(database)) {
+    console.log('🔄 Legacy database schema detected. Continuing with migrations...');
   }
 
   ensureSchemaInitialized(database);
