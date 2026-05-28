@@ -5,10 +5,8 @@ import { useDate } from '@/app/contexts/DateContext';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
-  addActivity,
   getFoodEntriesForDate,
   getNutritionSummary,
-  getRecentActivities,
   getUserProfile,
   getWorkoutEntries
 } from '@/services/database';
@@ -17,7 +15,7 @@ import { spacing, typography } from '@/styles/theme';
 import { WorkoutEntry } from '@/types/types';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 interface DashboardState {
   calorieData: {

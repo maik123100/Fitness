@@ -1,4 +1,4 @@
-import { rawDb, useDatabase } from "@/services/db";
+import { useDatabase } from "@/services/db";
 import { seedMockData, shouldSeedMockData } from '@/services/mockData';
 import { initializeNotifications, setupNotificationHandlers } from '@/services/notificationService';
 import { getOnboardingCompleted } from '@/services/onboardingService';

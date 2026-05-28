@@ -1,12 +1,3 @@
-CREATE TABLE `active_workout_session` (
-	`id` text PRIMARY KEY NOT NULL,
-	`workout_template_id` text NOT NULL,
-	`start_time` integer NOT NULL,
-	`date` text NOT NULL,
-	`sets` text NOT NULL,
-	FOREIGN KEY (`workout_template_id`) REFERENCES `workout_templates`(`id`) ON UPDATE no action ON DELETE no action
-);
---> statement-breakpoint
 CREATE TABLE `activities` (
 	`id` text PRIMARY KEY NOT NULL,
 	`activity` text NOT NULL,
@@ -202,4 +193,13 @@ CREATE TABLE `workout_template_exercises` (
 CREATE TABLE `workout_templates` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `active_workout_session` (
+	`id` text PRIMARY KEY NOT NULL,
+	`workout_template_id` text NOT NULL,
+	`start_time` integer NOT NULL,
+	`date` text NOT NULL,
+	`sets` text NOT NULL,
+	FOREIGN KEY (`workout_template_id`) REFERENCES `workout_templates`(`id`) ON UPDATE no action ON DELETE no action
 );
