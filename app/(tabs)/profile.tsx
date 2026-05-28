@@ -9,7 +9,7 @@ import { TimePickerModal } from '@/components/profile/TimePickerModal';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useProfileForm } from '@/hooks/useProfileForm';
-import { resetDatabase } from '@/services/db';
+import { resetDatabase } from '@/services/db/resetDatabase';
 import { setOnboardingCompleted } from '@/services/onboardingService';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import { MineralFields, VitaminFields } from '@/types/types';
