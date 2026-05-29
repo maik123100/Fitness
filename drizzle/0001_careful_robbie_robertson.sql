@@ -1,1 +1,0 @@
-ALTER TABLE `workout_entries` ADD `calories_burned` real DEFAULT 0 NOT NULL;
