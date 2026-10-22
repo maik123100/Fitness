@@ -1,8 +1,8 @@
 import { getOnboardingCompleted } from '@/services/onboardingService';
-import type { Router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-export const useAppBootstrap = (enabled: boolean, router: Router) => {
+export const useAppBootstrap = (enabled: boolean, router: ReturnType<typeof useRouter>) => {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {

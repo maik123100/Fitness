@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MEAL_ICONS, MEAL_LABELS, MEAL_TYPES } from '@/constants/foodConstants';
 import { MealType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';

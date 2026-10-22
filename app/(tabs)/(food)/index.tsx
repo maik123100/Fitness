@@ -1,7 +1,7 @@
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { SelectionModal } from '@/components/shared/SelectionModal';
-import { useDate } from '@/app/contexts/DateContext';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useDate } from '@/contexts/DateContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   deleteFoodEntry,
@@ -16,7 +16,8 @@ import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-ca
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 type FoodDiaryState = {

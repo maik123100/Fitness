@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getExerciseProgression, getExerciseTemplates } from '@/services/database';
 import { spacing } from '@/styles/theme';
 import { ExerciseTemplate } from '@/types/types';

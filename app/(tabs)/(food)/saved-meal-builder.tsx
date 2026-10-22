@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { createSavedMeal, getAllFoodItems } from '@/services/database';
 import { FoodItem, MealType } from '@/services/db/schema';

@@ -1,6 +1,6 @@
 import DatePickerModal from '@/components/DatePickerModal';
 import { InputField } from '@/components/shared/InputField';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ActivityLevel, GoalType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';

@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import SetTargetInputList from '@/components/SetTargetInputList';
 import { SelectionModal } from '@/components/shared/SelectionModal';
 import { addExerciseTemplate, deleteExerciseTemplate, getExerciseTemplates, updateExerciseTemplate } from '@/services/database';

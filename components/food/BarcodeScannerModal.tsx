@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { shadows, spacing, typography, borderRadius } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';

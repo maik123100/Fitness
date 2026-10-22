@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';

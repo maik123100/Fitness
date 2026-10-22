@@ -1,6 +1,6 @@
 import { getNutritionSummary, getUserProfile } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MineralFields, NutritionSummary, VitaminFields } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';

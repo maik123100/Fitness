@@ -1,8 +1,8 @@
 import CalorieOverview from '@/components/calorieOverview';
 import MakroOverview from '@/components/makroOverview';
 import RecentActivities from '@/components/recentActivities';
-import { useDate } from '@/app/contexts/DateContext';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useDate } from '@/contexts/DateContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   getFoodEntriesForDate,
@@ -42,6 +42,7 @@ export default function DashboardScreen() {
       target: { protein: 100, carbs: 200, fat: 50 },
     },
     recentActivities: [],
+    dbVerificationActivity: null,
   });
 
   const { calorieData, makroData, recentActivities } = state;

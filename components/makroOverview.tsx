@@ -1,5 +1,5 @@
 
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import { useRouter } from 'expo-router';
 import { Dimensions, Pressable, StyleSheet, Text } from 'react-native';

@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, shadows, spacing, typography } from '../styles/theme';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import Ionicons from '@expo/vector-icons/Ionicons';
 

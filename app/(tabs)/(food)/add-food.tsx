@@ -1,5 +1,5 @@
 import { useSnackbar } from '@/components/SnackbarProvider';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { addFoodItem, getAllFoodItems } from '@/services/database';
 import { FoodCategory, FoodItem } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
@@ -8,7 +8,7 @@ import { Picker } from '@react-native-picker/picker';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Modal, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputSubmitEditingEventData, TouchableOpacity, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, ScrollViewInstance, StyleSheet, Text, TextInput, TextInputSubmitEditingEvent, TouchableOpacity, View } from 'react-native';
 import ReanimatedAnimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 
@@ -44,7 +44,7 @@ const AddFood: React.FC = () => {
   const { theme } = useTheme();
   const { showSnackbar } = useSnackbar();
   const [food, setFood] = useState<FoodItem>({ ...defaultFood });
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
   const inputPositionsRef = useRef<Record<string, number>>({});
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -164,7 +164,7 @@ const AddFood: React.FC = () => {
     }, 100);
   };
 
-  const handleInputSubmit = (_event: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
+  const handleInputSubmit = (_event: TextInputSubmitEditingEvent) => {
     Keyboard.dismiss();
   };
 

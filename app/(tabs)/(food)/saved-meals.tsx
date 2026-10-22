@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { SelectionModal } from '@/components/shared/SelectionModal';
 import { deleteSavedMeal, getSavedMeals } from '@/services/database';

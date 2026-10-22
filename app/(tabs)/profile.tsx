@@ -6,7 +6,7 @@ import { NotificationSection } from '@/components/profile/NotificationSection';
 import { ProfileInfoSection } from '@/components/profile/ProfileInfoSection';
 import { ThemeSection } from '@/components/profile/ThemeSection';
 import { TimePickerModal } from '@/components/profile/TimePickerModal';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useProfileForm } from '@/hooks/useProfileForm';
 import { resetDatabase } from '@/services/db/resetDatabase';

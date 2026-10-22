@@ -1,4 +1,4 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { addWorkoutTemplate, addWorkoutTemplateExercise, getExerciseTemplates, addExerciseTemplate } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';

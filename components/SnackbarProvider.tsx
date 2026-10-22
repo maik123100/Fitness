@@ -2,7 +2,7 @@ import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 
 interface SnackbarContextType {

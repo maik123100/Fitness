@@ -1,5 +1,5 @@
 
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getFoodItem, getWorkoutTemplate } from '@/services/database';
 import { FoodEntry } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';

@@ -44,7 +44,9 @@
           "sounds": []
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-asset",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

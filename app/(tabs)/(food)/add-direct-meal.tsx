@@ -1,5 +1,5 @@
-import { useDate } from '@/app/contexts/DateContext';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useDate } from '@/contexts/DateContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { MealTypePicker } from '@/components/food/MealTypePicker';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';

@@ -5,7 +5,7 @@ import { useAppBootstrap } from '@/hooks/useAppBootstrap';
 import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
-import { ThemeProvider } from '@/app/contexts/ThemeContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 export default function RootLayout() {
   const { success, error } = useDatabase();

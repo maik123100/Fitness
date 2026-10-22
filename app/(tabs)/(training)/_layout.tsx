@@ -1,24 +1,6 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
-import { Stack, usePathname } from 'expo-router';
-import { useEffect } from 'react';
+import { Stack } from 'expo-router';
 
 export default function TrainingLayout() {
-  const { theme } = useTheme();
-  const navigation = useNavigation();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    const isIndex = pathname === '/(tabs)/training';
-    // @ts-ignore
-    navigation.getParent()?.setOptions({
-      tabBarStyle: {
-        display: isIndex ? 'flex' : 'none',
-        backgroundColor: theme.background,
-      },
-    });
-  }, [pathname, navigation, theme]);
-
   return (
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />

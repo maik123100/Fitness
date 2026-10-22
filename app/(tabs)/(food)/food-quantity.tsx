@@ -1,6 +1,6 @@
 import { useSnackbar } from '@/components/SnackbarProvider';
-import { useDate } from '@/app/contexts/DateContext';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useDate } from '@/contexts/DateContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   addFoodEntry,

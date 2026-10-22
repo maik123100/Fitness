@@ -1,5 +1,5 @@
 
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';

@@ -1,5 +1,5 @@
 import { borderRadius, spacing, typography } from '@/styles/theme';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { SetTarget } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';

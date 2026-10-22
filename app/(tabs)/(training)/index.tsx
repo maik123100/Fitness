@@ -1,5 +1,5 @@
-import { useTheme } from '@/app/contexts/ThemeContext';
-import { useDate } from '@/app/contexts/DateContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useDate } from '@/contexts/DateContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import { deleteWorkoutEntry, getActiveWorkoutSession, getWorkoutEntries, getWorkoutTemplate, getWorkoutTemplates, startWorkoutSession } from '@/services/database';
 import { borderRadius, spacing, typography } from '@/styles/theme';
@@ -8,8 +8,10 @@ import { WorkoutTemplate } from '@/services/db/schema';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 interface TrainingState {
   templates: WorkoutTemplate[];
@@ -26,7 +28,7 @@ export default function WorkoutScreen() {
     activeSession: null,
     workoutEntries: [],
   });
-  const swipeableRef = useRef<Swipeable>(null);
+  const swipeableRef = useRef<SwipeableMethods>(null);
 
   const { templates, activeSession, workoutEntries } = state;
 
@@ -53,21 +55,14 @@ export default function WorkoutScreen() {
     }
   };
 
-  const renderRightActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>, item: WorkoutEntry) => {
-    const trans = dragX.interpolate({
-      inputRange: [-160, 0],
-      outputRange: [0, 160],
-      extrapolate: 'clamp',
-    });
+  const renderRightActions = (_progress: unknown, _dragX: unknown, item: WorkoutEntry) => {
     return (
       <View style={styles.rightActionContainer}>
         <TouchableOpacity 
           onPress={() => router.navigate({ pathname: '/(tabs)/(training)/workoutSession', params: { workoutEntryId: item.id } })} 
           style={[styles.actionButton, styles.editButton, { backgroundColor: theme.green }]}
         >
-          <Animated.View style={{ transform: [{ translateX: trans }] }}>
-            <MaterialCommunityIcons name="pencil" size={24} color={theme.text.inverse} />
-          </Animated.View>
+          <MaterialCommunityIcons name="pencil" size={24} color={theme.text.inverse} />
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => {
@@ -77,9 +72,7 @@ export default function WorkoutScreen() {
           }} 
           style={[styles.actionButton, { backgroundColor: theme.red }]}
         >
-          <Animated.View style={{ transform: [{ translateX: trans }] }}>
-            <MaterialCommunityIcons name="delete" size={24} color={theme.text.inverse} />
-          </Animated.View>
+          <MaterialCommunityIcons name="delete" size={24} color={theme.text.inverse} />
         </TouchableOpacity>
       </View>
     );
