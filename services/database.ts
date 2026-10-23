@@ -2,8 +2,6 @@ import { formatDateToYYYYMMDD, parseDateFromYYYYMMDD } from '@/utils/dateHelpers
 import { db } from '@/services/db';
 import * as schema from '@/services/db/schema';
 import {
-  Activity,
-  DailyNutrition,
   FoodEntry,
   FoodItem,
   MealLog,
@@ -11,29 +9,24 @@ import {
   MealLogItemType,
   MealLogSourceType,
   MealType,
-  Recipe,
-  RecipeIngredient,
-  SavedMeal,
-  SavedMealItem,
-  UserProfile,
-  WeightEntry,
 } from '@/services/db/schema';
 import {
-  ActiveWorkoutSession,
   MealLogItemDetail,
   MealLogWithItems,
-  ExerciseTemplate,
   MineralFields,
-  SavedMealItemWithFood,
-  SavedMealWithItems,
   VitaminFields,
-  WorkoutEntry,
-  WorkoutTemplateExercise,
 } from '@/types/types';
-import { WorkoutTemplate } from '@/services/db/schema';
 import { addFoodItem, deleteFoodItem, getAllFoodItems, getFoodItem, searchFoodItems } from '@/services/db/repositories/foodRepository';
 export { addFoodItem, deleteFoodItem, getAllFoodItems, getFoodItem, searchFoodItems } from '@/services/db/repositories/foodRepository';
-import { and, asc, desc, eq, like, sql } from 'drizzle-orm';
+import { getWorkoutEntries as getWorkoutEntriesFromRepository } from '@/services/db/repositories/workoutRepository';
+import { getUserProfile as getUserProfileFromRepository } from '@/services/db/repositories/profileRepository';
+import { getSavedMeal as getSavedMealFromRepository } from '@/services/db/repositories/savedMealRepository';
+export { getSavedMeals, getSavedMeal, createSavedMeal, deleteSavedMeal } from '@/services/db/repositories/savedMealRepository';
+export { addWorkoutTemplate, getWorkoutTemplates, getWorkoutTemplate, addExerciseTemplate, getExerciseTemplates, getExerciseTemplate, deleteExerciseTemplate, updateExerciseTemplate, addWorkoutTemplateExercise, getWorkoutTemplateExercises, startWorkoutSession, getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutEntries, getWorkoutEntry, updateWorkoutEntry, deleteWorkoutEntry } from '@/services/db/repositories/workoutRepository';
+export { saveUserProfile, getUserProfile, addWeightEntry, getWeightEntries } from '@/services/db/repositories/profileRepository';
+export { addActivity, getRecentActivities, updateActivity, deleteActivity } from '@/services/db/repositories/activityRepository';
+export { updateDailyNutrition, getDailyNutrition } from '@/services/db/repositories/nutritionRepository';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 const VITAMIN_KEYS: (keyof VitaminFields)[] = [
   'vitaminA', 'vitaminC', 'vitaminD', 'vitaminB6', 'vitaminE', 'vitaminK',
@@ -81,25 +74,6 @@ const ZERO_MINERALS = (): MineralFields => ({
   selenium: 0,
   sodium: 0,
   zinc: 0,
-});
-
-const mapRowToSavedMeal = (row: any): SavedMeal => ({
-  id: row.id,
-  name: row.name,
-  defaultMealType: row.defaultMealType as MealType,
-  notes: row.notes,
-  isFavorite: row.isFavorite,
-  createdAt: row.createdAt,
-  updatedAt: row.updatedAt,
-});
-
-const mapRowToSavedMealItem = (row: any): SavedMealItem => ({
-  id: row.id,
-  savedMealId: row.savedMealId,
-  foodId: row.foodId,
-  quantity: row.quantity,
-  unit: row.unit,
-  itemOrder: row.itemOrder,
 });
 
 const mapRowToMealLog = (row: any): MealLog => ({
@@ -273,85 +247,6 @@ const getMealLogsForDateDetailed = (date: string): MealLogWithItems[] => {
   }));
 };
 
-export const getSavedMeals = (): SavedMealWithItems[] => {
-  const meals = db
-    .select()
-    .from(schema.savedMeals)
-    .orderBy(desc(schema.savedMeals.isFavorite), asc(schema.savedMeals.name))
-    .all()
-    .map(mapRowToSavedMeal);
-
-  return meals.map((meal): SavedMealWithItems => {
-    const items = db
-      .select()
-      .from(schema.savedMealItems)
-      .where(eq(schema.savedMealItems.savedMealId, meal.id))
-      .orderBy(asc(schema.savedMealItems.itemOrder), asc(schema.savedMealItems.id))
-      .all()
-      .map(mapRowToSavedMealItem)
-      .map((item): SavedMealItemWithFood => ({
-        ...item,
-        food: getFoodItem(item.foodId),
-      }));
-
-    return {
-      ...meal,
-      defaultMealType: meal.defaultMealType as MealType,
-      items,
-    };
-  });
-};
-
-export const getSavedMeal = (id: string): SavedMealWithItems | null => {
-  return getSavedMeals().find((meal) => meal.id === id) ?? null;
-};
-
-export const createSavedMeal = ({
-  name,
-  defaultMealType,
-  notes,
-  isFavorite = false,
-  items,
-}: {
-  name: string;
-  defaultMealType: MealType;
-  notes?: string;
-  isFavorite?: boolean;
-  items: Array<{ foodId: string; quantity: number; unit?: string }>;
-}): SavedMealWithItems => {
-  const now = Date.now();
-  const mealId = `saved-meal-${now}`;
-
-  db.insert(schema.savedMeals).values({
-    id: mealId,
-    name,
-    defaultMealType,
-    notes: notes ?? null,
-    isFavorite,
-    createdAt: now,
-    updatedAt: now,
-  }).run();
-
-  items.forEach((item, index) => {
-    const food = getFoodItem(item.foodId);
-    db.insert(schema.savedMealItems).values({
-      id: `${mealId}-item-${index}-${now}`,
-      savedMealId: mealId,
-      foodId: item.foodId,
-      quantity: item.quantity,
-      unit: item.unit ?? food?.servingUnit ?? 'g',
-      itemOrder: index,
-    }).run();
-  });
-
-  return getSavedMeal(mealId)!;
-};
-
-export const deleteSavedMeal = (id: string): void => {
-  db.delete(schema.savedMealItems).where(eq(schema.savedMealItems.savedMealId, id)).run();
-  db.delete(schema.savedMeals).where(eq(schema.savedMeals.id, id)).run();
-};
-
 export const logQuickProductMeal = ({
   foodId,
   quantity,
@@ -518,7 +413,7 @@ export const logSavedMeal = ({
   date: string;
   itemQuantities: Record<string, number>;
 }): MealLogWithItems | null => {
-  const savedMeal = getSavedMeal(savedMealId);
+  const savedMeal = getSavedMealFromRepository(savedMealId);
   if (!savedMeal) return null;
 
   const createdAt = Date.now();
@@ -707,303 +602,6 @@ export const deleteFoodEntry = (id: string): void => {
   db.delete(schema.foodEntries).where(eq(schema.foodEntries.id, id)).run();
 };
 
-// ============== Workout Functions ==============
-
-export const addWorkoutTemplate = (template: WorkoutTemplate): void => {
-  db.insert(schema.workoutTemplates).values({
-    id: template.id,
-    name: template.name,
-  }).run();
-};
-
-export const getWorkoutTemplates = (): WorkoutTemplate[] => {
-  return db.select().from(schema.workoutTemplates).all();
-};
-
-export const getWorkoutTemplate = (id: string): WorkoutTemplate | null => {
-  return db.select().from(schema.workoutTemplates).where(eq(schema.workoutTemplates.id, id)).get() ?? null;
-};
-
-export const addExerciseTemplate = (template: ExerciseTemplate): void => {
-  db.insert(schema.exerciseTemplates).values({
-    id: template.id,
-    name: template.name,
-    defaultSetTargets: JSON.stringify(template.defaultSetTargets),
-  }).run();
-};
-
-export const getExerciseTemplates = (): ExerciseTemplate[] => {
-  return db.select().from(schema.exerciseTemplates).all().map(row => ({
-    id: row.id,
-    name: row.name,
-    defaultSetTargets: JSON.parse(row.defaultSetTargets),
-  }));
-};
-
-export const getExerciseTemplate = (id: string): ExerciseTemplate | null => {
-  const row = db.select().from(schema.exerciseTemplates).where(eq(schema.exerciseTemplates.id, id)).get();
-  if (!row) return null;
-  return {
-    id: row.id,
-    name: row.name,
-    defaultSetTargets: JSON.parse(row.defaultSetTargets),
-  };
-};
-
-export const deleteExerciseTemplate = (id: string): void => {
-  db.delete(schema.exerciseTemplates).where(eq(schema.exerciseTemplates.id, id)).run();
-};
-
-export const updateExerciseTemplate = (template: ExerciseTemplate): void => {
-  db.update(schema.exerciseTemplates)
-    .set({
-      name: template.name,
-      defaultSetTargets: JSON.stringify(template.defaultSetTargets),
-    })
-    .where(eq(schema.exerciseTemplates.id, template.id))
-    .run();
-};
-
-export const addWorkoutTemplateExercise = (exercise: WorkoutTemplateExercise): void => {
-  db.insert(schema.workoutTemplateExercises).values({
-    id: exercise.id,
-    workoutTemplateId: exercise.workoutTemplateId,
-    exerciseTemplateId: exercise.exerciseTemplateId,
-    setTargets: JSON.stringify(exercise.setTargets),
-    order: exercise.order,
-  }).run();
-};
-
-export const getWorkoutTemplateExercises = (templateId: string): WorkoutTemplateExercise[] => {
-  return db
-    .select()
-    .from(schema.workoutTemplateExercises)
-    .where(eq(schema.workoutTemplateExercises.workoutTemplateId, templateId))
-    .orderBy(asc(schema.workoutTemplateExercises.order))
-    .all()
-    .map(row => ({
-      id: row.id,
-      workoutTemplateId: row.workoutTemplateId,
-      exerciseTemplateId: row.exerciseTemplateId,
-      setTargets: JSON.parse(row.setTargets),
-      order: row.order,
-    }));
-};
-
-// ============== Active Workout Session Functions ==============
-
-export const startWorkoutSession = (templateId: string, date: string): ActiveWorkoutSession => {
-  // Delete any existing session
-  db.delete(schema.activeWorkoutSession).run();
-
-  const exercises = getWorkoutTemplateExercises(templateId);
-  const sets: any[] = exercises.flatMap(exercise => {
-    const exerciseTemplate = getExerciseTemplate(exercise.exerciseTemplateId);
-    if (!exerciseTemplate) return [];
-    return exercise.setTargets.map((target: any, index: number) => ({
-      id: `${exercise.id}-${index}`,
-      workoutTemplateExerciseId: exercise.id,
-      weight: 0,
-      reps: 0,
-      targetReps: target.reps,
-      targetWeight: target.weight,
-      completed: false,
-    }));
-  });
-
-  const newSession: ActiveWorkoutSession = {
-    id: Date.now().toString(),
-    workoutTemplateId: templateId,
-    startTime: Date.now(),
-    date: date,
-    sets,
-  };
-
-  db.insert(schema.activeWorkoutSession).values({
-    id: newSession.id,
-    workoutTemplateId: newSession.workoutTemplateId,
-    startTime: newSession.startTime,
-    date: newSession.date,
-    sets: JSON.stringify(newSession.sets),
-  }).run();
-
-  return newSession;
-};
-
-export const getActiveWorkoutSession = (): ActiveWorkoutSession | null => {
-  const row = db.select().from(schema.activeWorkoutSession).limit(1).get();
-  if (!row) return null;
-
-  return {
-    id: row.id,
-    workoutTemplateId: row.workoutTemplateId,
-    startTime: row.startTime,
-    date: row.date,
-    sets: JSON.parse(row.sets),
-  };
-};
-
-export const updateActiveWorkoutSession = (session: ActiveWorkoutSession): void => {
-  db.update(schema.activeWorkoutSession)
-    .set({ sets: JSON.stringify(session.sets) })
-    .where(eq(schema.activeWorkoutSession.id, session.id))
-    .run();
-};
-
-export const finishWorkoutSession = (session: ActiveWorkoutSession, caloriesBurned: number = 0): void => {
-  const newEntry: WorkoutEntry = {
-    id: Date.now().toString(),
-    workoutTemplateId: session.workoutTemplateId,
-    date: session.date,
-    duration: Math.round((Date.now() - session.startTime) / 60000),
-    caloriesBurned: caloriesBurned,
-    sets: session.sets.filter((s: any) => s.completed),
-    createdAt: Date.now(),
-  };
-
-  db.insert(schema.workoutEntries).values({
-    id: newEntry.id,
-    workoutTemplateId: newEntry.workoutTemplateId,
-    date: newEntry.date,
-    duration: newEntry.duration,
-    caloriesBurned: newEntry.caloriesBurned,
-    sets: JSON.stringify(newEntry.sets),
-    createdAt: newEntry.createdAt,
-  }).run();
-
-  db.delete(schema.activeWorkoutSession).run();
-};
-
-// ============== Workout Entry Functions ==============
-
-export const getWorkoutEntries = (date: string): WorkoutEntry[] => {
-  return db
-    .select()
-    .from(schema.workoutEntries)
-    .where(eq(schema.workoutEntries.date, date))
-    .orderBy(desc(schema.workoutEntries.createdAt))
-    .all()
-    .map(row => ({
-      id: row.id,
-      workoutTemplateId: row.workoutTemplateId,
-      date: row.date,
-      duration: row.duration,
-      caloriesBurned: row.caloriesBurned || 0,
-      sets: JSON.parse(row.sets),
-      createdAt: row.createdAt,
-    }));
-};
-
-export const getWorkoutEntry = (id: string): WorkoutEntry | null => {
-  const row = db.select().from(schema.workoutEntries).where(eq(schema.workoutEntries.id, id)).get();
-  if (!row) return null;
-  return {
-    id: row.id,
-    workoutTemplateId: row.workoutTemplateId,
-    date: row.date,
-    duration: row.duration,
-    caloriesBurned: row.caloriesBurned || 0,
-    sets: JSON.parse(row.sets),
-    createdAt: row.createdAt,
-  };
-};
-
-export const updateWorkoutEntry = (entry: WorkoutEntry): void => {
-  db.update(schema.workoutEntries)
-    .set({
-      duration: entry.duration,
-      caloriesBurned: entry.caloriesBurned,
-      sets: JSON.stringify(entry.sets),
-    })
-    .where(eq(schema.workoutEntries.id, entry.id))
-    .run();
-};
-
-export const deleteWorkoutEntry = (id: string): void => {
-  db.delete(schema.workoutEntries).where(eq(schema.workoutEntries.id, id)).run();
-};
-
-// ============== User Profile Functions ==============
-
-export const saveUserProfile = (profile: UserProfile): void => {
-  const now = Date.now();
-
-  db.insert(schema.userProfile).values({
-    id: profile.id,
-    birthdate: profile.birthdate,
-    gender: profile.gender,
-    height: profile.height,
-    weight: profile.weight,
-    activityLevel: profile.activityLevel,
-    goalType: profile.goalType,
-    targetWeight: profile.targetWeight ?? null,
-    targetCalories: profile.targetCalories,
-    targetProtein: profile.targetProtein,
-    targetCarbs: profile.targetCarbs,
-    targetFat: profile.targetFat,
-    createdAt: profile.createdAt || now,
-    updatedAt: now,
-  }).onConflictDoUpdate({
-    target: schema.userProfile.id,
-    set: {
-      birthdate: profile.birthdate,
-      gender: profile.gender,
-      height: profile.height,
-      weight: profile.weight,
-      activityLevel: profile.activityLevel,
-      goalType: profile.goalType,
-      targetWeight: profile.targetWeight ?? null,
-      targetCalories: profile.targetCalories,
-      targetProtein: profile.targetProtein,
-      targetCarbs: profile.targetCarbs,
-      targetFat: profile.targetFat,
-      updatedAt: now,
-    },
-  }).run();
-
-  // Add a corresponding weight entry
-  const weightEntry: WeightEntry = {
-    id: `weight-${now}`,
-    weight: profile.weight,
-    date: new Date().toISOString().split('T')[0],
-    createdAt: now,
-  };
-  addWeightEntry(weightEntry);
-};
-
-export const getUserProfile = (): UserProfile | null => {
-  const row = db
-    .select()
-    .from(schema.userProfile)
-    .orderBy(desc(schema.userProfile.updatedAt))
-    .limit(1)
-    .get();
-
-  if (!row) return null;
-
-  return row as UserProfile;
-};
-
-// ============== Weight Tracking Functions ==============
-
-export const addWeightEntry = (entry: WeightEntry): void => {
-  db.insert(schema.weightEntries).values({
-    id: entry.id,
-    weight: entry.weight,
-    date: entry.date,
-    createdAt: entry.createdAt,
-  }).run();
-};
-
-export const getWeightEntries = (limit: number = 30): WeightEntry[] => {
-  return db
-    .select()
-    .from(schema.weightEntries)
-    .orderBy(desc(schema.weightEntries.date))
-    .limit(limit)
-    .all();
-};
-
 // ============== Nutrition Summary Functions ==============
 
 export const getNutritionSummary = (date: string): any => {
@@ -1039,7 +637,7 @@ export const getNutritionSummary = (date: string): any => {
     }
   }
 
-  const workoutEntries = getWorkoutEntries(date);
+  const workoutEntries = getWorkoutEntriesFromRepository(date);
   const caloriesBurned = workoutEntries.reduce((total, workout) => {
     return total + (workout.caloriesBurned || 0);
   }, 0);
@@ -1059,7 +657,7 @@ export const getNutritionSummary = (date: string): any => {
 };
 
 export const getCalorieIntakeForPeriod = (startDate: string, endDate: string): { date: string, totalCalories: number, targetCalories: number }[] => {
-  const userProfile = getUserProfile();
+  const userProfile = getUserProfileFromRepository();
   const baseTargetCalories = userProfile?.targetCalories || 0;
 
   const workoutEntries = db
@@ -1158,67 +756,4 @@ export const getExerciseProgression = (exerciseTemplateId: string, period: numbe
     date,
     sets: progression[date],
   }));
-};
-
-// ============== Activity Functions ==============
-
-export const addActivity = (activity: Activity): void => {
-  db.insert(schema.activities).values({
-    id: activity.id,
-    activity: activity.activity,
-    calories: activity.calories,
-    type: activity.type,
-    timestamp: activity.timestamp,
-  }).run();
-};
-
-export const getRecentActivities = (limit: number = 10): Activity[] => {
-  return db
-    .select()
-    .from(schema.activities)
-    .orderBy(desc(schema.activities.timestamp))
-    .limit(limit)
-    .all() as Activity[];
-};
-
-export const updateActivity = (activity: Activity): void => {
-  db.update(schema.activities)
-    .set({
-      activity: activity.activity,
-      calories: activity.calories,
-    })
-    .where(eq(schema.activities.id, activity.id))
-    .run();
-};
-
-export const deleteActivity = (id: string): void => {
-  db.delete(schema.activities).where(eq(schema.activities.id, id)).run();
-};
-
-// ============== Daily Nutrition Functions ==============
-
-export const updateDailyNutrition = (nutrition: DailyNutrition): void => {
-  db.insert(schema.dailyNutrition).values({
-    id: nutrition.id,
-    date: nutrition.date,
-    protein: nutrition.protein,
-    carbs: nutrition.carbs,
-    fat: nutrition.fat,
-  }).onConflictDoUpdate({
-    target: schema.dailyNutrition.id,
-    set: {
-      date: nutrition.date,
-      protein: nutrition.protein,
-      carbs: nutrition.carbs,
-      fat: nutrition.fat,
-    },
-  }).run();
-};
-
-export const getDailyNutrition = (date: string): DailyNutrition | null => {
-  return db
-    .select()
-    .from(schema.dailyNutrition)
-    .where(eq(schema.dailyNutrition.date, date))
-    .get() ?? null;
 };
