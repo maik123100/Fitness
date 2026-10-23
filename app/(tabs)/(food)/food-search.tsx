@@ -1,17 +1,20 @@
 import { useSnackbar } from '@/components/SnackbarProvider';
-import { useTheme } from '@/app/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { SelectionModal } from '@/components/shared/SelectionModal';
 import {
+  addFoodItem,
   deleteFoodItem,
   getAllFoodItems,
 } from '@/services/database';
+import { searchOpenFoodFacts } from '@/services/openFoodFactsService';
+import { useFoodSearchSettings } from '@/hooks/useFoodSearchSettings';
 import { FoodItem, MealType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function FoodSearchScreen() {
   const router = useRouter();
@@ -29,6 +32,9 @@ export default function FoodSearchScreen() {
     item: null,
   });
   const [permission, requestPermission] = useCameraPermissions();
+  const { openFoodFactsSearchEnabled, setOpenFoodFactsSearch } = useFoodSearchSettings();
+  const [remoteResultIds, setRemoteResultIds] = useState<Set<string>>(new Set());
+  const [isSearchingRemote, setIsSearchingRemote] = useState(false);
 
   useEffect(() => {
     const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
@@ -61,7 +67,54 @@ export default function FoodSearchScreen() {
     setQuery(text);
   };
 
+  useEffect(() => {
+    if (!openFoodFactsSearchEnabled || query.trim().length < 2) {
+      setRemoteResultIds(new Set());
+      setResults((currentResults) => currentResults.filter((food) => !food.id.startsWith('openfoodfacts-')));
+      return;
+    }
+
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      setIsSearchingRemote(true);
+      searchOpenFoodFacts(query)
+        .then((remoteFoods) => {
+          if (cancelled) return;
+          const localIds = new Set(getAllFoodItems().map((food) => food.id));
+          const uniqueRemoteFoods = remoteFoods.filter((food) => !localIds.has(food.id));
+          setRemoteResultIds(new Set(uniqueRemoteFoods.map((food) => food.id)));
+          setResults((localFoods) => [
+            ...localFoods.filter((food) => !food.id.startsWith('openfoodfacts-')),
+            ...uniqueRemoteFoods,
+          ].sort((a, b) => a.name.localeCompare(b.name)));
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            console.error('OpenFoodFacts search failed:', error);
+            showSnackbar('Could not search OpenFoodFacts. Check your connection and try again.', 3500);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsSearchingRemote(false);
+        });
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [openFoodFactsSearchEnabled, query, showSnackbar]);
+
   const handleAddFood = (foodItem: FoodItem) => {
+    if (remoteResultIds.has(foodItem.id)) {
+      addFoodItem(foodItem);
+      setRemoteResultIds((ids) => {
+        const next = new Set(ids);
+        next.delete(foodItem.id);
+        return next;
+      });
+      showSnackbar('Food item added to your local database.', 2500);
+    }
     router.navigate({
       pathname: '/(tabs)/(food)/food-quantity',
       params: { foodId: foodItem.id, mealType: mealType },
@@ -127,6 +180,27 @@ export default function FoodSearchScreen() {
         </Pressable>
       </View>
 
+      <View style={[styles.onlineSearchToggle, { backgroundColor: theme.surface.card }]}>
+        <View style={styles.onlineSearchToggleText}>
+          <Text style={[styles.onlineSearchTitle, { color: theme.foreground }]}>
+            Search online
+          </Text>
+          <Text style={[styles.onlineSearchDescription, { color: theme.comment }]}>
+            Include OpenFoodFacts results
+          </Text>
+        </View>
+        <Switch
+          value={openFoodFactsSearchEnabled}
+          onValueChange={(enabled) => {
+            setOpenFoodFactsSearch(enabled).catch((error) => {
+              console.error('Failed to save food search setting:', error);
+            });
+          }}
+          trackColor={{ false: theme.surface.secondary, true: theme.cyan }}
+          thumbColor={openFoodFactsSearchEnabled ? theme.text.inverse : theme.comment}
+        />
+      </View>
+
       {/* Add New Food Button */}
       <Pressable
         style={[styles.addNewButton, { backgroundColor: theme.success }, shadows.md]}
@@ -141,7 +215,7 @@ export default function FoodSearchScreen() {
       {query.length > 0 && (
         <View style={styles.resultsHeader}>
           <Text style={[styles.resultsCount, { color: theme.comment }]}>
-            {results.length} {results.length === 1 ? 'result' : 'results'} found
+            {isSearchingRemote ? 'Searching local foods and OpenFoodFacts...' : `${results.length} ${results.length === 1 ? 'result' : 'results'} found`}
           </Text>
         </View>
       )}
@@ -319,6 +393,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
     gap: spacing.md,
+  },
+  onlineSearchToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  onlineSearchToggleText: {
+    flex: 1,
+    paddingRight: spacing.md,
+  },
+  onlineSearchTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+  onlineSearchDescription: {
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.xs,
   },
   searchInputContainer: {
     flex: 1,
