@@ -2,7 +2,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { shadows, spacing, typography, borderRadius } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface BarcodeScannerModalProps {
@@ -15,6 +15,10 @@ export function BarcodeScannerModal({ visible, onClose, onScan }: BarcodeScanner
   const { theme } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+
+  useEffect(() => {
+    if (!visible) setScanned(false);
+  }, [visible]);
 
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {
     setScanned(true);
