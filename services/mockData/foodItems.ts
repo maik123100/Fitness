@@ -6,6 +6,7 @@ const now = Date.now();
 const createFoodItem = (item: Partial<FoodItem> & Pick<FoodItem, 'id' | 'name' | 'category' | 'calories' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'servingSize' | 'servingUnit' | 'isVerified' | 'createdAt' | 'updatedAt'>): FoodItem => ({
   brand: null,
   barcode: null,
+  imageUrl: null,
   vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0,
   vitaminE: 0, vitaminK: 0, thiamin: 0, vitaminB12: 0,
   riboflavin: 0, folate: 0, niacin: 0, choline: 0,

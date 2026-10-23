@@ -36,9 +36,7 @@ export type FoodSearchStatus = 'idle' | 'loading' | 'success' | 'error';
 export type FoodProviderProduct = Omit<
   NewFoodItem,
   'createdAt' | 'updatedAt' | 'isVerified'
-> & {
-  imageUrl?: string | null;
-};
+>;
 
 /** External food providers expose normalized domain items, never raw API rows. */
 export interface FoodSearchProvider {

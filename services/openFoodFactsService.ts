@@ -8,6 +8,9 @@ const SEARCH_FIELDS = [
   'product_name',
   'product_name_en',
   'brands',
+  'image_front_url',
+  'image_front_small_url',
+  'image_url',
   'categories_tags',
   'serving_size',
   'nutriments',
@@ -18,6 +21,9 @@ type OpenFoodFactsProduct = {
   product_name?: string;
   product_name_en?: string;
   brands?: string | string[];
+  image_front_url?: string;
+  image_front_small_url?: string;
+  image_url?: string;
   categories_tags?: string[];
   serving_size?: string;
   nutriments?: Record<string, number | undefined>;
@@ -29,6 +35,20 @@ type OpenFoodFactsResponse = {
 
 const numberOrZero = (value: number | undefined): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : 0;
+
+const validImageUrl = (...values: (string | undefined)[]): string | null => {
+  for (const value of values) {
+    const candidate = value?.trim();
+    if (!candidate) continue;
+    try {
+      const url = new URL(candidate);
+      if (url.protocol === 'http:' || url.protocol === 'https:') return candidate;
+    } catch {
+      // Ignore invalid provider image URLs and try the next supported field.
+    }
+  }
+  return null;
+};
 
 const wait = (milliseconds: number) =>
   new Promise<void>((resolve) => {
@@ -102,6 +122,7 @@ const toFoodItem = (product: OpenFoodFactsProduct): FoodItem | null => {
     name,
     brand: (Array.isArray(product.brands) ? product.brands[0] : product.brands?.split(',')[0])?.trim() || null,
     barcode: code,
+    imageUrl: validImageUrl(product.image_front_url, product.image_front_small_url, product.image_url),
     sourceType: 'product',
     category: categoryFromTags(product.categories_tags),
     calories: numberOrZero(nutrients['energy-kcal_100g'] ?? nutrients['energy-kcal']),

@@ -24,6 +24,7 @@ export const foodItems = sqliteTable('food_items', {
   name: text('name').notNull(),
   brand: text('brand'),
   barcode: text('barcode'),
+  imageUrl: text('image_url'),
   sourceType: text('source_type').notNull().default('product'),
   category: text('category').notNull(),
   calories: real('calories').notNull(),
