@@ -1,19 +1,15 @@
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SelectionModal } from '@/components/shared/SelectionModal';
-import {
-  addFoodItem,
-  deleteFoodItem,
-  getAllFoodItems,
-} from '@/services/db/repositories/foodRepository';
-import { searchOpenFoodFacts } from '@/services/openFoodFactsService';
-import { useFoodSearchSettings } from '@/hooks/useFoodSearchSettings';
-import { FoodItem, MealType } from '@/services/db/schema';
+import { getAllFoodItems } from '@/services/db/repositories/foodRepository';
+import { useFoodSearch } from '@/hooks/food/useFoodSearch';
+import { MealType } from '@/services/db/schema';
+import type { FoodSearchResult } from '@/types/food';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function FoodSearchScreen() {
@@ -23,96 +19,32 @@ export default function FoodSearchScreen() {
   const params = useLocalSearchParams<{ mealType: MealType }>();
   const mealType = params.mealType;
 
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<FoodItem[]>([]);
-  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    query, setQuery, state: searchState, results, isSearching,
+    openFoodFactsSearchEnabled, setOpenFoodFactsSearch,
+    importResult, deleteResult,
+  } = useFoodSearch();
   const [cameraModal, setCameraModal] = useState({ visible: false, scanned: false });
-  const [deleteFoodModal, setDeleteFoodModal] = useState<{ visible: boolean; item: FoodItem | null }>({
+  const [deleteFoodModal, setDeleteFoodModal] = useState<{ visible: boolean; item: FoodSearchResult | null }>({
     visible: false,
     item: null,
   });
   const [permission, requestPermission] = useCameraPermissions();
-  const { openFoodFactsSearchEnabled, setOpenFoodFactsSearch } = useFoodSearchSettings();
-  const [remoteResultIds, setRemoteResultIds] = useState<Set<string>>(new Set());
-  const [isSearchingRemote, setIsSearchingRemote] = useState(false);
-
   useEffect(() => {
-    const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
-    setResults(allFoods);
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const handleSearchQueryChange = (text: string) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+    if (searchState.status === 'error') {
+      console.error('Food search failed:', searchState.error.cause ?? searchState.error.message);
+      showSnackbar(
+        searchState.error.category === 'local-database'
+          ? 'Could not load your saved foods. Please try again.'
+          : 'Could not search OpenFoodFacts. Check your connection and try again.',
+        3500,
+      );
     }
-    debounceTimeoutRef.current = setTimeout(() => {
-      const allFoods = getAllFoodItems();
-      if (text.length > 0) {
-        const filteredResults = allFoods.filter(food =>
-          food.name.toLowerCase().includes(text.toLowerCase())
-        ).sort((a, b) => a.name.localeCompare(b.name));
-        setResults(filteredResults);
-      } else {
-        setResults(allFoods.sort((a, b) => a.name.localeCompare(b.name)));
-      }
-    }, 500);
+  }, [searchState, showSnackbar]);
 
-    setQuery(text);
-  };
-
-  useEffect(() => {
-    if (!openFoodFactsSearchEnabled || query.trim().length < 2) {
-      setRemoteResultIds(new Set());
-      setResults((currentResults) => currentResults.filter((food) => !food.id.startsWith('openfoodfacts-')));
-      return;
-    }
-
-    let cancelled = false;
-    const timeout = setTimeout(() => {
-      setIsSearchingRemote(true);
-      searchOpenFoodFacts(query)
-        .then((remoteFoods) => {
-          if (cancelled) return;
-          const localIds = new Set(getAllFoodItems().map((food) => food.id));
-          const uniqueRemoteFoods = remoteFoods.filter((food) => !localIds.has(food.id));
-          setRemoteResultIds(new Set(uniqueRemoteFoods.map((food) => food.id)));
-          setResults((localFoods) => [
-            ...localFoods.filter((food) => !food.id.startsWith('openfoodfacts-')),
-            ...uniqueRemoteFoods,
-          ].sort((a, b) => a.name.localeCompare(b.name)));
-        })
-        .catch((error) => {
-          if (!cancelled) {
-            console.error('OpenFoodFacts search failed:', error);
-            showSnackbar('Could not search OpenFoodFacts. Check your connection and try again.', 3500);
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setIsSearchingRemote(false);
-        });
-    }, 500);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeout);
-    };
-  }, [openFoodFactsSearchEnabled, query, showSnackbar]);
-
-  const handleAddFood = (foodItem: FoodItem) => {
-    if (remoteResultIds.has(foodItem.id)) {
-      addFoodItem(foodItem);
-      setRemoteResultIds((ids) => {
-        const next = new Set(ids);
-        next.delete(foodItem.id);
-        return next;
-      });
+  const handleAddFood = (result: FoodSearchResult) => {
+    const foodItem = result.isPersisted ? result.food : importResult(result).food;
+    if (!result.isPersisted) {
       showSnackbar('Food item added to your local database.', 2500);
     }
     router.navigate({
@@ -136,7 +68,7 @@ export default function FoodSearchScreen() {
     const foundFood = allFoods.find(food => food.barcode === result.data);
 
     if (foundFood) {
-      handleAddFood(foundFood);
+      handleAddFood({ food: foundFood, source: 'local', isPersisted: true });
       showSnackbar('Food item found and ready to add!', 2000);
     } else {
       showSnackbar('No food item found with that barcode.', 3000);
@@ -162,11 +94,11 @@ export default function FoodSearchScreen() {
             placeholder="Search for food..."
             placeholderTextColor={theme.comment}
             value={query}
-            onChangeText={handleSearchQueryChange}
+            onChangeText={setQuery}
             autoFocus
           />
           {query.length > 0 && (
-            <Pressable onPress={() => handleSearchQueryChange('')} style={styles.clearButton}>
+            <Pressable onPress={() => setQuery('')} style={styles.clearButton}>
               <Ionicons name="close-circle" size={20} color={theme.comment} />
             </Pressable>
           )}
@@ -215,7 +147,7 @@ export default function FoodSearchScreen() {
       {query.length > 0 && (
         <View style={styles.resultsHeader}>
           <Text style={[styles.resultsCount, { color: theme.comment }]}>
-            {isSearchingRemote ? 'Searching local foods and OpenFoodFacts...' : `${results.length} ${results.length === 1 ? 'result' : 'results'} found`}
+            {isSearching ? 'Searching local foods and OpenFoodFacts...' : `${results.length} ${results.length === 1 ? 'result' : 'results'} found`}
           </Text>
         </View>
       )}
@@ -223,14 +155,16 @@ export default function FoodSearchScreen() {
       {/* Food List */}
       <FlatList
         data={results}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(result) => result.food.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
+        renderItem={({ item: result }) => {
+          const item = result.food;
+          return (
           <View style={[styles.foodCard, { backgroundColor: theme.surface.card }, shadows.sm]}>
             <Pressable
               style={styles.foodCardContent}
-              onPress={() => handleAddFood(item)}
+              onPress={() => handleAddFood(result)}
               android_ripple={{ color: theme.selection }}
             >
               <View style={styles.foodCardMain}>
@@ -266,12 +200,13 @@ export default function FoodSearchScreen() {
             {/* Delete Button */}
             <Pressable
               style={[styles.deleteButton, { backgroundColor: theme.surface.elevated }]}
-              onPress={() => setDeleteFoodModal({ visible: true, item })}
+              onPress={() => setDeleteFoodModal({ visible: true, item: result })}
             >
               <Ionicons name="trash-outline" size={20} color={theme.danger} />
             </Pressable>
           </View>
-        )}
+        );
+        }}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={64} color={theme.comment} style={styles.emptyIcon} />
@@ -341,7 +276,7 @@ export default function FoodSearchScreen() {
       <SelectionModal
         visible={deleteFoodModal.visible}
         title="Delete Food Item"
-        description={deleteFoodModal.item ? `Remove ${deleteFoodModal.item.name} from your food library. Close the sheet to keep it.` : 'Remove this food item from your food library. Close the sheet to keep it.'}
+        description={deleteFoodModal.item ? `Remove ${deleteFoodModal.item.food.name} from your food library. Close the sheet to keep it.` : 'Remove this food item from your food library. Close the sheet to keep it.'}
         onClose={() => setDeleteFoodModal({ visible: false, item: null })}
         options={[
           {
@@ -355,9 +290,7 @@ export default function FoodSearchScreen() {
                 return;
               }
 
-              deleteFoodItem(deleteFoodModal.item);
-              const allFoods = getAllFoodItems().sort((a, b) => a.name.localeCompare(b.name));
-              setResults(allFoods);
+              deleteResult(deleteFoodModal.item);
               showSnackbar('Food item deleted.', 3000);
             },
           },

@@ -30,7 +30,9 @@ export type FoodSearchOutcome =
   | { status: 'error'; results: FoodSearchResult[]; error: FoodSearchError }
   | { status: 'cancelled'; results: FoodSearchResult[] };
 
-export type FoodSearchStatus = 'idle' | 'loading' | 'success' | 'error';
+export type FoodSearchState =
+  | { status: 'idle' | 'loading' | 'success'; results: FoodSearchResult[] }
+  | { status: 'error'; results: FoodSearchResult[]; error: FoodSearchError };
 
 /** Provider-neutral food fields before they are persisted as a FoodItem. */
 export type FoodProviderProduct = Omit<
