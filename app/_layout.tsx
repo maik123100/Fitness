@@ -1,14 +1,14 @@
-import { useDatabase } from "@/services/db";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useAppBootstrap } from '@/hooks/useAppBootstrap';
+import { useAppBootstrap } from '@/services/bootstrap/appBootstrap';
+import { useDatabaseBootstrap } from '@/services/bootstrap/databaseBootstrap';
 import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
 export default function RootLayout() {
-  const { success, error } = useDatabase();
+  const { success, error } = useDatabaseBootstrap();
   const router = useRouter();
   const appReady = useAppBootstrap(success, router);
 

@@ -6,50 +6,33 @@ export const useAppBootstrap = (enabled: boolean, router: ReturnType<typeof useR
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-
+    if (!enabled) return;
     let cancelled = false;
 
     const run = async () => {
       await getOnboardingCompleted();
-
-      if (cancelled) {
-        return;
-      }
+      if (cancelled) return;
 
       if (__DEV__ && process.env.EXPO_PUBLIC_USE_MOCK_DATA === 'true') {
-        const { seedMockData } = await import('@/services/mockData');
-        if (!cancelled) {
-          seedMockData();
-        }
+        const { initializeMockData } = await import('@/services/bootstrap/mockDataBootstrap');
+        if (cancelled) return;
+        initializeMockData();
       }
 
       if (!__DEV__) {
-        const { initializeNotifications, setupNotificationHandlers } = await import(
-          '@/services/notificationService'
-        );
-
-        await initializeNotifications();
-
-        if (cancelled) {
-          return;
-        }
-
-        setupNotificationHandlers(router);
+        const { initializeNotificationBootstrap } = await import('@/services/bootstrap/notificationBootstrap');
+        if (cancelled) return;
+        await initializeNotificationBootstrap(router);
       }
 
-      setLoaded(true);
+      if (!cancelled) setLoaded(true);
     };
 
     run().catch((error) => {
       console.error('App bootstrap failed:', error);
     });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [enabled, router]);
 
   return loaded;
