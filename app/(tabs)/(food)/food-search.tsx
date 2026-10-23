@@ -5,7 +5,7 @@ import {
   addFoodItem,
   deleteFoodItem,
   getAllFoodItems,
-} from '@/services/database';
+} from '@/services/db/repositories/foodRepository';
 import { searchOpenFoodFacts } from '@/services/openFoodFactsService';
 import { useFoodSearchSettings } from '@/hooks/useFoodSearchSettings';
 import { FoodItem, MealType } from '@/services/db/schema';

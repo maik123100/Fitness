@@ -4,8 +4,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   addFoodEntry,
-  getFoodItem,
 } from '@/services/database';
+import { getFoodItem } from '@/services/db/repositories/foodRepository';
 import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';

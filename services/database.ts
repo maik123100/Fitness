@@ -31,6 +31,8 @@ import {
   WorkoutTemplateExercise,
 } from '@/types/types';
 import { WorkoutTemplate } from '@/services/db/schema';
+import { addFoodItem, deleteFoodItem, getAllFoodItems, getFoodItem, searchFoodItems } from '@/services/db/repositories/foodRepository';
+export { addFoodItem, deleteFoodItem, getAllFoodItems, getFoodItem, searchFoodItems } from '@/services/db/repositories/foodRepository';
 import { and, asc, desc, eq, like, sql } from 'drizzle-orm';
 
 const VITAMIN_KEYS: (keyof VitaminFields)[] = [
@@ -79,115 +81,6 @@ const ZERO_MINERALS = (): MineralFields => ({
   selenium: 0,
   sodium: 0,
   zinc: 0,
-});
-
-// ============== Food Database Functions ==============
-
-export const addFoodItem = (food: FoodItem): void => {
-  const now = Date.now();
-  db.insert(schema.foodItems).values({
-    id: food.id,
-    name: food.name,
-    brand: food.brand ?? null,
-    barcode: food.barcode ?? null,
-    imageUrl: food.imageUrl ?? null,
-    sourceType: food.sourceType ?? 'product',
-    category: food.category,
-    calories: food.calories,
-    protein: food.protein,
-    carbs: food.carbs,
-    fat: food.fat,
-    fiber: food.fiber,
-    vitaminA: food.vitaminA ?? 0,
-    vitaminC: food.vitaminC ?? 0,
-    vitaminD: food.vitaminD ?? 0,
-    vitaminB6: food.vitaminB6 ?? 0,
-    vitaminE: food.vitaminE ?? 0,
-    vitaminK: food.vitaminK ?? 0,
-    thiamin: food.thiamin ?? 0,
-    vitaminB12: food.vitaminB12 ?? 0,
-    riboflavin: food.riboflavin ?? 0,
-    folate: food.folate ?? 0,
-    niacin: food.niacin ?? 0,
-    choline: food.choline ?? 0,
-    pantothenicAcid: food.pantothenicAcid ?? 0,
-    biotin: food.biotin ?? 0,
-    carotenoids: food.carotenoids ?? 0,
-    calcium: food.calcium ?? 0,
-    chloride: food.chloride ?? 0,
-    chromium: food.chromium ?? 0,
-    copper: food.copper ?? 0,
-    fluoride: food.fluoride ?? 0,
-    iodine: food.iodine ?? 0,
-    iron: food.iron ?? 0,
-    magnesium: food.magnesium ?? 0,
-    manganese: food.manganese ?? 0,
-    molybdenum: food.molybdenum ?? 0,
-    phosphorus: food.phosphorus ?? 0,
-    potassium: food.potassium ?? 0,
-    selenium: food.selenium ?? 0,
-    sodium: food.sodium ?? 0,
-    zinc: food.zinc ?? 0,
-    servingSize: food.servingSize,
-    servingUnit: food.servingUnit,
-    isVerified: food.isVerified,
-    createdAt: food.createdAt || now,
-    updatedAt: food.updatedAt || now,
-  }).run();
-};
-
-export const deleteFoodItem = (foodItem: FoodItem): void => {
-  db.delete(schema.foodItems).where(eq(schema.foodItems.id, foodItem.id)).run();
-};
-
-const mapRowToFoodItem = (row: any): FoodItem => ({
-  id: row.id,
-  name: row.name,
-  brand: row.brand,
-  barcode: row.barcode,
-  imageUrl: row.imageUrl ?? null,
-  sourceType: row.sourceType,
-  category: row.category,
-  calories: row.calories,
-  protein: row.protein,
-  carbs: row.carbs,
-  fat: row.fat,
-  fiber: row.fiber,
-  vitaminA: row.vitaminA,
-  vitaminC: row.vitaminC,
-  vitaminD: row.vitaminD,
-  vitaminB6: row.vitaminB6,
-  vitaminE: row.vitaminE,
-  vitaminK: row.vitaminK,
-  thiamin: row.thiamin,
-  vitaminB12: row.vitaminB12,
-  riboflavin: row.riboflavin,
-  folate: row.folate,
-  niacin: row.niacin,
-  choline: row.choline,
-  pantothenicAcid: row.pantothenicAcid,
-  biotin: row.biotin,
-  carotenoids: row.carotenoids,
-  calcium: row.calcium,
-  chloride: row.chloride,
-  chromium: row.chromium,
-  copper: row.copper,
-  fluoride: row.fluoride,
-  iodine: row.iodine,
-  iron: row.iron,
-  magnesium: row.magnesium,
-  manganese: row.manganese,
-  molybdenum: row.molybdenum,
-  phosphorus: row.phosphorus,
-  potassium: row.potassium,
-  selenium: row.selenium,
-  sodium: row.sodium,
-  zinc: row.zinc,
-  servingSize: row.servingSize,
-  servingUnit: row.servingUnit,
-  isVerified: row.isVerified,
-  createdAt: row.createdAt,
-  updatedAt: row.updatedAt,
 });
 
 const mapRowToSavedMeal = (row: any): SavedMeal => ({
@@ -690,37 +583,6 @@ export const logSavedMeal = ({
   });
 
   return getMealLogsForDateDetailed(date).find((log) => log.id === mealLogId) ?? null;
-};
-
-export const getAllFoodItems = (options?: { includeDirect?: boolean }): FoodItem[] => {
-  const rows = db.select().from(schema.foodItems).orderBy(asc(schema.foodItems.name)).all();
-  const includeDirect = options?.includeDirect ?? false;
-  return rows
-    .map(mapRowToFoodItem)
-    .filter((item) => includeDirect || item.sourceType !== 'direct');
-};
-
-export const searchFoodItems = (query: string, category?: string, limit: number = 20): FoodItem[] => {
-  const conditions = [like(schema.foodItems.name, `%${query}%`), eq(schema.foodItems.sourceType, 'product')];
-
-  if (category) {
-    conditions.push(eq(schema.foodItems.category, category));
-  }
-
-  const rows = db
-    .select()
-    .from(schema.foodItems)
-    .where(conditions.length > 1 ? and(...conditions) : conditions[0])
-    .orderBy(desc(schema.foodItems.isVerified), asc(schema.foodItems.name))
-    .limit(limit)
-    .all();
-
-  return rows.map(mapRowToFoodItem);
-};
-
-export const getFoodItem = (id: string): FoodItem | null => {
-  const row = db.select().from(schema.foodItems).where(eq(schema.foodItems.id, id)).get();
-  return row ? mapRowToFoodItem(row) : null;
 };
 
 // ============== Food Entry Functions ==============
