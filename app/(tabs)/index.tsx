@@ -7,9 +7,9 @@ import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   getFoodEntriesForDate,
   getNutritionSummary,
-  getUserProfile,
-  getWorkoutEntries
-} from '@/services/database';
+} from '@/services/application/mealAndNutritionService';
+import { getUserProfile } from '@/services/db/repositories/profileRepository';
+import { getWorkoutEntries } from '@/services/db/repositories/workoutRepository';
 import { Activity, FoodEntry } from '@/services/db/schema';
 import { spacing, typography } from '@/styles/theme';
 import { WorkoutEntry } from '@/types/types';

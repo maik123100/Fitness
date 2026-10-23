@@ -1,6 +1,6 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
-import { getCalorieIntakeForPeriod } from '@/services/database';
+import { getCalorieIntakeForPeriod } from '@/services/application/mealAndNutritionService';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';

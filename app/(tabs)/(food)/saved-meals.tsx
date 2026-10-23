@@ -1,7 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { SelectionModal } from '@/components/shared/SelectionModal';
-import { deleteSavedMeal, getSavedMeals } from '@/services/database';
+import { deleteSavedMeal, getSavedMeals } from '@/services/db/repositories/savedMealRepository';
 import { SavedMealWithItems } from '@/types/types';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';

@@ -1,5 +1,5 @@
 import DatePickerModal from '@/components/DatePickerModal';
-import { saveUserProfile } from '@/services/database';
+import { saveUserProfile } from '@/services/db/repositories/profileRepository';
 import { setOnboardingCompleted } from '@/services/onboardingService';
 import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
 import { useRouter } from 'expo-router';

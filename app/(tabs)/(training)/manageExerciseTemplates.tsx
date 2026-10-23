@@ -1,7 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import SetTargetInputList from '@/components/SetTargetInputList';
 import { SelectionModal } from '@/components/shared/SelectionModal';
-import { addExerciseTemplate, deleteExerciseTemplate, getExerciseTemplates, updateExerciseTemplate } from '@/services/database';
+import { addExerciseTemplate, deleteExerciseTemplate, getExerciseTemplates, updateExerciseTemplate } from '@/services/db/repositories/workoutRepository';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ExerciseTemplate, SetTarget } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';

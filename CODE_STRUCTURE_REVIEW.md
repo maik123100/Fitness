@@ -1,27 +1,9 @@
 # Code Structure Review
 
-## Main Issues
+The first refactoring pass has moved database access into domain repositories and removed the old `services/database.ts` facade. Meal logging and nutrition summaries live in `services/application/mealAndNutritionService.ts` because they coordinate food, meal, and workout data. The current repository boundaries are in `services/db/repositories/`, with the food row mapper alongside them in `services/db/mappers/`.
 
-- `services/database.ts` is too large and mixed in responsibility. It combines CRUD, row mapping, domain helpers, and calculations in one file, which makes it hard to change safely.
-- `services/db/index.ts` still owns database open logic, migration startup, and reset logic in one place. That is workable, but it is doing too much for a single module.
-- `app/_layout.tsx` is a bootstrapping hub. It handles database setup, onboarding checks, mock seeding, and notification setup in one component.
+Food search now follows a route → hook → search service → repository/provider path. The OpenFoodFacts client owns HTTP behavior, its mapper converts provider responses, and the search result card owns image presentation and fallback behavior. `FoodItem.imageUrl` is nullable; provider images remain URL metadata and do not affect identity or deduplication.
 
-## What Feels Sloppy
+Startup responsibilities are separated into `services/bootstrap/`: database migration state, app readiness, notification setup, and development mock seeding. The root layout composes the providers and router after migrations and app bootstrap complete. Mock data is dynamically loaded only from the development bootstrap path.
 
-- `services/database.ts` has the classic "god file" shape. It is a long list of near-duplicate map functions and query helpers, and the domain logic is spread across many unrelated entities.
-- There is a lot of repetitive field copying between schema types and row shapes. That is noisy and makes schema changes expensive.
-- `app/_layout.tsx` mixes app lifecycle concerns with UI rendering. The component is doing orchestration work that would be clearer in a dedicated bootstrap hook or service.
-
-## How I Would Improve It
-
-- Split `services/database.ts` into per-domain modules such as `services/db/food.ts`, `services/db/workouts.ts`, and `services/db/meals.ts`.
-- Move row mapping helpers next to the relevant domain queries so each file owns its own conversion logic.
-- Extract the app startup sequence from `app/_layout.tsx` into a `useAppBootstrap()` hook or a small bootstrap service. Additional point it would be great that the bootstrapping logic is implemented in a way that when the app is compiled the things that get setup that are only needed in dev env should not get compiled into the production build.
-- Move reset and debugging helpers into a separate dev-only module so the main DB entrypoint stays focused on opening the database and running migrations.
-
-## Suggested Order
-
-1. Split `services/database.ts` by domain.
-2. Extract startup orchestration out of `app/_layout.tsx`.
-3. Separate dev/reset utilities from `services/db/index.ts`.
-4. Revisit migration file generation so the Drizzle artifacts stay consistent.
+Remaining improvement areas are focused repository and migration tests, stronger domain types for remaining JSON-backed workout data, and moving nutrition query calculations out of the meal application service if their ownership can be separated without duplicating cross-domain reads.

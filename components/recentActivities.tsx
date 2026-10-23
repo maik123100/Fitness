@@ -1,6 +1,7 @@
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { getFoodItem, getWorkoutTemplate } from '@/services/database';
+import { getFoodItem } from '@/services/db/repositories/foodRepository';
+import { getWorkoutTemplate } from '@/services/db/repositories/workoutRepository';
 import { FoodEntry } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import { WorkoutEntry } from '@/types/types';

@@ -16,16 +16,10 @@ import {
   MineralFields,
   VitaminFields,
 } from '@/types/types';
-import { addFoodItem, deleteFoodItem, getAllFoodItems, getFoodItem, searchFoodItems } from '@/services/db/repositories/foodRepository';
-export { addFoodItem, deleteFoodItem, getAllFoodItems, getFoodItem, searchFoodItems } from '@/services/db/repositories/foodRepository';
+import { addFoodItem, getAllFoodItems, getFoodItem } from '@/services/db/repositories/foodRepository';
 import { getWorkoutEntries as getWorkoutEntriesFromRepository } from '@/services/db/repositories/workoutRepository';
 import { getUserProfile as getUserProfileFromRepository } from '@/services/db/repositories/profileRepository';
 import { getSavedMeal as getSavedMealFromRepository } from '@/services/db/repositories/savedMealRepository';
-export { getSavedMeals, getSavedMeal, createSavedMeal, deleteSavedMeal } from '@/services/db/repositories/savedMealRepository';
-export { addWorkoutTemplate, getWorkoutTemplates, getWorkoutTemplate, addExerciseTemplate, getExerciseTemplates, getExerciseTemplate, deleteExerciseTemplate, updateExerciseTemplate, addWorkoutTemplateExercise, getWorkoutTemplateExercises, startWorkoutSession, getActiveWorkoutSession, updateActiveWorkoutSession, finishWorkoutSession, getWorkoutEntries, getWorkoutEntry, updateWorkoutEntry, deleteWorkoutEntry } from '@/services/db/repositories/workoutRepository';
-export { saveUserProfile, getUserProfile, addWeightEntry, getWeightEntries } from '@/services/db/repositories/profileRepository';
-export { addActivity, getRecentActivities, updateActivity, deleteActivity } from '@/services/db/repositories/activityRepository';
-export { updateDailyNutrition, getDailyNutrition } from '@/services/db/repositories/nutritionRepository';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 const VITAMIN_KEYS: (keyof VitaminFields)[] = [
@@ -185,7 +179,7 @@ const createMealLogItemFromFood = (
   } as MealLogItem;
 };
 
-const aggregateMealLogItems = (items: Array<MealLogItem | MealLogItemDetail>) => {
+const aggregateMealLogItems = (items: (MealLogItem | MealLogItemDetail)[]) => {
   const totalVitamins = ZERO_VITAMINS();
   const totalMinerals = ZERO_MINERALS();
 

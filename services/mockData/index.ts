@@ -1,4 +1,5 @@
-import { addExerciseTemplate, addFoodItem } from '@/services/database';
+import { addFoodItem } from '@/services/db/repositories/foodRepository';
+import { addExerciseTemplate } from '@/services/db/repositories/workoutRepository';
 import { mockExerciseTemplates } from './exerciseTemplates';
 import { mockFoodItems } from './foodItems';
 

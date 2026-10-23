@@ -5,10 +5,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   deleteFoodEntry,
-  getAllFoodItems,
   getFoodEntriesForDate,
-  getFoodItem,
-} from '@/services/database';
+} from '@/services/application/mealAndNutritionService';
+import { getAllFoodItems, getFoodItem } from '@/services/db/repositories/foodRepository';
 import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';

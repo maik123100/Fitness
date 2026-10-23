@@ -1,5 +1,5 @@
 import type { FoodCategory, FoodItem } from '@/services/db/schema';
-import type { OpenFoodFactsProduct, OpenFoodFactsResponse } from './openFoodFactsClient';
+import { OpenFoodFactsError, type OpenFoodFactsProduct, type OpenFoodFactsResponse } from './openFoodFactsClient';
 
 const numberOrZero = (value: number | undefined): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : 0;
@@ -66,7 +66,7 @@ export const mapOpenFoodFactsProduct = (product: OpenFoodFactsProduct): FoodItem
 
 export const mapOpenFoodFactsResponse = (response: OpenFoodFactsResponse): FoodItem[] => {
   if (response.hits !== undefined && !Array.isArray(response.hits)) {
-    throw new Error('OpenFoodFacts response did not contain a valid hits list');
+    throw new OpenFoodFactsError('OpenFoodFacts response did not contain a valid hits list', 'invalid-response');
   }
   return (response.hits ?? [])
     .map(mapOpenFoodFactsProduct)

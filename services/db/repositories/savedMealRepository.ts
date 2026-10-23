@@ -68,7 +68,7 @@ export const createSavedMeal = ({
   defaultMealType: MealType;
   notes?: string;
   isFavorite?: boolean;
-  items: Array<{ foodId: string; quantity: number; unit?: string }>;
+  items: { foodId: string; quantity: number; unit?: string }[];
 }): SavedMealWithItems => {
   const now = Date.now();
   const mealId = `saved-meal-${now}`;

@@ -1,5 +1,6 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { getExerciseProgression, getExerciseTemplates } from '@/services/database';
+import { getExerciseProgression } from '@/services/application/mealAndNutritionService';
+import { getExerciseTemplates } from '@/services/db/repositories/workoutRepository';
 import { spacing } from '@/styles/theme';
 import { ExerciseTemplate } from '@/types/types';
 import { Picker } from '@react-native-picker/picker';

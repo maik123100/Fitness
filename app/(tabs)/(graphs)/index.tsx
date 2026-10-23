@@ -1,5 +1,6 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { addWeightEntry, getNutritionSummary, getWeightEntries } from '@/services/database';
+import { getNutritionSummary } from '@/services/application/mealAndNutritionService';
+import { addWeightEntry, getWeightEntries } from '@/services/db/repositories/profileRepository';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { NutritionSummary } from '@/types/types';
 import Ionicons from '@expo/vector-icons/Ionicons';

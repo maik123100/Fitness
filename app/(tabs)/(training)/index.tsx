@@ -1,7 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDate } from '@/contexts/DateContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
-import { deleteWorkoutEntry, getActiveWorkoutSession, getWorkoutEntries, getWorkoutTemplate, getWorkoutTemplates, startWorkoutSession } from '@/services/database';
+import { deleteWorkoutEntry, getActiveWorkoutSession, getWorkoutEntries, getWorkoutTemplate, getWorkoutTemplates, startWorkoutSession } from '@/services/db/repositories/workoutRepository';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ActiveWorkoutSession, WorkoutEntry } from '@/types/types';
 import { WorkoutTemplate } from '@/services/db/schema';

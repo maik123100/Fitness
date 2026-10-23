@@ -1,5 +1,5 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { finishWorkoutSession, getActiveWorkoutSession, getExerciseTemplate, getWorkoutEntry, getWorkoutTemplateExercises, updateActiveWorkoutSession, updateWorkoutEntry } from '@/services/database';
+import { finishWorkoutSession, getActiveWorkoutSession, getExerciseTemplate, getWorkoutEntry, getWorkoutTemplateExercises, updateActiveWorkoutSession, updateWorkoutEntry } from '@/services/db/repositories/workoutRepository';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { ActiveWorkoutSession, WorkoutEntry, WorkoutTemplateExercise, WorkoutSet } from '@/types/types';
 import { Ionicons } from '@expo/vector-icons';

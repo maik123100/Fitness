@@ -1,6 +1,6 @@
 import { db } from "@/services/db";
 import * as schema from "@/services/db/schema";
-import type { Activity, DailyNutrition } from "@/services/db/schema";
+import type { Activity } from "@/services/db/schema";
 import { desc, eq } from "drizzle-orm";
 
 // ============== Activity Functions ==============

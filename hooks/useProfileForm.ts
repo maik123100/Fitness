@@ -1,4 +1,4 @@
-import { getUserProfile, saveUserProfile } from '@/services/database';
+import { getUserProfile, saveUserProfile } from '@/services/db/repositories/profileRepository';
 import { ActivityLevel, GoalType, UserProfile } from '@/services/db/schema';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';

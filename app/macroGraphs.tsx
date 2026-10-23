@@ -1,4 +1,5 @@
-import { getNutritionSummary, getUserProfile } from '@/services/database';
+import { getNutritionSummary } from '@/services/application/mealAndNutritionService';
+import { getUserProfile } from '@/services/db/repositories/profileRepository';
 import { borderRadius, spacing, typography } from '@/styles/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { MineralFields, NutritionSummary, VitaminFields } from '@/types/types';

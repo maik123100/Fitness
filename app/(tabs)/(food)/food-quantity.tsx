@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
 import {
   addFoodEntry,
-} from '@/services/database';
+} from '@/services/application/mealAndNutritionService';
 import { getFoodItem } from '@/services/db/repositories/foodRepository';
 import { FoodEntry, FoodItem, MealType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';

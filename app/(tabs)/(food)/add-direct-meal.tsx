@@ -3,7 +3,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useSnackbar } from '@/components/SnackbarProvider';
 import { MealTypePicker } from '@/components/food/MealTypePicker';
 import { formatDateToYYYYMMDD } from '@/utils/dateHelpers';
-import { logDirectMeal } from '@/services/database';
+import { logDirectMeal } from '@/services/application/mealAndNutritionService';
 import { MealType } from '@/services/db/schema';
 import { borderRadius, shadows, spacing, typography } from '@/styles/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
